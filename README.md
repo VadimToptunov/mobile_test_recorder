@@ -1,0 +1,300 @@
+# 🎯 Mobile Observe & Test Framework
+
+**Intelligent Mobile Testing Platform** - Observe, Analyze, Automate
+
+---
+
+## 📖 Overview
+
+Mobile Observe & Test Framework is a platform for automatic generation of mobile application tests based on observing real user behavior.
+
+### What does it do?
+
+1. **Observe** 👀 - Records QA engineer actions in a special build of the application
+2. **Analyze** 🧠 - Creates a semantic model of the application (screens, elements, transitions, APIs)
+3. **Generate** ⚡ - Automatically generates Page Objects, API tests, and BDD scenarios
+4. **Execute** 🚀 - Runs tests on a clean build (without SDK)
+
+### Key Benefits
+
+- ✅ **Minimal Manual Work** - QA engineers just walk through scenarios, tests generate automatically
+- ✅ **80-90% API Tests** - Fast and stable tests instead of slow UI
+- ✅ **Cross-platform Selectors** - Android and iOS from single model
+- ✅ **Smart Fallbacks** - Automatic handling of fragile locators
+- ✅ **Complex Cases Support** - Swipe, WebView, dynamic UI
+
+---
+
+## 🏗️ Architecture
+
+```
+┌────────────────────────────────────────────┐
+│              CLI / Orchestrator             │
+└──────────────┬─────────────────────────────┘
+               │
+┌──────────────┴─────────────────────────────┐
+│        Knowledge Acquisition                │
+│  ┌──────────────┐  ┌────────────────────┐  │
+│  │ Static       │  │ Observe Runtime    │  │
+│  │ Analyzer     │  │ (Android / iOS)    │  │
+│  └──────────────┘  └────────────────────┘  │
+└──────────────┬─────────────────────────────┘
+               │
+┌──────────────┴─────────────────────────────┐
+│            App Model Core                   │
+│   (Screens, States, APIs, Flows)            │
+└──────────────┬─────────────────────────────┘
+               │
+┌──────────────┴─────────────────────────────┐
+│          Generators Layer                   │
+│  (Python, pytest-bdd, Appium, API)          │
+└──────────────┬─────────────────────────────┘
+               │
+┌──────────────┴─────────────────────────────┐
+│      Execution & Reporting Layer            │
+│       (Stage builds, CI, TestRail)          │
+└─────────────────────────────────────────────┘
+```
+
+---
+
+## 📦 Project Structure
+
+```
+mobile_test_recorder/
+├── demo-app/                    # Demo Fintech application
+│   ├── android/                 # Android demo app (Jetpack Compose)
+│   │   ├── app/
+│   │   │   ├── src/
+│   │   │   │   ├── main/       # Main code
+│   │   │   │   ├── observe/    # Observe build variant
+│   │   │   │   └── test/       # Test build variant
+│   │   │   └── build.gradle.kts
+│   │   └── observe-sdk/         # Android Observe SDK
+│   │       └── src/
+│   ├── ios/                     # iOS demo app (SwiftUI) - TODO
+│   └── mock-backend/            # Mock API server
+│       └── main.py
+│
+├── framework/                   # Core Framework
+│   ├── cli/                     # CLI interface
+│   │   ├── __init__.py
+│   │   ├── main.py
+│   │   └── commands/
+│   │       ├── analyze.py
+│   │       ├── observe.py
+│   │       ├── generate.py
+│   │       └── model.py
+│   │
+│   ├── analyzer/                # Static Analysis
+│   │   ├── android_analyzer.py
+│   │   └── ios_analyzer.py
+│   │
+│   ├── model/                   # App Model Core
+│   │   ├── app_model.py
+│   │   ├── schema.py
+│   │   ├── state_machine.py
+│   │   └── diff_engine.py
+│   │
+│   ├── correlation/             # Event Correlation
+│   │   ├── correlation_engine.py
+│   │   └── strategies.py
+│   │
+│   ├── storage/                 # Event Store
+│   │   ├── event_store.py
+│   │   └── sqlite_adapter.py
+│   │
+│   └── generators/              # Code Generators
+│       ├── page_object_gen.py
+│       ├── api_client_gen.py
+│       ├── selector_gen.py
+│       └── bdd_gen.py
+│
+├── tests/                       # Generated tests (example)
+│   ├── pages/
+│   ├── api/
+│   └── features/
+│
+├── docs/                        # Documentation
+│   ├── architecture.md
+│   ├── roadmap.md
+│   └── examples/
+│
+├── requirements.txt             # Python dependencies
+├── pyproject.toml              # Python project config
+└── README.md                   # This file
+```
+
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+- Python 3.13+ (tested with 3.13.11)
+- Android SDK (for demo app)
+- Java 17+ (for Android)
+- Android Studio or IntelliJ IDEA
+- Node.js (for mock backend, optional)
+
+### Installation
+
+```bash
+# Clone repository (or navigate to existing)
+cd mobile_test_recorder
+
+# Create and activate virtual environment
+python3 -m venv .venv
+source .venv/bin/activate
+
+# Or use the activation script
+source activate.sh
+
+# Install Python dependencies
+pip install -r requirements.txt
+
+# Install CLI in editable mode
+pip install -e .
+
+# Verify installation
+observe --help
+observe info
+```
+
+### Build Demo App
+
+```bash
+# Open Android project
+# File → Open → demo-app/android in Android Studio
+
+# OR build from command line:
+cd demo-app/android
+
+# Build observe variant (with Observe SDK)
+./gradlew assembleObserveDebug
+
+# Build test variant (clean, for automation)
+./gradlew assembleTestDebug
+
+# Install on device/emulator
+adb install app/build/outputs/apk/observe/debug/app-observe-debug.apk
+
+# Run on connected device
+./gradlew installObserveDebug
+```
+
+### Demo App Features
+
+✅ **Onboarding** - Swipeable welcome screens  
+✅ **Login** - Email/password authentication  
+✅ **KYC** - Document scanning with Regula SDK  
+✅ **Home** - Balance and quick actions  
+🚧 **Top-up** - Card top-up with WebView (coming soon)  
+🚧 **Send Money** - Transfer to friends (coming soon)
+
+**Note:** KYC camera works best on real device. Use "Skip" button for emulator testing.
+
+### Run Framework
+
+```bash
+# Initialize project
+observe init --platform android
+
+# Analyze source code (optional)
+observe analyze android --source demo-app/android
+
+# Start recording session
+observe record start --device emulator-5554
+
+# (Use the app - tap, swipe, input text)
+
+# Stop recording
+observe record stop
+
+# Generate Page Objects
+observe generate pages --output tests/pages/
+
+# Generate tests
+observe generate tests --output tests/
+```
+
+---
+
+## 📚 Documentation
+
+- [Architecture Deep Dive](docs/architecture.md)
+- [RFC Specification](mobile_observe_test_framework_RFC.md)
+- [Roadmap & Milestones](docs/roadmap.md)
+- [Demo App Overview](demo-app/README.md)
+- [Framework API Reference](docs/api_reference.md)
+
+---
+
+## 🎯 Roadmap
+
+### ✅ Phase 1: MVP (6-8 weeks) - 50% Complete
+- [x] Project structure
+- [x] Python virtual environment setup
+- [x] CLI framework (Click)
+- [x] App Model Core (Pydantic)
+- [x] Demo Android App (Partial)
+  - [x] Onboarding (swipeable screens)
+  - [x] Login screen
+  - [x] KYC screen with Regula SDK
+  - [x] Home screen
+  - [ ] Top-up with WebView
+  - [ ] Send Money flow
+- [ ] Android Observe SDK (structure ready, implementation in progress)
+- [ ] Event Store (SQLite)
+- [ ] Page Object Generator
+- [ ] API Client Generator
+
+### 🚧 Phase 2: Production Ready (4-6 weeks)
+- [ ] Correlation Engine
+- [ ] API method generation
+- [ ] State Machine tracking
+- [ ] Diff engine
+- [ ] WebView support
+- [ ] Comprehensive testing
+
+### 📅 Phase 3: iOS Support (6-8 weeks)
+- [ ] iOS demo app
+- [ ] iOS Observe SDK
+- [ ] iOS static analyzer
+- [ ] Cross-platform generators
+
+### 🔮 Phase 4: Advanced Features
+- [ ] ML-based element classification
+- [ ] Visual regression testing
+- [ ] CI/CD integration
+- [ ] TestRail integration
+- [ ] Web support (optional)
+
+---
+
+## 🤝 Contributing
+
+This is currently a private project. Contact the maintainer for contribution guidelines.
+
+---
+
+## 📄 License
+
+TBD
+
+---
+
+## 👤 Author
+
+**Vadim Toptunov**
+
+Built with ❤️ for QA Engineers who deserve better tools.
+
+---
+
+## 🙏 Acknowledgments
+
+- Inspired by production testing challenges in fintech
+- Built with modern tech stack (Compose, SwiftUI, Python)
+- Designed for real-world legacy code scenarios
+
