@@ -300,12 +300,23 @@ class ModelBuilder:
             android_selector['xpath'] = f"//{class_name}"
             ios_selector['xpath'] = f"//{class_name}"
         
+        # Determine primary_strategy based on what's actually in the selector
+        if element_id:
+            primary_strategy = 'test_id'
+            fallback_strategies = ['text', 'xpath']
+        elif text and 'text' in android_selector:
+            primary_strategy = 'text'
+            fallback_strategies = ['xpath']
+        else:
+            primary_strategy = 'xpath'
+            fallback_strategies = []
+        
         return Selector(
             id=element_id or text or 'unknown',
             android=android_selector or None,
             ios=ios_selector or None,
-            primary_strategy='test_id' if element_id else 'text',
-            fallback_strategies=['text', 'xpath'] if element_id else ['xpath']
+            primary_strategy=primary_strategy,
+            fallback_strategies=fallback_strategies
         )
     
     def _extract_actions(

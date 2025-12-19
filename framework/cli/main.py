@@ -431,6 +431,106 @@ def validate(model_file: str):
 
 
 @model.command()
+@click.argument('model_file', type=click.Path(exists=True))
+@click.option('--detailed', is_flag=True, help='Show detailed analysis')
+def analyze_selectors(model_file: str, detailed: bool):
+    """
+    Analyze selectors in app model
+    
+    Example:
+        observe model analyze-selectors models/app_model.yaml
+    """
+    click.echo(f"🔍 Analyzing selectors in model...")
+    click.echo(f"   Model: {model_file}")
+    
+    try:
+        import yaml
+        import json
+        from framework.model.app_model import AppModel
+        from framework.selectors import SelectorOptimizer
+        
+        # Load model
+        with open(model_file, 'r') as f:
+            if model_file.endswith('.yaml') or model_file.endswith('.yml'):
+                model_data = yaml.safe_load(f)
+            else:
+                model_data = json.load(f)
+        
+        app_model = AppModel(**model_data)
+        optimizer = SelectorOptimizer()
+        
+        # Collect all selectors
+        all_selectors = []
+        for screen in app_model.screens.values():
+            for element in screen.elements:
+                if element.selector:
+                    all_selectors.append(element.selector)
+        
+        # Analyze
+        analysis = optimizer.analyze_selectors(all_selectors)
+        
+        # Print results
+        click.echo(f"\n📊 Selector Analysis Results:")
+        click.echo(f"   Total selectors: {analysis['total']}")
+        
+        if analysis['total'] == 0:
+            click.echo("\n⚠️  No selectors found in the model.")
+            return
+        
+        click.echo(f"   Average stability: {analysis['average_stability']:.2f}")
+        
+        click.echo(f"\n📈 Stability Distribution:")
+        dist = analysis['stability_distribution']
+        click.echo(f"   ✨ Excellent: {dist['excellent']} ({dist['excellent']/analysis['total']*100:.1f}%)")
+        click.echo(f"   ✅ Good:      {dist['good']} ({dist['good']/analysis['total']*100:.1f}%)")
+        click.echo(f"   ⚠️  Fair:      {dist['fair']} ({dist['fair']/analysis['total']*100:.1f}%)")
+        click.echo(f"   ❌ Poor:      {dist['poor']} ({dist['poor']/analysis['total']*100:.1f}%)")
+        click.echo(f"   💥 Fragile:   {dist['fragile']} ({dist['fragile']/analysis['total']*100:.1f}%)")
+        
+        click.echo(f"\n🎯 Strategy Distribution:")
+        for strategy, count in sorted(analysis['strategy_distribution'].items(), key=lambda x: x[1], reverse=True):
+            percentage = count / analysis['total'] * 100
+            click.echo(f"   {strategy}: {count} ({percentage:.1f}%)")
+        
+        click.echo(f"\n💡 Recommendations:")
+        for rec in analysis['recommendations']:
+            click.echo(f"   {rec}")
+        
+        # Detailed analysis if requested
+        if detailed:
+            click.echo(f"\n🔬 Detailed Selector Analysis:")
+            
+            # Find problematic selectors
+            problematic = [s for s in all_selectors if (s.stability_score or 0) < 0.5]
+            
+            if problematic:
+                click.echo(f"\n⚠️  {len(problematic)} problematic selectors found:")
+                for selector in problematic[:10]:  # Show first 10
+                    click.echo(f"\n   Element: {selector.id}")
+                    click.echo(f"   Stability: {selector.stability} ({selector.stability_score:.2f})")
+                    click.echo(f"   Primary: {selector.primary_strategy}")
+                    
+                    suggestions = optimizer.suggest_improvements(selector)
+                    for suggestion in suggestions:
+                        click.echo(f"      {suggestion}")
+            
+            # Check for duplicates
+            duplicates = optimizer.find_duplicate_selectors(all_selectors)
+            if duplicates:
+                click.echo(f"\n⚠️  {len(duplicates)} duplicate selectors found:")
+                for elem1, elem2 in duplicates[:5]:
+                    click.echo(f"   • {elem1} and {elem2} have identical selectors")
+        
+        click.echo(f"\n✅ Analysis complete!")
+        
+    except Exception as e:
+        click.echo(f"\n❌ Error analyzing selectors: {e}", err=True)
+        import traceback
+        traceback.print_exc()
+        raise click.Abort()
+
+
+@model.command()
 @click.option('--session-id', required=True, help='Session ID to build from')
 @click.option('--app-version', required=True, help='Application version')
 @click.option('--platform', type=click.Choice(['android', 'ios']), default='android',
