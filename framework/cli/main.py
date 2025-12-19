@@ -4,6 +4,7 @@ Main CLI entry point for Mobile Observe & Test Framework
 
 import click
 from pathlib import Path
+from typing import Optional
 from framework import __version__
 
 
@@ -101,9 +102,63 @@ def analyze(platform: str, source: str, output: str):
     click.echo(f"📂 Source: {source}")
     click.echo(f"📄 Output: {output}")
     
-    # TODO: Implement static analysis
-    click.echo("\n⚠️  Static analysis not yet implemented")
-    click.echo("   This will be available in Phase 2")
+    try:
+        from pathlib import Path
+        import yaml
+        import json
+        
+        if platform == 'android':
+            from framework.analyzers import AndroidAnalyzer
+            
+            click.echo(f"\n🤖 Running Android static analyzer...")
+            analyzer = AndroidAnalyzer()
+            result = analyzer.analyze(source)
+            
+        elif platform == 'ios':
+            click.echo(f"\n❌ iOS static analysis not yet implemented")
+            return
+        else:
+            click.echo(f"\n❌ Unknown platform: {platform}")
+            return
+        
+        # Save results
+        output_path = Path(output)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        with open(output_path, 'w') as f:
+            if output.endswith('.json'):
+                json.dump(result.model_dump(), f, indent=2, default=str)
+            else:
+                yaml.dump(result.model_dump(), f, default_flow_style=False, sort_keys=False)
+        
+        # Print summary
+        click.echo(f"\n✅ Static analysis complete!")
+        click.echo(f"\n📊 Results:")
+        click.echo(f"   Files analyzed: {result.files_analyzed}")
+        click.echo(f"   Screens found: {len(result.screens)}")
+        click.echo(f"   UI elements found: {len(result.ui_elements)}")
+        click.echo(f"   Navigation routes: {len(result.navigation)}")
+        click.echo(f"   API endpoints: {len(result.api_endpoints)}")
+        
+        if result.errors:
+            click.echo(f"\n⚠️  Errors: {len(result.errors)}")
+            for error in result.errors[:5]:  # Show first 5
+                click.echo(f"   • {error}")
+        
+        if result.warnings:
+            click.echo(f"\n⚠️  Warnings: {len(result.warnings)}")
+        
+        click.echo(f"\n📄 Results saved to: {output_path}")
+        click.echo(f"\nNext steps:")
+        click.echo(f"  1. Review the analysis results")
+        click.echo(f"  2. Record a session: observe record start")
+        click.echo(f"  3. Merge static + dynamic: observe model build")
+        
+    except Exception as e:
+        click.echo(f"\n❌ Error during analysis: {e}", err=True)
+        import traceback
+        traceback.print_exc()
+        raise click.Abort()
 
 
 @cli.group()
@@ -145,6 +200,64 @@ def stop():
     click.echo("🛑 Stopping recording session...")
     # TODO: Implement
     click.echo("⚠️  Not yet implemented")
+
+
+@record.command()
+@click.option('--session-id', required=True, help='Session ID to correlate')
+@click.option('--output', type=click.Path(), default='correlations.json',
+              help='Output file for correlation results')
+def correlate(session_id: str, output: str):
+    """
+    Correlate events in a recorded session
+    
+    Example:
+        observe record correlate --session-id session_20250119_142345
+    """
+    click.echo(f"🔗 Correlating events for session: {session_id}")
+    click.echo(f"   Output: {output}")
+    
+    try:
+        from pathlib import Path
+        import json
+        from framework.storage.event_store import EventStore
+        from framework.correlation import EventCorrelator
+        
+        # Initialize event store
+        store = EventStore()
+        
+        # Initialize correlator
+        correlator = EventCorrelator(event_store=store)
+        
+        # Correlate events
+        result = correlator.correlate_session(session_id)
+        
+        # Save results
+        output_path = Path(output)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        with open(output_path, 'w') as f:
+            json.dump(result.model_dump(), f, indent=2, default=str)
+        
+        # Print summary
+        click.echo(f"\n✅ Correlation complete!")
+        click.echo(f"\n📊 Statistics:")
+        click.echo(f"   Total UI events: {result.total_ui_events}")
+        click.echo(f"   Total API events: {result.total_api_events}")
+        click.echo(f"   Total Navigation events: {result.total_navigation_events}")
+        click.echo(f"   ")
+        click.echo(f"   UI→API correlations: {len(result.ui_to_api)}")
+        click.echo(f"   API→Navigation correlations: {len(result.api_to_navigation)}")
+        click.echo(f"   Complete flows: {len(result.full_flows)}")
+        click.echo(f"   ")
+        click.echo(f"   Correlation rate: {result.correlation_rate:.1%}")
+        click.echo(f"   ")
+        click.echo(f"📄 Results saved to: {output_path}")
+        
+    except Exception as e:
+        click.echo(f"\n❌ Error during correlation: {e}", err=True)
+        import traceback
+        traceback.print_exc()
+        raise click.Abort()
 
 
 @cli.group()
@@ -315,6 +428,94 @@ def validate(model_file: str):
     click.echo(f"✔️  Validating model: {model_file}")
     # TODO: Implement validation
     click.echo("⚠️  Not yet implemented")
+
+
+@model.command()
+@click.option('--session-id', required=True, help='Session ID to build from')
+@click.option('--app-version', required=True, help='Application version')
+@click.option('--platform', type=click.Choice(['android', 'ios']), default='android',
+              help='Target platform')
+@click.option('--output', type=click.Path(), default='models/app_model.yaml',
+              help='Output file for generated model')
+@click.option('--correlations', type=click.Path(exists=True),
+              help='Pre-computed correlations JSON file (optional)')
+def build(session_id: str, app_version: str, platform: str, output: str, correlations: Optional[str]):
+    """
+    Build AppModel from recorded session
+    
+    Example:
+        observe model build --session-id session_20250119_142345 --app-version 1.0.0
+    """
+    click.echo(f"🏗️  Building AppModel from session...")
+    click.echo(f"   Session: {session_id}")
+    click.echo(f"   App Version: {app_version}")
+    click.echo(f"   Platform: {platform}")
+    click.echo(f"   Output: {output}")
+    
+    try:
+        from pathlib import Path
+        import yaml
+        import json
+        from framework.storage.event_store import EventStore
+        from framework.model_builder import ModelBuilder
+        from framework.model.app_model import Platform
+        from framework.correlation import CorrelationResult
+        
+        # Initialize store and builder
+        store = EventStore()
+        builder = ModelBuilder(event_store=store)
+        
+        # Load correlations if provided
+        correlation_result = None
+        if correlations:
+            click.echo(f"\n📊 Loading correlations from: {correlations}")
+            with open(correlations, 'r') as f:
+                corr_data = json.load(f)
+                correlation_result = CorrelationResult(**corr_data)
+        
+        # Map platform string to enum
+        platform_enum = Platform.ANDROID if platform == 'android' else Platform.IOS
+        
+        # Build model
+        click.echo(f"\n🔨 Building model...")
+        app_model = builder.build_from_session(
+            session_id=session_id,
+            app_version=app_version,
+            platform=platform_enum,
+            correlation_result=correlation_result
+        )
+        
+        # Save model
+        output_path = Path(output)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        with open(output_path, 'w') as f:
+            if output.endswith('.json'):
+                json.dump(app_model.model_dump(), f, indent=2, default=str)
+            else:
+                yaml.dump(app_model.model_dump(), f, default_flow_style=False, sort_keys=False)
+        
+        # Print summary
+        click.echo(f"\n✅ AppModel built successfully!")
+        click.echo(f"\n📊 Model Statistics:")
+        click.echo(f"   Screens: {len(app_model.screens)}")
+        click.echo(f"   API Calls: {len(app_model.api_calls)}")
+        click.echo(f"   Flows: {len(app_model.flows)}")
+        
+        if app_model.state_machine:
+            click.echo(f"   States: {len(app_model.state_machine.states)}")
+            click.echo(f"   Transitions: {len(app_model.state_machine.transitions)}")
+        
+        click.echo(f"\n📄 Model saved to: {output_path}")
+        click.echo(f"\nNext steps:")
+        click.echo(f"  1. Review the generated model")
+        click.echo(f"  2. Generate tests: observe generate pages --model {output}")
+        
+    except Exception as e:
+        click.echo(f"\n❌ Error building model: {e}", err=True)
+        import traceback
+        traceback.print_exc()
+        raise click.Abort()
 
 
 @cli.command()

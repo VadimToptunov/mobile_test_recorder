@@ -30,11 +30,13 @@ import kotlin.math.abs
  */
 class UIObserver(
     private val app: Application,
-    private val eventBus: EventBus
+    private val eventBus: EventBus,
+    private val enableHierarchyCapture: Boolean = true
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var currentActivity: Activity? = null
     private var currentScreen: String = "Unknown"
+    private val hierarchyCollector = HierarchyCollector()
     
     // Touch tracking
     private var touchDownX = 0f
