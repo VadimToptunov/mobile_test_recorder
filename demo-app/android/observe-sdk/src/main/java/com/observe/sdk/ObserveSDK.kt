@@ -4,121 +4,256 @@ import android.app.Application
 import android.util.Log
 import com.observe.sdk.core.ObserveConfig
 import com.observe.sdk.core.ObserveSession
+import com.observe.sdk.events.Event
 import com.observe.sdk.events.EventBus
 import com.observe.sdk.export.EventExporter
-import com.observe.sdk.observers.UIObserver
 import com.observe.sdk.observers.NavigationObserver
 import com.observe.sdk.observers.NetworkObserver
+import com.observe.sdk.observers.UIObserver
+import java.util.UUID
 
 /**
  * Main entry point for Observe SDK
  * 
  * Usage:
  * ```kotlin
- * // In Application.onCreate()
- * ObserveSDK.initialize(
- *     app = this,
- *     config = ObserveConfig(
- *         appVersion = BuildConfig.VERSION_NAME,
- *         serverUrl = "http://localhost:8080"
- *     )
- * )
+ * // In Application class
+ * class MyApp : Application() {
+ *     override fun onCreate() {
+ *         super.onCreate()
+ *         ObserveSDK.initialize(
+ *             this,
+ *             ObserveConfig(enabled = true)
+ *         )
+ *     }
+ * }
  * ```
  */
 object ObserveSDK {
     
-    private const val TAG = "ObserveSDK"
-    
     private var isInitialized = false
+    private var isStarted = false
+    
+    private lateinit var application: Application
     private lateinit var config: ObserveConfig
     private lateinit var session: ObserveSession
+    
+    // Core components
     private lateinit var eventBus: EventBus
+    private lateinit var eventExporter: EventExporter
     
     // Observers
     private lateinit var uiObserver: UIObserver
     private lateinit var navigationObserver: NavigationObserver
     private lateinit var networkObserver: NetworkObserver
     
-    // Exporter
-    private lateinit var eventExporter: EventExporter
-    
     /**
-     * Initialize the Observe SDK
-     * 
-     * Should be called once in Application.onCreate()
+     * Initialize SDK with configuration
      */
-    fun initialize(app: Application, config: ObserveConfig) {
+    fun initialize(app: Application, cfg: ObserveConfig) {
         if (isInitialized) {
             Log.w(TAG, "SDK already initialized")
             return
         }
         
-        this.config = config
+        application = app
+        config = cfg
         
-        Log.i(TAG, "🎯 Initializing Observe SDK...")
-        Log.i(TAG, "   App version: ${config.appVersion}")
-        Log.i(TAG, "   Server: ${config.serverUrl}")
+        if (!config.enabled) {
+            Log.i(TAG, "SDK disabled by config")
+            return
+        }
+        
+        Log.i(TAG, "Initializing ObserveSDK...")
         
         // Create session
-        session = ObserveSession.create(
-            appVersion = config.appVersion,
-            platform = "android"
-        )
+        session = ObserveSession.create(app)
         
-        Log.i(TAG, "   Session ID: ${session.id}")
-        
-        // Initialize event bus
+        // Initialize components
         eventBus = EventBus()
+        eventExporter = EventExporter(
+            context = app,
+            config = EventExporter.ExportConfig(
+                bufferSize = cfg.eventBufferSize,
+                maxStoredFiles = cfg.maxStoredFiles
+            )
+        )
         
         // Initialize observers
         uiObserver = UIObserver(app, eventBus)
         navigationObserver = NavigationObserver(app, eventBus)
         networkObserver = NetworkObserver(eventBus)
         
+        // Subscribe to events
+        subscribeToEvents()
+        
+        isInitialized = true
+        
+        // Auto-start if configured
+        if (config.autoStart) {
+            start()
+        }
+        
+        Log.i(TAG, "SDK initialized successfully. Session: ${session.sessionId}")
+    }
+    
+    /**
+     * Start observation
+     */
+    fun start() {
+        if (!isInitialized) {
+            Log.e(TAG, "SDK not initialized. Call initialize() first.")
+            return
+        }
+        
+        if (isStarted) {
+            Log.w(TAG, "SDK already started")
+            return
+        }
+        
+        Log.i(TAG, "Starting observation...")
+        
+        // Start exporter
+        eventExporter.start()
+        
         // Start observers
         uiObserver.start()
         navigationObserver.start()
         networkObserver.start()
         
-        // Initialize exporter
-        eventExporter = EventExporter(eventBus, config)
-        eventExporter.start()
+        // Emit session start event
+        eventBus.publish(Event.SessionEvent(
+            timestamp = System.currentTimeMillis(),
+            sessionId = session.sessionId,
+            eventType = "session_start",
+            data = mapOf(
+                "device_model" to session.deviceModel,
+                "os_version" to session.osVersion,
+                "app_version" to session.appVersion
+            )
+        ))
         
-        isInitialized = true
-        Log.i(TAG, "✅ Observe SDK initialized successfully")
+        isStarted = true
+        Log.i(TAG, "Observation started")
     }
     
     /**
-     * Get current session
+     * Stop observation
      */
-    fun getSession(): ObserveSession {
-        checkInitialized()
-        return session
-    }
-    
-    /**
-     * Shutdown SDK (for testing or cleanup)
-     */
-    fun shutdown() {
-        if (!isInitialized) return
+    fun stop() {
+        if (!isStarted) {
+            Log.w(TAG, "SDK not started")
+            return
+        }
         
-        Log.i(TAG, "Shutting down Observe SDK...")
+        Log.i(TAG, "Stopping observation...")
         
+        // Emit session end event
+        eventBus.publish(Event.SessionEvent(
+            timestamp = System.currentTimeMillis(),
+            sessionId = session.sessionId,
+            eventType = "session_end",
+            data = mapOf(
+                "duration" to (System.currentTimeMillis() - session.startTime),
+                "event_count" to eventExporter.getEventCount()
+            )
+        ))
+        
+        // Stop observers
         uiObserver.stop()
         navigationObserver.stop()
         networkObserver.stop()
+        
+        // Stop exporter (will flush events)
         eventExporter.stop()
         
-        isInitialized = false
-        Log.i(TAG, "SDK shut down")
+        isStarted = false
+        Log.i(TAG, "Observation stopped")
     }
     
-    private fun checkInitialized() {
-        if (!isInitialized) {
-            throw IllegalStateException(
-                "ObserveSDK not initialized. Call ObserveSDK.initialize() first."
-            )
+    /**
+     * Subscribe to EventBus and forward to exporter
+     */
+    private fun subscribeToEvents() {
+        eventBus.subscribe<Event.UIEvent> { event ->
+            // Set session ID
+            val eventWithSession = event.copy(sessionId = session.sessionId)
+            eventExporter.queueEvent(eventWithSession)
+            Log.d(TAG, "UI Event: ${event.actionType} on ${event.screen}")
+        }
+        
+        eventBus.subscribe<Event.NavigationEvent> { event ->
+            val eventWithSession = event.copy(sessionId = session.sessionId)
+            eventExporter.queueEvent(eventWithSession)
+            Log.d(TAG, "Navigation: ${event.fromScreen} -> ${event.toScreen}")
+        }
+        
+        eventBus.subscribe<Event.NetworkEvent> { event ->
+            val eventWithSession = event.copy(sessionId = session.sessionId)
+            eventExporter.queueEvent(eventWithSession)
+            Log.d(TAG, "Network: ${event.method} ${event.endpoint} [${event.statusCode}]")
+        }
+        
+        eventBus.subscribe<Event.SessionEvent> { event ->
+            eventExporter.queueEvent(event)
+            Log.d(TAG, "Session: ${event.eventType}")
         }
     }
+    
+    /**
+     * Get current session info
+     */
+    fun getSession(): ObserveSession? {
+        return if (isInitialized) session else null
+    }
+    
+    /**
+     * Get network observer for OkHttp integration
+     */
+    fun getNetworkObserver(): NetworkObserver? {
+        return if (isInitialized) networkObserver else null
+    }
+    
+    /**
+     * Get exported event files
+     */
+    fun getExportedFiles(): List<java.io.File> {
+        return if (isInitialized) {
+            eventExporter.getExportedFiles()
+        } else {
+            emptyList()
+        }
+    }
+    
+    /**
+     * Clear all exported events
+     */
+    fun clearExports() {
+        if (isInitialized) {
+            eventExporter.clearExports()
+        }
+    }
+    
+    /**
+     * Check if SDK is initialized
+     */
+    fun isInitialized(): Boolean = isInitialized
+    
+    /**
+     * Check if observation is active
+     */
+    fun isRunning(): Boolean = isStarted
+    
+    /**
+     * Get event count
+     */
+    fun getEventCount(): Int {
+        return if (isInitialized) {
+            eventExporter.getEventCount()
+        } else {
+            0
+        }
+    }
+    
+    private const val TAG = "ObserveSDK"
 }
-

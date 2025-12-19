@@ -90,9 +90,8 @@ fun AppNavigation() {
                     navController.navigateUp()
                 },
                 onTopUpSuccess = {
-                    navController.navigate(Screen.Home.route) {
-                        popUpTo(Screen.Home.route) { inclusive = true }
-                    }
+                    // Pop TopUp screen to return to Home (already in backstack)
+                    navController.popBackStack()
                 }
             )
         }
@@ -103,9 +102,8 @@ fun AppNavigation() {
                     navController.navigateUp()
                 },
                 onSendSuccess = {
-                    navController.navigate(Screen.Home.route) {
-                        popUpTo(Screen.Home.route) { inclusive = true }
-                    }
+                    // Pop SendMoney screen to return to Home (already in backstack)
+                    navController.popBackStack()
                 }
             )
         }

@@ -124,7 +124,6 @@ def start(device: str, session_name: str):
     Example:
         observe record start --device emulator-5554
     """
-    import uuid
     from datetime import datetime
     
     session_id = session_name or f"session_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
@@ -174,9 +173,33 @@ def pages(model: str, output: str, platform: str):
     click.echo(f"   Output: {output}")
     click.echo(f"   Platform: {platform}")
     
-    # TODO: Implement generation
-    click.echo("\n⚠️  Page Object generation not yet implemented")
-    click.echo("   This will be available in Phase 2")
+    try:
+        from pathlib import Path
+        import yaml
+        from framework.model.app_model import AppModel
+        from framework.generators.page_object_gen import generate_all_page_objects
+        
+        # Load model
+        with open(model, 'r') as f:
+            if model.endswith('.yaml') or model.endswith('.yml'):
+                model_data = yaml.safe_load(f)
+            else:
+                import json
+                model_data = json.load(f)
+        
+        app_model = AppModel(**model_data)
+        
+        # Generate Page Objects - MUST pass .values() to get Screen objects, not keys
+        output_path = Path(output)
+        generated_files = generate_all_page_objects(list(app_model.screens.values()), output_path)
+        
+        click.echo(f"\n✅ Generated {len(generated_files)} Page Object files:")
+        for file_path in generated_files:
+            click.echo(f"   📄 {file_path}")
+        
+    except Exception as e:
+        click.echo(f"\n❌ Error generating Page Objects: {e}", err=True)
+        raise click.Abort()
 
 
 @generate.command()
@@ -187,8 +210,35 @@ def pages(model: str, output: str, platform: str):
 def api(model: str, output: str):
     """Generate API client classes"""
     click.echo(f"⚡ Generating API clients...")
-    # TODO: Implement
-    click.echo("⚠️  Not yet implemented")
+    click.echo(f"   Model: {model}")
+    click.echo(f"   Output: {output}")
+    
+    try:
+        from pathlib import Path
+        import yaml
+        from framework.model.app_model import AppModel
+        from framework.generators.api_client_gen import generate_api_client
+        
+        # Load model
+        with open(model, 'r') as f:
+            if model.endswith('.yaml') or model.endswith('.yml'):
+                model_data = yaml.safe_load(f)
+            else:
+                import json
+                model_data = json.load(f)
+        
+        app_model = AppModel(**model_data)
+        
+        # Generate API client - MUST pass .values() to get APICall objects, not keys
+        output_path = Path(output) / "api_client.py"
+        generated_file = generate_api_client(list(app_model.api_calls.values()), output_path)
+        
+        click.echo(f"\n✅ Generated API client:")
+        click.echo(f"   📄 {generated_file}")
+        
+    except Exception as e:
+        click.echo(f"\n❌ Error generating API client: {e}", err=True)
+        raise click.Abort()
 
 
 @generate.command()
@@ -199,8 +249,36 @@ def api(model: str, output: str):
 def features(model: str, output: str):
     """Generate BDD feature files"""
     click.echo(f"⚡ Generating BDD features...")
-    # TODO: Implement
-    click.echo("⚠️  Not yet implemented")
+    click.echo(f"   Model: {model}")
+    click.echo(f"   Output: {output}")
+    
+    try:
+        from pathlib import Path
+        import yaml
+        from framework.model.app_model import AppModel
+        from framework.generators.bdd_gen import generate_all_features
+        
+        # Load model
+        with open(model, 'r') as f:
+            if model.endswith('.yaml') or model.endswith('.yml'):
+                model_data = yaml.safe_load(f)
+            else:
+                import json
+                model_data = json.load(f)
+        
+        app_model = AppModel(**model_data)
+        
+        # Generate BDD features
+        output_path = Path(output)
+        generated_files = generate_all_features(app_model.flows, output_path)
+        
+        click.echo(f"\n✅ Generated {len(generated_files)} feature files:")
+        for file_path in generated_files:
+            click.echo(f"   📄 {file_path}")
+        
+    except Exception as e:
+        click.echo(f"\n❌ Error generating BDD features: {e}", err=True)
+        raise click.Abort()
 
 
 @cli.group()

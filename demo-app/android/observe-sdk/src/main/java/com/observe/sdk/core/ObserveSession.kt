@@ -1,46 +1,82 @@
 package com.observe.sdk.core
 
+import android.app.Application
+import android.content.pm.PackageManager
 import android.os.Build
 import java.util.UUID
 
 /**
- * Represents a single observe recording session
+ * Observation session information
+ * 
+ * Tracks metadata about the current observation session including:
+ * - Session ID (unique identifier)
+ * - Device information
+ * - App version
+ * - OS version
+ * - Start time
  */
 data class ObserveSession(
-    val id: String,
+    val sessionId: String,
     val startTime: Long,
-    val appVersion: String,
-    val platform: String,
-    val deviceInfo: DeviceInfo
-) {
-    companion object {
-        fun create(appVersion: String, platform: String): ObserveSession {
-            return ObserveSession(
-                id = UUID.randomUUID().toString(),
-                startTime = System.currentTimeMillis(),
-                appVersion = appVersion,
-                platform = platform,
-                deviceInfo = DeviceInfo.current()
-            )
-        }
-    }
-}
-
-data class DeviceInfo(
-    val model: String,
-    val manufacturer: String,
+    val deviceModel: String,
+    val deviceManufacturer: String,
     val osVersion: String,
-    val sdkInt: Int
+    val appVersion: String,
+    val appPackage: String
 ) {
     companion object {
-        fun current(): DeviceInfo {
-            return DeviceInfo(
-                model = Build.MODEL,
-                manufacturer = Build.MANUFACTURER,
-                osVersion = Build.VERSION.RELEASE,
-                sdkInt = Build.VERSION.SDK_INT
+        /**
+         * Create new session from application context
+         */
+        fun create(app: Application): ObserveSession {
+            return ObserveSession(
+                sessionId = UUID.randomUUID().toString(),
+                startTime = System.currentTimeMillis(),
+                deviceModel = Build.MODEL,
+                deviceManufacturer = Build.MANUFACTURER,
+                osVersion = "Android ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})",
+                appVersion = getAppVersion(app),
+                appPackage = app.packageName
             )
         }
+        
+        /**
+         * Get app version from PackageManager
+         */
+        private fun getAppVersion(app: Application): String {
+            return try {
+                val packageInfo = app.packageManager.getPackageInfo(app.packageName, 0)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    "${packageInfo.versionName} (${packageInfo.longVersionCode})"
+                } else {
+                    @Suppress("DEPRECATION")
+                    "${packageInfo.versionName} (${packageInfo.versionCode})"
+                }
+            } catch (e: PackageManager.NameNotFoundException) {
+                "unknown"
+            }
+        }
+    }
+    
+    /**
+     * Get session duration in milliseconds
+     */
+    fun getDuration(): Long {
+        return System.currentTimeMillis() - startTime
+    }
+    
+    /**
+     * Convert session to map for export
+     */
+    fun toMap(): Map<String, Any> {
+        return mapOf(
+            "session_id" to sessionId,
+            "start_time" to startTime,
+            "device_model" to deviceModel,
+            "device_manufacturer" to deviceManufacturer,
+            "os_version" to osVersion,
+            "app_version" to appVersion,
+            "app_package" to appPackage
+        )
     }
 }
-
