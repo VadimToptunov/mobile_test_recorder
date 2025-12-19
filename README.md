@@ -222,29 +222,31 @@ observe generate tests --output tests/
 
 ## 📚 Documentation
 
-- [Architecture Deep Dive](docs/architecture.md)
-- [RFC Specification](mobile_observe_test_framework_RFC.md)
-- [Roadmap & Milestones](docs/roadmap.md)
-- [Demo App Overview](demo-app/README.md)
-- [Framework API Reference](docs/api_reference.md)
+- [RFC Specification](mobile_observe_test_framework_RFC.md) - Full technical specification
+- [Demo App Overview](demo-app/README.md) - Demo app features and setup
+- [KYC Integration Guide](demo-app/android/KYC_INTEGRATION.md) - Regula SDK integration
+- [Mock Backend API](demo-app/mock-backend/README.md) - Backend API documentation
+- [Getting Started](GETTING_STARTED.md) - Quick start guide
 
 ---
 
 ## 🎯 Roadmap
 
-### ✅ Phase 1: MVP (6-8 weeks) - 50% Complete
+### ✅ Phase 1: MVP (6-8 weeks) - 75% Complete
 - [x] Project structure
-- [x] Python virtual environment setup
+- [x] Python virtual environment setup (3.13)
 - [x] CLI framework (Click)
 - [x] App Model Core (Pydantic)
-- [x] Demo Android App (Partial)
+- [x] Demo Android App ✅
   - [x] Onboarding (swipeable screens)
   - [x] Login screen
   - [x] KYC screen with Regula SDK
   - [x] Home screen
-  - [ ] Top-up with WebView
-  - [ ] Send Money flow
-- [ ] Android Observe SDK (structure ready, implementation in progress)
+  - [x] Top-up with WebView ✨
+  - [x] Send Money flow ✨
+  - [x] Full navigation
+- [x] Mock Backend API (FastAPI) ✨
+- [ ] Android Observe SDK (structure ready, implementation 30%)
 - [ ] Event Store (SQLite)
 - [ ] Page Object Generator
 - [ ] API Client Generator

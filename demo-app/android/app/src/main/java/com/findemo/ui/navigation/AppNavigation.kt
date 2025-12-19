@@ -8,6 +8,8 @@ import com.findemo.ui.auth.LoginScreen
 import com.findemo.ui.home.HomeScreen
 import com.findemo.ui.kyc.KYCScreen
 import com.findemo.ui.onboarding.OnboardingScreen
+import com.findemo.ui.send.SendMoneyScreen
+import com.findemo.ui.topup.TopUpScreen
 
 sealed class Screen(val route: String) {
     object Onboarding : Screen("onboarding")
@@ -82,7 +84,31 @@ fun AppNavigation() {
             )
         }
         
-        // TODO: Add more screens
+        composable(Screen.TopUp.route) {
+            TopUpScreen(
+                onNavigateBack = {
+                    navController.navigateUp()
+                },
+                onTopUpSuccess = {
+                    navController.navigate(Screen.Home.route) {
+                        popUpTo(Screen.Home.route) { inclusive = true }
+                    }
+                }
+            )
+        }
+        
+        composable(Screen.SendMoney.route) {
+            SendMoneyScreen(
+                onNavigateBack = {
+                    navController.navigateUp()
+                },
+                onSendSuccess = {
+                    navController.navigate(Screen.Home.route) {
+                        popUpTo(Screen.Home.route) { inclusive = true }
+                    }
+                }
+            )
+        }
     }
 }
 
