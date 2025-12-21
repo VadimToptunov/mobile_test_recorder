@@ -15,13 +15,11 @@ from framework.model.app_model import (
     Action,
     ActionType,
     APICall,
-    HTTPMethod,
     Selector,
     Platform,
     Flow,
     StateMachine,
-    State,
-    Transition
+    StateTransition
 )
 from framework.correlation import CorrelationResult, EventCorrelator
 from framework.storage.event_store import EventStore
@@ -67,7 +65,8 @@ class ModelBuilder:
             raise ValueError("EventStore required for session-based model building")
         
         # Get session info
-        session = self.event_store.get_session(session_id)
+        sessions = self.event_store.get_sessions()
+        session = next((s for s in sessions if s.get('session_id') == session_id), None)
         if not session:
             raise ValueError(f"Session not found: {session_id}")
         
@@ -77,17 +76,20 @@ class ModelBuilder:
             correlation_result = correlator.correlate_session(session_id)
         
         # Load events
-        ui_events = self.event_store.query_events(
+        ui_events = self.event_store.get_events(
             session_id=session_id,
-            event_type='UIEvent'
+            event_type='UIEvent',
+            limit=10000
         )
-        api_events = self.event_store.query_events(
+        api_events = self.event_store.get_events(
             session_id=session_id,
-            event_type='NetworkEvent'
+            event_type='NetworkEvent',
+            limit=10000
         )
-        nav_events = self.event_store.query_events(
+        nav_events = self.event_store.get_events(
             session_id=session_id,
-            event_type='NavigationEvent'
+            event_type='NavigationEvent',
+            limit=10000
         )
         
         # Convert to dicts
@@ -203,9 +205,9 @@ class ModelBuilder:
                 
                 screen = Screen(
                     name=screen_name,
-                    elements=elements,
-                    actions=actions,
-                    route=screen_name.lower().replace(' ', '_')
+                    class_name=None,
+                    elements=list(elements.values()),
+                    actions=actions
                 )
                 
                 screens[screen_name] = screen
@@ -241,8 +243,9 @@ class ModelBuilder:
             element = Element(
                 id=element_id,
                 type=element_type,
-                selectors=[selector],
-                label=event.get('text') or event.get('contentDescription')
+                selector=selector,
+                text=event.get('text') or event.get('contentDescription'),
+                visible_when=None
             )
             
             elements[element_id] = element
@@ -257,9 +260,9 @@ class ModelBuilder:
         """Infer element type from action and event data"""
         
         if action == 'input':
-            return ElementType.TEXT_INPUT
+            return ElementType.INPUT  # Use INPUT instead of TEXT_INPUT
         elif action == 'swipe':
-            return ElementType.SWIPEABLE
+            return ElementType.LIST  # Swipeable elements are typically lists
         elif action == 'tap':
             text = event.get('text', '').lower()
             if 'button' in text or 'btn' in text:
@@ -267,7 +270,7 @@ class ModelBuilder:
             else:
                 return ElementType.BUTTON  # Default for taps
         else:
-            return ElementType.BUTTON
+            return ElementType.GENERIC
     
     def _build_selector(self, event: Dict[str, Any]) -> Selector:
         """Build selector from event data"""
@@ -300,23 +303,46 @@ class ModelBuilder:
             android_selector['xpath'] = f"//{class_name}"
             ios_selector['xpath'] = f"//{class_name}"
         
-        # Determine primary_strategy based on what's actually in the selector
+        # Build selector with fallbacks
+        android_str = None
+        ios_str = None
+        test_id_str = None
+        xpath_str = None
+        android_fallbacks = []
+        ios_fallbacks = []
+        
         if element_id:
-            primary_strategy = 'test_id'
-            fallback_strategies = ['text', 'xpath']
-        elif text and 'text' in android_selector:
-            primary_strategy = 'text'
-            fallback_strategies = ['xpath']
-        else:
-            primary_strategy = 'xpath'
-            fallback_strategies = []
+            test_id_str = element_id
+            # Add fallbacks
+            if 'text' in android_selector:
+                android_fallbacks.append(android_selector['text'])
+            if 'xpath' in android_selector:
+                android_fallbacks.append(android_selector['xpath'])
+        
+        if 'resource_id' in android_selector:
+            android_str = android_selector['resource_id']
+        elif 'text' in android_selector:
+            android_str = android_selector['text']
+        elif 'xpath' in android_selector:
+            android_str = android_selector['xpath']
+        
+        if 'accessibility_id' in ios_selector:
+            ios_str = ios_selector['accessibility_id']
+        elif 'label' in ios_selector:
+            ios_str = ios_selector['label']
+        elif 'xpath' in ios_selector:
+            ios_str = ios_selector['xpath']
+        
+        if 'xpath' in android_selector and not test_id_str:
+            xpath_str = android_selector['xpath']
         
         return Selector(
-            id=element_id or text or 'unknown',
-            android=android_selector or None,
-            ios=ios_selector or None,
-            primary_strategy=primary_strategy,
-            fallback_strategies=fallback_strategies
+            android=android_str,
+            ios=ios_str,
+            test_id=test_id_str,
+            xpath=xpath_str,
+            android_fallback=android_fallbacks,
+            ios_fallback=ios_fallbacks
         )
     
     def _extract_actions(
@@ -333,6 +359,9 @@ class ModelBuilder:
         
         for event in ui_events:
             element_id = event.get('elementId')
+            if not element_id:
+                continue  # Skip events without element ID
+            
             action_type_str = event.get('action', 'tap')
             
             # Map string to ActionType
@@ -348,9 +377,10 @@ class ModelBuilder:
             
             action = Action(
                 name=f"{action_type.value}_{element_id}",
-                type=action_type,
+                ui_action=action_type,
                 element_id=element_id,
-                description=f"{action_type.value.title()} on {element_id}"
+                api_call=None,
+                validation=None
             )
             
             actions.append(action)
@@ -364,9 +394,9 @@ class ModelBuilder:
             'click': ActionType.TAP,
             'input': ActionType.INPUT,
             'swipe': ActionType.SWIPE,
-            'scroll': ActionType.SCROLL,
+            'scroll': ActionType.SWIPE,  # Map scroll to SWIPE
             'long_press': ActionType.LONG_PRESS,
-            'navigate': ActionType.NAVIGATE
+            'navigate': ActionType.TAP  # Map navigate to TAP (navigation trigger)
         }
         return mapping.get(action_str.lower(), ActionType.TAP)
     
@@ -394,20 +424,22 @@ class ModelBuilder:
             if key in api_calls:
                 continue  # Already processed
             
-            # Map to HTTPMethod
-            http_method = self._map_http_method(method)
-            
             # Extract request/response schemas (simplified)
             request_body = event.get('requestBody')
             response_body = event.get('responseBody')
             
+            schema = {}
+            if isinstance(request_body, dict):
+                schema['request'] = request_body
+            if isinstance(response_body, dict):
+                schema['response'] = response_body
+            
             api_call = APICall(
-                id=key,
-                method=http_method,
+                name=key,
+                method=method.upper(),
                 endpoint=endpoint,
-                description=f"{method} {endpoint}",
-                request_schema=request_body if isinstance(request_body, dict) else None,
-                response_schema=response_body if isinstance(response_body, dict) else None
+                schema=schema,
+                triggers_state_change=None
             )
             
             api_calls[key] = api_call
@@ -433,17 +465,6 @@ class ModelBuilder:
             path = path.split('?')[0]
         
         return path
-    
-    def _map_http_method(self, method: str) -> HTTPMethod:
-        """Map HTTP method string to enum"""
-        mapping = {
-            'GET': HTTPMethod.GET,
-            'POST': HTTPMethod.POST,
-            'PUT': HTTPMethod.PUT,
-            'DELETE': HTTPMethod.DELETE,
-            'PATCH': HTTPMethod.PATCH
-        }
-        return mapping.get(method.upper(), HTTPMethod.GET)
     
     def _build_flows(
         self,
@@ -505,8 +526,8 @@ class ModelBuilder:
         
         Creates states for each screen and transitions between them.
         """
-        states: Dict[str, State] = {}
-        transitions: List[Transition] = []
+        states: List[str] = []
+        transitions: List[StateTransition] = []
         
         # Get unique screens
         screen_names: Set[str] = set()
@@ -516,14 +537,10 @@ class ModelBuilder:
             if 'fromScreen' in nav:
                 screen_names.add(nav['fromScreen'])
         
-        # Create states
+        # Create states (just list of state names)
         for screen in screen_names:
             if screen and screen != 'unknown':
-                state = State(
-                    name=screen,
-                    screen_id=screen
-                )
-                states[screen] = state
+                states.append(screen)
         
         # Create transitions
         seen_transitions: Set[str] = set()
@@ -550,7 +567,7 @@ class ModelBuilder:
                         trigger = f"api_{nav_corr.api_method}_{nav_corr.api_endpoint}"
                         break
             
-            transition = Transition(
+            transition = StateTransition(
                 from_state=from_screen,
                 to_state=to_screen,
                 trigger=trigger or 'user_action',

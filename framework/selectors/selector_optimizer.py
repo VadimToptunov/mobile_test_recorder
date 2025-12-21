@@ -5,8 +5,7 @@ Optimizes and improves existing selectors.
 """
 
 from typing import Dict, List, Optional
-from framework.model.app_model import Selector
-from framework.selectors.selector_scorer import SelectorScorer, SelectorStability
+from framework.model.app_model import Selector, SelectorStability as ModelStability
 
 
 class SelectorOptimizer:
@@ -17,7 +16,7 @@ class SelectorOptimizer:
     """
     
     def __init__(self):
-        self.scorer = SelectorScorer()
+        pass
     
     def optimize_selector(self, selector: Selector) -> Selector:
         """
@@ -29,34 +28,18 @@ class SelectorOptimizer:
         Returns:
             Optimized selector
         """
-        # Score current selector
-        android_score = self.scorer.score_selector(selector.android or {})
-        ios_score = self.scorer.score_selector(selector.ios or {})
-        
-        # Update stability if not set
-        if not selector.stability_score:
-            selector.stability_score = max(android_score, ios_score)
-            selector.stability = self.scorer.get_stability_level(
-                selector.stability_score
-            ).value
-        
-        # Optimize XPath if present and poor
-        if selector.android and 'xpath' in selector.android:
-            if android_score < 0.5:
-                selector.android = self._optimize_xpath(selector.android)
-        
-        if selector.ios and 'xpath' in selector.ios:
-            if ios_score < 0.5:
-                selector.ios = self._optimize_xpath(selector.ios)
+        # Optimize XPath if present in selector
+        if selector.xpath:
+            optimized_xpath = self._optimize_xpath(selector.xpath)
+            if optimized_xpath != selector.xpath:
+                selector.xpath = optimized_xpath
         
         return selector
     
-    def _optimize_xpath(self, selector: Dict[str, str]) -> Dict[str, str]:
+    def _optimize_xpath(self, xpath: str) -> str:
         """Optimize XPath expression"""
-        xpath = selector.get('xpath', '')
-        
         if not xpath:
-            return selector
+            return xpath
         
         # Try to simplify XPath
         optimized_xpath = xpath
@@ -71,7 +54,7 @@ class SelectorOptimizer:
         # Remove index if it's [1] (first element, default)
         optimized_xpath = optimized_xpath.replace('[1]', '')
         
-        return {'xpath': optimized_xpath}
+        return optimized_xpath
     
     def analyze_selectors(
         self,
@@ -95,35 +78,51 @@ class SelectorOptimizer:
                 'recommendations': []
             }
         
-        # Count by stability
-        excellent = sum(1 for s in selectors if s.stability == SelectorStability.EXCELLENT.value)
-        good = sum(1 for s in selectors if s.stability == SelectorStability.GOOD.value)
-        fair = sum(1 for s in selectors if s.stability == SelectorStability.FAIR.value)
-        poor = sum(1 for s in selectors if s.stability == SelectorStability.POOR.value)
-        fragile = sum(1 for s in selectors if s.stability == SelectorStability.FRAGILE.value)
+        # Count by stability (using app_model SelectorStability)
+        high = sum(1 for s in selectors if s.stability == ModelStability.HIGH)
+        medium = sum(1 for s in selectors if s.stability == ModelStability.MEDIUM)
+        low = sum(1 for s in selectors if s.stability == ModelStability.LOW)
+        unknown = sum(1 for s in selectors if s.stability == ModelStability.UNKNOWN)
         
-        # Count by strategy
+        # Count by primary selector type
         strategies = {}
         for selector in selectors:
-            strategy = selector.primary_strategy
+            # Determine primary strategy from what's set
+            if selector.test_id:
+                strategy = 'test_id'
+            elif selector.android and 'id:' in selector.android:
+                strategy = 'resource_id'
+            elif selector.ios and 'accessibility id:' in selector.ios:
+                strategy = 'accessibility_id'
+            elif selector.xpath:
+                strategy = 'xpath'
+            else:
+                strategy = 'other'
+            
             strategies[strategy] = strategies.get(strategy, 0) + 1
         
-        # Average stability score
-        avg_score = sum(s.stability_score or 0 for s in selectors) / total if total > 0 else 0
+        # Calculate average stability (map to numeric)
+        stability_map = {
+            ModelStability.HIGH: 0.9,
+            ModelStability.MEDIUM: 0.6,
+            ModelStability.LOW: 0.3,
+            ModelStability.UNKNOWN: 0.0
+        }
+        avg_score = sum(stability_map.get(s.stability, 0) for s in selectors) / total if total > 0 else 0
         
         # Generate recommendations
         recommendations = []
         
-        if fragile > total * 0.2:
+        if low > total * 0.2:
             recommendations.append(
-                f"⚠️  {fragile} fragile selectors detected ({fragile/total*100:.1f}%). "
-                "Add test tags to improve stability."
+                f"⚠️  {low} low-stability selectors detected ({low/total*100:.1f}%). "
+                "Add test tags or accessibility IDs to improve stability."
             )
         
-        if poor + fragile > total * 0.3:
+        if low + unknown > total * 0.3:
             recommendations.append(
-                f"⚠️  {poor + fragile} unstable selectors ({(poor+fragile)/total*100:.1f}%). "
-                "Consider using accessibility IDs or resource IDs."
+                f"⚠️  {low + unknown} unstable selectors ({(low+unknown)/total*100:.1f}%). "
+                "Consider using test IDs, resource IDs, or accessibility IDs."
             )
         
         xpath_count = strategies.get('xpath', 0)
@@ -142,11 +141,11 @@ class SelectorOptimizer:
             'total': total,
             'average_stability': round(avg_score, 2),
             'stability_distribution': {
-                'excellent': excellent,
-                'good': good,
-                'fair': fair,
-                'poor': poor,
-                'fragile': fragile
+                'excellent': high,  # Map HIGH to excellent for display
+                'good': medium,     # Map MEDIUM to good
+                'fair': 0,
+                'poor': low,        # Map LOW to poor
+                'fragile': unknown  # Map UNKNOWN to fragile
             },
             'strategy_distribution': strategies,
             'recommendations': recommendations
@@ -168,14 +167,21 @@ class SelectorOptimizer:
         duplicates = []
         seen = {}
         
-        for selector in selectors:
-            # Check Android selector
+        for i, selector in enumerate(selectors):
+            # Use selector string as key
             if selector.android:
-                key = str(sorted(selector.android.items()))
+                key = selector.android
                 if key in seen:
-                    duplicates.append((seen[key], selector.id))
+                    duplicates.append((seen[key], i))
                 else:
-                    seen[key] = selector.id
+                    seen[key] = i
+            
+            if selector.ios:
+                key = selector.ios
+                if key in seen:
+                    duplicates.append((seen[key], i))
+                else:
+                    seen[key] = i
         
         return duplicates
     
@@ -192,24 +198,22 @@ class SelectorOptimizer:
         suggestions = []
         
         # Check stability
-        if selector.stability_score and selector.stability_score < 0.5:
+        if selector.stability == ModelStability.LOW or selector.stability == ModelStability.UNKNOWN:
             suggestions.append(
-                "⚠️  Low stability score. Add test tags or accessibility IDs to UI elements."
+                "⚠️  Low stability. Add test tags or accessibility IDs to UI elements."
             )
         
         # Check if using XPath
-        if selector.android and 'xpath' in selector.android:
+        if selector.xpath:
             suggestions.append(
                 "💡 Using XPath. Consider adding resource-id or test tag for better stability."
             )
         
         # Check if using text
-        if selector.android and 'text' in selector.android:
-            text = selector.android['text']
-            if self.scorer._looks_dynamic(text):
-                suggestions.append(
-                    f"⚠️  Text selector '{text}' looks dynamic. May break if content changes."
-                )
+        if selector.android and 'text:' in selector.android:
+            suggestions.append(
+                "⚠️  Text-based selector. May break if content changes or is localized."
+            )
         
         # Check if missing iOS selector
         if selector.android and not selector.ios:
@@ -218,7 +222,8 @@ class SelectorOptimizer:
             )
         
         # Check fallback strategies
-        if not selector.fallback_strategies or len(selector.fallback_strategies) < 2:
+        total_fallbacks = len(selector.android_fallback) + len(selector.ios_fallback)
+        if total_fallbacks < 2:
             suggestions.append(
                 "💡 Add more fallback strategies for resilience."
             )

@@ -37,28 +37,59 @@ class SelectorBuilder:
             Selector with primary strategy and fallbacks
         """
         # Build platform-specific selectors
-        android_selector = self._build_platform_selector(attributes, "android")
-        ios_selector = self._build_platform_selector(attributes, "ios")
+        android_dict = self._build_platform_selector(attributes, "android")
+        ios_dict = self._build_platform_selector(attributes, "ios")
         
-        # Determine primary strategy
-        primary_strategy = self._determine_primary_strategy(attributes)
+        # Convert dicts to strings for Selector model
+        android_selector = self._dict_to_selector_string(android_dict) if android_dict else None
+        ios_selector = self._dict_to_selector_string(ios_dict) if ios_dict else None
         
-        # Build fallback chain
-        fallback_strategies = self._build_fallback_chain(attributes, primary_strategy)
+        # Extract test_id and xpath if present
+        test_id = attributes.get('test_tag') or attributes.get('accessibility_id')
+        xpath = None
         
-        # Calculate stability
-        primary_selector = android_selector if platform == Platform.ANDROID else ios_selector
-        stability_score = self.scorer.score_selector(primary_selector or {})
-        stability = self.scorer.get_stability_level(stability_score)
+        # Build fallback lists
+        android_fallbacks = []
+        ios_fallbacks = []
+        
+        if android_dict:
+            for key, value in android_dict.items():
+                if key != 'test_id' and value:
+                    fallback_str = f"{key}:{value}"
+                    android_fallbacks.append(fallback_str)
+                if key == 'xpath':
+                    xpath = value
+        
+        if ios_dict:
+            for key, value in ios_dict.items():
+                if key != 'accessibility_id' and value:
+                    fallback_str = f"{key}:{value}"
+                    ios_fallbacks.append(fallback_str)
+        
+        # Calculate stability using the dict format
+        primary_selector_dict = android_dict if platform == Platform.ANDROID else ios_dict
+        stability_score = self.scorer.score_selector(primary_selector_dict or {})
+        stability_level = self.scorer.get_stability_level(stability_score)
+        
+        # Map scorer stability to app_model stability
+        from framework.model.app_model import SelectorStability as ModelStability
+        stability_mapping = {
+            'excellent': ModelStability.HIGH,
+            'good': ModelStability.HIGH,
+            'fair': ModelStability.MEDIUM,
+            'poor': ModelStability.LOW,
+            'fragile': ModelStability.LOW
+        }
+        stability = stability_mapping.get(stability_level.value, ModelStability.UNKNOWN)
         
         return Selector(
-            id=element_id,
             android=android_selector,
             ios=ios_selector,
-            primary_strategy=primary_strategy,
-            fallback_strategies=fallback_strategies,
-            stability=stability.value,
-            stability_score=stability_score
+            test_id=test_id,
+            xpath=xpath,
+            android_fallback=android_fallbacks,
+            ios_fallback=ios_fallbacks,
+            stability=stability
         )
     
     def _build_platform_selector(
@@ -74,6 +105,26 @@ class SelectorBuilder:
             return self._build_ios_selector(attributes)
         
         return None
+    
+    def _dict_to_selector_string(self, selector_dict: Dict[str, str]) -> str:
+        """Convert selector dict to Appium selector string format"""
+        if not selector_dict:
+            return ""
+        
+        # Get the first (primary) selector strategy
+        key, value = next(iter(selector_dict.items()))
+        
+        # Map to Appium selector format
+        selector_map = {
+            'test_id': f'id:{value}',
+            'resource_id': f'id:{value}',
+            'content_desc': f'accessibility id:{value}',
+            'accessibility_id': f'accessibility id:{value}',
+            'text': f'text:{value}',
+            'xpath': value  # XPath is used as-is
+        }
+        
+        return selector_map.get(key, f'{key}:{value}')
     
     def _build_android_selector(self, attributes: Dict[str, str]) -> Optional[Dict[str, str]]:
         """Build Android-specific selector"""

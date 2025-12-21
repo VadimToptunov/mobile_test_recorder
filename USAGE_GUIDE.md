@@ -86,7 +86,13 @@ The SDK will capture:
 Start recording:
 
 ```bash
+# For demo app (default)
 observe record start --device emulator-5554 --session-name login_flow
+
+# For custom app
+observe record start --device emulator-5554 \
+    --package com.yourcompany.yourapp \
+    --session-name login_flow
 ```
 
 **Interact with your app:**
@@ -98,7 +104,11 @@ observe record start --device emulator-5554 --session-name login_flow
 **Stop recording:**
 Press `Ctrl+C` or run:
 ```bash
+# For demo app (default)
 observe record stop
+
+# For custom app
+observe record stop --device emulator-5554 --package com.yourcompany.yourapp
 ```
 
 Events are saved to SQLite database and JSON files.
@@ -336,8 +346,8 @@ generation:
 ### 1. Use Meaningful Session Names
 
 ```bash
-observe record start --session-name user_registration_happy_path
-observe record start --session-name payment_error_scenarios
+observe record start --session-name user_registration_happy_path --package com.myapp
+observe record start --session-name payment_error_scenarios --package com.myapp
 ```
 
 ### 2. Record Multiple Scenarios
@@ -384,7 +394,7 @@ Always review and refine generated tests:
 observe analyze android --source ./app
 
 # Step 2: Dynamic recording
-observe record start
+observe record start --package com.myapp
 
 # Step 3: Merge results
 observe model build --session-id <id> \

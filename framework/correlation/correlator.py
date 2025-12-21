@@ -178,7 +178,7 @@ class EventCorrelator:
                     })
             
             # Create correlation only if we found related APIs
-            if correlated_apis or True:  # Keep all UI events for now
+            if correlated_apis:
                 # Determine overall strength
                 if correlated_apis:
                     confidences = [api['confidence'] for api in correlated_apis]
@@ -304,7 +304,7 @@ class EventCorrelator:
                 ]
                 related_navs.extend(navs)
             
-            if related_navs or True:  # Create flow even without navigation
+            if related_navs:
                 # Determine overall strength
                 if related_navs:
                     nav_strengths = [nav.strength for nav in related_navs]

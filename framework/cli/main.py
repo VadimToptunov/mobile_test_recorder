@@ -172,12 +172,14 @@ def record():
               help='Device ID or emulator name')
 @click.option('--session-name', default=None,
               help='Custom session name')
-def start(device: str, session_name: str):
+@click.option('--package', default='com.findemo',
+              help='App package name (e.g., com.myapp)')
+def start(device: str, session_name: str, package: str):
     """
     Start recording session
     
     Example:
-        observe record start --device emulator-5554
+        observe record start --device emulator-5554 --package com.myapp
     """
     from datetime import datetime
     
@@ -186,20 +188,139 @@ def start(device: str, session_name: str):
     click.echo(f"🎯 Starting recording session...")
     click.echo(f"   Session ID: {session_id}")
     click.echo(f"   Device: {device}")
+    click.echo(f"   Package: {package}")
     click.echo(f"\n📱 Perform actions in the app...")
     click.echo(f"   Press Ctrl+C to stop recording\n")
     
-    # TODO: Implement recording
-    click.echo("⚠️  Recording not yet implemented")
-    click.echo("   This will be available after Observe SDK is complete")
+    try:
+        from framework.storage.event_store import EventStore
+        import subprocess
+        import time
+        
+        # Initialize event store
+        store = EventStore()
+        
+        # Session will be created automatically when first event is imported
+        
+        # Build device path
+        device_path = f'/sdcard/Android/data/{package}/files/observe/'
+        
+        # Start monitoring (pull events from device)
+        click.echo("📡 Monitoring device for events...")
+        click.echo(f"   Pulling events from: {device_path}")
+        click.echo("   Press Ctrl+C to stop\n")
+        
+        try:
+            while True:
+                # Pull event files from device
+                result = subprocess.run(
+                    ['adb', '-s', device, 'shell', 'ls', device_path],
+                    capture_output=True,
+                    text=True
+                )
+                
+                if result.returncode == 0 and result.stdout.strip():
+                    files = result.stdout.strip().split('\n')
+                    for file in files:
+                        if file.endswith('.json'):
+                            # Pull file
+                            local_path = f'/tmp/{file}'
+                            subprocess.run(
+                                ['adb', '-s', device, 'pull', 
+                                 f'{device_path}{file}',
+                                 local_path],
+                                capture_output=True
+                            )
+                            
+                            # Import to event store
+                            try:
+                                store.import_from_json(local_path)
+                                click.echo(f"   ✅ Imported: {file}")
+                                
+                                # Delete from device
+                                subprocess.run(
+                                    ['adb', '-s', device, 'shell', 'rm',
+                                     f'{device_path}{file}'],
+                                    capture_output=True
+                                )
+                            except Exception as e:
+                                click.echo(f"   ⚠️  Failed to import {file}: {e}")
+                
+                time.sleep(2)  # Poll every 2 seconds
+                
+        except KeyboardInterrupt:
+            click.echo("\n\n🛑 Recording stopped by user")
+            
+        # Show summary
+        events = store.get_events(session_id=session_id)
+        click.echo(f"\n✅ Recording complete!")
+        click.echo(f"   Total events: {len(events)}")
+        click.echo(f"   Session ID: {session_id}")
+        click.echo(f"\n💡 Next steps:")
+        click.echo(f"   1. Correlate events: observe record correlate --session-id {session_id}")
+        click.echo(f"   2. Build model: observe model build --session-id {session_id}")
+        
+    except ImportError as e:
+        click.echo(f"❌ Error: {e}")
+        click.echo("   Make sure all dependencies are installed")
+    except Exception as e:
+        click.echo(f"❌ Error: {e}")
 
 
 @record.command()
-def stop():
-    """Stop current recording session"""
+@click.option('--device', default='emulator-5554', help='Device ID')
+@click.option('--package', default='com.findemo',
+              help='App package name (e.g., com.myapp)')
+def stop(device: str, package: str):
+    """Stop current recording session and pull remaining events"""
     click.echo("🛑 Stopping recording session...")
-    # TODO: Implement
-    click.echo("⚠️  Not yet implemented")
+    click.echo(f"   Device: {device}")
+    click.echo(f"   Package: {package}")
+    
+    try:
+        import subprocess
+        
+        # Build device path
+        device_path = f'/sdcard/Android/data/{package}/files/observe/'
+        
+        # Pull any remaining event files
+        result = subprocess.run(
+            ['adb', '-s', device, 'shell', 'ls', device_path],
+            capture_output=True,
+            text=True
+        )
+        
+        if result.returncode == 0 and result.stdout.strip():
+            files = result.stdout.strip().split('\n')
+            click.echo(f"\n📥 Pulling {len(files)} remaining event file(s)...")
+            
+            for file in files:
+                if file.endswith('.json'):
+                    local_path = f'/tmp/{file}'
+                    pull_result = subprocess.run(
+                        ['adb', '-s', device, 'pull',
+                         f'{device_path}{file}',
+                         local_path],
+                        capture_output=True
+                    )
+                    
+                    if pull_result.returncode == 0:
+                        click.echo(f"   ✅ Pulled: {file}")
+                        
+                        # Delete from device
+                        subprocess.run(
+                            ['adb', '-s', device, 'shell', 'rm',
+                             f'{device_path}{file}'],
+                            capture_output=True
+                        )
+                    else:
+                        click.echo(f"   ⚠️  Failed to pull: {file}")
+        
+        click.echo("\n✅ Recording stopped successfully")
+        click.echo("   All event files pulled from device")
+        
+    except Exception as e:
+        click.echo(f"❌ Error: {e}")
 
 
 @record.command()
@@ -417,8 +538,152 @@ def diff(old_model: str, new_model: str, output: str):
     click.echo(f"   New: {new_model}")
     click.echo(f"   Output: {output}")
     
-    # TODO: Implement diff
-    click.echo("\n⚠️  Model diff not yet implemented")
+    try:
+        import yaml
+        import json
+        from pathlib import Path
+        from framework.model.app_model import AppModel
+        
+        # Load models
+        with open(old_model) as f:
+            old_data = yaml.safe_load(f) if old_model.endswith('.yaml') else json.load(f)
+        
+        with open(new_model) as f:
+            new_data = yaml.safe_load(f) if new_model.endswith('.yaml') else json.load(f)
+        
+        old_app_model = AppModel(**old_data)
+        new_app_model = AppModel(**new_data)
+        
+        # Compare
+        diff_result = {
+            'summary': {
+                'old_version': old_app_model.meta.app_version,
+                'new_version': new_app_model.meta.app_version,
+                'changes': []
+            },
+            'screens': {
+                'added': [],
+                'removed': [],
+                'modified': []
+            },
+            'api_calls': {
+                'added': [],
+                'removed': [],
+                'modified': []
+            },
+            'flows': {
+                'added': [],
+                'removed': [],
+                'modified': []
+            }
+        }
+        
+        # Compare screens
+        old_screens = set(old_app_model.screens.keys())
+        new_screens = set(new_app_model.screens.keys())
+        
+        diff_result['screens']['added'] = list(new_screens - old_screens)
+        diff_result['screens']['removed'] = list(old_screens - new_screens)
+        
+        for screen_name in old_screens & new_screens:
+            old_screen = old_app_model.screens[screen_name]
+            new_screen = new_app_model.screens[screen_name]
+            
+            # Compare elements
+            old_elements = {e.id for e in old_screen.elements}
+            new_elements = {e.id for e in new_screen.elements}
+            
+            if old_elements != new_elements:
+                diff_result['screens']['modified'].append({
+                    'name': screen_name,
+                    'elements_added': list(new_elements - old_elements),
+                    'elements_removed': list(old_elements - new_elements)
+                })
+        
+        # Compare API calls
+        old_apis = set(old_app_model.api_calls.keys())
+        new_apis = set(new_app_model.api_calls.keys())
+        
+        diff_result['api_calls']['added'] = list(new_apis - old_apis)
+        diff_result['api_calls']['removed'] = list(old_apis - new_apis)
+        
+        # Compare flows
+        old_flows = {f.name for f in old_app_model.flows}
+        new_flows = {f.name for f in new_app_model.flows}
+        
+        diff_result['flows']['added'] = list(new_flows - old_flows)
+        diff_result['flows']['removed'] = list(old_flows - new_flows)
+        
+        # Generate summary
+        total_changes = (
+            len(diff_result['screens']['added']) +
+            len(diff_result['screens']['removed']) +
+            len(diff_result['screens']['modified']) +
+            len(diff_result['api_calls']['added']) +
+            len(diff_result['api_calls']['removed']) +
+            len(diff_result['flows']['added']) +
+            len(diff_result['flows']['removed'])
+        )
+        
+        # Print results
+        click.echo(f"\n📊 Model Comparison Results:")
+        click.echo(f"   Old version: {old_app_model.meta.app_version}")
+        click.echo(f"   New version: {new_app_model.meta.app_version}")
+        click.echo(f"   Total changes: {total_changes}")
+        
+        if diff_result['screens']['added']:
+            click.echo(f"\n➕ Screens Added ({len(diff_result['screens']['added'])}):")
+            for screen in diff_result['screens']['added']:
+                click.echo(f"   • {screen}")
+        
+        if diff_result['screens']['removed']:
+            click.echo(f"\n➖ Screens Removed ({len(diff_result['screens']['removed'])}):")
+            for screen in diff_result['screens']['removed']:
+                click.echo(f"   • {screen}")
+        
+        if diff_result['screens']['modified']:
+            click.echo(f"\n🔄 Screens Modified ({len(diff_result['screens']['modified'])}):")
+            for mod in diff_result['screens']['modified']:
+                click.echo(f"   • {mod['name']}")
+                if mod['elements_added']:
+                    click.echo(f"     ➕ Elements: {', '.join(mod['elements_added'])}")
+                if mod['elements_removed']:
+                    click.echo(f"     ➖ Elements: {', '.join(mod['elements_removed'])}")
+        
+        if diff_result['api_calls']['added']:
+            click.echo(f"\n➕ API Calls Added ({len(diff_result['api_calls']['added'])}):")
+            for api in diff_result['api_calls']['added']:
+                click.echo(f"   • {api}")
+        
+        if diff_result['api_calls']['removed']:
+            click.echo(f"\n➖ API Calls Removed ({len(diff_result['api_calls']['removed'])}):")
+            for api in diff_result['api_calls']['removed']:
+                click.echo(f"   • {api}")
+        
+        if diff_result['flows']['added']:
+            click.echo(f"\n➕ Flows Added ({len(diff_result['flows']['added'])}):")
+            for flow in diff_result['flows']['added']:
+                click.echo(f"   • {flow}")
+        
+        if diff_result['flows']['removed']:
+            click.echo(f"\n➖ Flows Removed ({len(diff_result['flows']['removed'])}):")
+            for flow in diff_result['flows']['removed']:
+                click.echo(f"   • {flow}")
+        
+        # Save to file
+        if output:
+            output_path = Path(output)
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(output_path, 'w') as f:
+                json.dump(diff_result, f, indent=2)
+            click.echo(f"\n💾 Diff saved to: {output}")
+        
+        click.echo(f"\n✅ Comparison complete")
+        
+    except Exception as e:
+        click.echo(f"❌ Error: {e}")
+        import traceback
+        traceback.print_exc()
 
 
 @model.command()
@@ -426,8 +691,106 @@ def diff(old_model: str, new_model: str, output: str):
 def validate(model_file: str):
     """Validate app model against JSON schema"""
     click.echo(f"✔️  Validating model: {model_file}")
-    # TODO: Implement validation
-    click.echo("⚠️  Not yet implemented")
+    
+    try:
+        import yaml
+        import json
+        from framework.model.app_model import AppModel
+        from pydantic import ValidationError
+        
+        # Load model file
+        with open(model_file) as f:
+            if model_file.endswith('.yaml') or model_file.endswith('.yml'):
+                data = yaml.safe_load(f)
+            else:
+                data = json.load(f)
+        
+        # Validate using Pydantic
+        try:
+            app_model = AppModel(**data)
+            
+            # Additional validations
+            errors = []
+            warnings = []
+            
+            # Check for screens without elements
+            for screen_name, screen in app_model.screens.items():
+                if not screen.elements:
+                    warnings.append(f"Screen '{screen_name}' has no elements")
+            
+            # Check for elements without selectors
+            for screen_name, screen in app_model.screens.items():
+                for element in screen.elements:
+                    if not element.selector:
+                        errors.append(f"Element '{element.id}' in screen '{screen_name}' has no selector")
+            
+            # Check for API calls without endpoints
+            for api_name, api_call in app_model.api_calls.items():
+                if not api_call.endpoint:
+                    errors.append(f"API call '{api_name}' has no endpoint")
+            
+            # Check for flows without steps
+            for flow in app_model.flows:
+                if not flow.steps:
+                    errors.append(f"Flow '{flow.name}' has no steps")
+                    
+                # Check if flow steps reference existing screens
+                for step in flow.steps:
+                    screen_ref = step.get('screen')
+                    if screen_ref and screen_ref not in app_model.screens:
+                        errors.append(f"Flow '{flow.name}' references unknown screen '{screen_ref}'")
+            
+            # Check state machine
+            if app_model.state_machine:
+                for state in app_model.state_machine.states:
+                    if state not in app_model.screens:
+                        errors.append(f"State machine references unknown screen '{state}'")
+            
+            # Print results
+            click.echo("\n📋 Validation Results:")
+            
+            if not errors and not warnings:
+                click.echo("   ✅ Model is valid!")
+                click.echo(f"\n📊 Model Statistics:")
+                click.echo(f"   Screens: {len(app_model.screens)}")
+                click.echo(f"   API Calls: {len(app_model.api_calls)}")
+                click.echo(f"   Flows: {len(app_model.flows)}")
+                
+                total_elements = sum(len(s.elements) for s in app_model.screens.values())
+                click.echo(f"   Total Elements: {total_elements}")
+                
+                if app_model.state_machine:
+                    click.echo(f"   States: {len(app_model.state_machine.states)}")
+                    click.echo(f"   Transitions: {len(app_model.state_machine.transitions)}")
+            else:
+                if errors:
+                    click.echo(f"\n❌ Errors ({len(errors)}):")
+                    for error in errors:
+                        click.echo(f"   • {error}")
+                
+                if warnings:
+                    click.echo(f"\n⚠️  Warnings ({len(warnings)}):")
+                    for warning in warnings:
+                        click.echo(f"   • {warning}")
+                
+                if errors:
+                    click.echo("\n❌ Validation failed")
+                    exit(1)
+                else:
+                    click.echo("\n✅ Validation passed with warnings")
+        
+        except ValidationError as e:
+            click.echo("\n❌ Validation failed:")
+            for error in e.errors():
+                location = ' → '.join(str(loc) for loc in error['loc'])
+                click.echo(f"   • {location}: {error['msg']}")
+            exit(1)
+    
+    except Exception as e:
+        click.echo(f"❌ Error: {e}")
+        import traceback
+        traceback.print_exc()
+        exit(1)
 
 
 @model.command()
@@ -500,15 +863,17 @@ def analyze_selectors(model_file: str, detailed: bool):
         if detailed:
             click.echo(f"\n🔬 Detailed Selector Analysis:")
             
-            # Find problematic selectors
-            problematic = [s for s in all_selectors if (s.stability_score or 0) < 0.5]
+            # Find problematic selectors (LOW stability)
+            from framework.model.app_model import SelectorStability
+            problematic = [s for s in all_selectors if s.stability == SelectorStability.LOW]
             
             if problematic:
                 click.echo(f"\n⚠️  {len(problematic)} problematic selectors found:")
                 for selector in problematic[:10]:  # Show first 10
-                    click.echo(f"\n   Element: {selector.id}")
-                    click.echo(f"   Stability: {selector.stability} ({selector.stability_score:.2f})")
-                    click.echo(f"   Primary: {selector.primary_strategy}")
+                    # Determine which selector string to display
+                    selector_str = selector.android or selector.ios or selector.test_id or selector.xpath or "unknown"
+                    click.echo(f"\n   Selector: {selector_str}")
+                    click.echo(f"   Stability: {selector.stability.value}")
                     
                     suggestions = optimizer.suggest_improvements(selector)
                     for suggestion in suggestions:
