@@ -108,15 +108,20 @@ def analyze(platform: str, source: str, output: str):
         import json
         
         if platform == 'android':
-            from framework.analyzers import AndroidAnalyzer
+            from framework.analyzers.android_analyzer import AndroidAnalyzer
             
             click.echo(f"\n🤖 Running Android static analyzer...")
             analyzer = AndroidAnalyzer()
             result = analyzer.analyze(source)
             
         elif platform == 'ios':
-            click.echo(f"\n❌ iOS static analysis not yet implemented")
-            return
+            from framework.analyzers.ios_analyzer import IOSAnalyzer
+            from pathlib import Path
+            
+            click.echo(f"\n🍎 Running iOS static analyzer...")
+            analyzer = IOSAnalyzer(project_path=Path(source))
+            result = analyzer.analyze()
+            
         else:
             click.echo(f"\n❌ Unknown platform: {platform}")
             return

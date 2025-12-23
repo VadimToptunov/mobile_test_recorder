@@ -4,7 +4,7 @@ Analysis Result Types
 Data structures for static analysis results.
 """
 
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 from pydantic import BaseModel, Field
 
 
@@ -72,5 +72,5 @@ class AnalysisResult(BaseModel):
     errors: List[str] = Field(default_factory=list)
     warnings: List[str] = Field(default_factory=list)
     
-    metadata: Dict[str, any] = Field(default_factory=dict)
+    metadata: Dict[str, Any] = Field(default_factory=dict)
 
