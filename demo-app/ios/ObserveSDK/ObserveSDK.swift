@@ -189,6 +189,10 @@ public class ObserveSDK {
         return hierarchyCollector
     }
     
+    internal func getUIObserver() -> UIObserver? {
+        return uiObserver
+    }
+    
     // MARK: - Private Methods
     
     private func subscribeToEvents() {

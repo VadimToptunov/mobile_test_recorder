@@ -155,9 +155,9 @@ class IOSAnalyzer:
                 # Extract elements from this screen
                 screen_elements = self._extract_elements_from_view(
                     screen_name=view_name, 
-                    view_content=body_content,
-                    file_path=file_path,
-                    content_offset=start_pos
+                    full_content=content,
+                    view_body_start=start_pos,
+                    file_path=file_path
                 )
                 elements.extend(screen_elements)
         
@@ -166,27 +166,34 @@ class IOSAnalyzer:
     def _extract_elements_from_view(
         self, 
         screen_name: str, 
-        view_content: str, 
-        file_path: Path,
-        content_offset: int = 0
+        full_content: str,
+        view_body_start: int,
+        file_path: Path
     ) -> List[UIElementCandidate]:
         """Extract UI elements with accessibility identifiers from view"""
         elements = []
         
-        # Pattern: .accessibilityIdentifier("some_id")
-        accessibility_pattern = r'\.accessibilityIdentifier\("(\w+)"\)'
+        # Pattern: .accessibilityIdentifier("any_string_including_interpolation")
+        # Uses greedy matching to capture everything between outer quotes,
+        # including Swift string interpolation \(...) with nested quotes
+        accessibility_pattern = r'\.accessibilityIdentifier\("(.+)"\)'
         
-        for match in re.finditer(accessibility_pattern, view_content):
+        # Search in the full content starting from view body
+        for match in re.finditer(accessibility_pattern, full_content[view_body_start:]):
+            # Get the captured identifier (may contain \(...) for string interpolation)
             element_id = match.group(1)
             
+            # Calculate absolute position in file
+            absolute_pos = view_body_start + match.start()
+            
             # Try to infer element type from context
-            context_start = max(0, match.start() - 200)
-            context = view_content[context_start:match.start()]
+            context_start = max(0, absolute_pos - 200)
+            context = full_content[context_start:absolute_pos]
             
             element_type = self._infer_element_type_from_context(context)
             
-            # Line number is relative to start of file + offset
-            line_number = content_offset + view_content[:match.start()].count('\n') + 1
+            # Calculate line number from file start
+            line_number = full_content[:absolute_pos].count('\n') + 1
             
             elements.append(UIElementCandidate(
                 id=element_id,

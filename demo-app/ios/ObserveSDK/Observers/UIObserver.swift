@@ -148,16 +148,5 @@ extension UIControl {
     }
 }
 
-// MARK: - ObserveSDK Extension
-
-extension ObserveSDK {
-    internal func getUIObserver() -> UIObserver? {
-        return self.uiObserver
-    }
-    
-    private var uiObserver: UIObserver? {
-        // Access through runtime associated object or stored property
-        return nil // TODO: Implement proper accessor
-    }
-}
+// Note: getUIObserver() is now implemented in ObserveSDK.swift
 

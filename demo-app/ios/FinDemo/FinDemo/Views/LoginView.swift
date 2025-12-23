@@ -12,6 +12,8 @@ struct LoginView: View {
     @State private var username = ""
     @State private var password = ""
     @State private var showError = false
+    @State private var showForgotPassword = false
+    @State private var showSignUp = false
     
     var body: some View {
         NavigationView {
@@ -71,7 +73,7 @@ struct LoginView: View {
                 
                 // Forgot password link
                 Button("Forgot Password?") {
-                    // TODO: Implement forgot password
+                    showForgotPassword = true
                 }
                 .font(.caption)
                 .foregroundColor(.blue)
@@ -84,7 +86,7 @@ struct LoginView: View {
                     Text("Don't have an account?")
                         .foregroundColor(.secondary)
                     Button("Sign Up") {
-                        // TODO: Implement sign up
+                        showSignUp = true
                     }
                     .fontWeight(.semibold)
                     .accessibilityIdentifier("login_signup_button")
@@ -93,6 +95,16 @@ struct LoginView: View {
                 .padding(.bottom, 20)
             }
             .navigationBarHidden(true)
+            .alert("Forgot Password", isPresented: $showForgotPassword) {
+                Button("OK") { }
+            } message: {
+                Text("Password reset functionality coming soon!")
+            }
+            .alert("Sign Up", isPresented: $showSignUp) {
+                Button("OK") { }
+            } message: {
+                Text("Registration functionality coming soon!")
+            }
         }
     }
     

@@ -25,6 +25,7 @@ fun LoginScreen(
     var password by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var showForgotPasswordDialog by remember { mutableStateOf(false) }
     
     Column(
         modifier = modifier
@@ -100,7 +101,7 @@ fun LoginScreen(
         
         // Forgot password
         TextButton(
-            onClick = { /* TODO: Implement forgot password */ },
+            onClick = { showForgotPasswordDialog = true },
             modifier = Modifier
                 .align(Alignment.End)
                 .testTag("forgot_password_button")
@@ -156,6 +157,20 @@ fun LoginScreen(
                 Text("Register")
             }
         }
+    }
+    
+    // Forgot password dialog
+    if (showForgotPasswordDialog) {
+        AlertDialog(
+            onDismissRequest = { showForgotPasswordDialog = false },
+            title = { Text("Forgot Password") },
+            text = { Text("Password reset functionality coming soon!") },
+            confirmButton = {
+                TextButton(onClick = { showForgotPasswordDialog = false }) {
+                    Text("OK")
+                }
+            }
+        )
     }
 }
 

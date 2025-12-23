@@ -11,6 +11,7 @@ struct HomeView: View {
     @EnvironmentObject var appState: AppState
     @State private var showTopUp = false
     @State private var showSendMoney = false
+    @State private var showQRScanner = false
     
     var body: some View {
         NavigationView {
@@ -77,7 +78,7 @@ struct HomeView: View {
                                 icon: "qrcode.viewfinder",
                                 title: "Scan QR",
                                 color: .orange,
-                                action: { /* TODO */ }
+                                action: { showQRScanner = true }
                             )
                             .accessibilityIdentifier("home_scanqr_button")
                         }
@@ -135,6 +136,11 @@ struct HomeView: View {
             }
             .sheet(isPresented: $showSendMoney) {
                 SendMoneyView()
+            }
+            .alert("QR Scanner", isPresented: $showQRScanner) {
+                Button("OK") { }
+            } message: {
+                Text("QR code scanning coming soon!")
             }
         }
     }
