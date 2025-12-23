@@ -143,7 +143,7 @@ class SelectorOptimizer:
             'stability_distribution': {
                 'excellent': high,  # Map HIGH to excellent for display
                 'good': medium,     # Map MEDIUM to good
-                'fair': 0,
+                'fair': 0,          # Not used (kept for compatibility)
                 'poor': low,        # Map LOW to poor
                 'fragile': unknown  # Map UNKNOWN to fragile
             },

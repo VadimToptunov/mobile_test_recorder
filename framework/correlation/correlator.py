@@ -180,19 +180,17 @@ class EventCorrelator:
             # Create correlation only if we found related APIs
             if correlated_apis:
                 # Determine overall strength
-                if correlated_apis:
-                    confidences = [api['confidence'] for api in correlated_apis]
-                    avg_confidence = sum(confidences) / len(confidences)
-                    
-                    if avg_confidence >= 0.8:
-                        strength = CorrelationStrength.STRONG
-                    elif avg_confidence >= 0.5:
-                        strength = CorrelationStrength.MEDIUM
-                    else:
-                        strength = CorrelationStrength.WEAK
+                confidences = [api['confidence'] for api in correlated_apis]
+                avg_confidence = sum(confidences) / len(confidences)
+                
+                if avg_confidence >= 0.8:
+                    strength = CorrelationStrength.STRONG
+                elif avg_confidence >= 0.5:
+                    strength = CorrelationStrength.MEDIUM
                 else:
-                    strength = CorrelationStrength.NONE
-                    avg_confidence = 0.0
+                    strength = CorrelationStrength.WEAK
+                    # Keep avg_confidence as-is (don't overwrite to 0.0)
+                    # This preserves the actual measured correlation strength
                 
                 # Calculate time delta
                 time_delta = None
@@ -306,23 +304,23 @@ class EventCorrelator:
             
             if related_navs:
                 # Determine overall strength
-                if related_navs:
-                    nav_strengths = [nav.strength for nav in related_navs]
-                    if CorrelationStrength.STRONG in nav_strengths:
-                        overall_strength = CorrelationStrength.STRONG
-                    elif CorrelationStrength.MEDIUM in nav_strengths:
-                        overall_strength = CorrelationStrength.MEDIUM
-                    else:
-                        overall_strength = CorrelationStrength.WEAK
-                    
-                    overall_confidence = (ui_corr.confidence_score + 
-                                        sum(nav.confidence_score for nav in related_navs)) / (1 + len(related_navs))
+                nav_strengths = [nav.strength for nav in related_navs]
+                if CorrelationStrength.STRONG in nav_strengths:
+                    overall_strength = CorrelationStrength.STRONG
+                elif CorrelationStrength.MEDIUM in nav_strengths:
+                    overall_strength = CorrelationStrength.MEDIUM
                 else:
-                    overall_strength = ui_corr.strength
-                    overall_confidence = ui_corr.confidence_score
+                    overall_strength = CorrelationStrength.WEAK
                 
-                # Generate flow description
-                description = self._generate_flow_description(ui_corr, related_navs)
+                overall_confidence = (ui_corr.confidence_score + 
+                                    sum(nav.confidence_score for nav in related_navs)) / (1 + len(related_navs))
+            else:
+                # No navigation correlations found, use UI correlation values
+                overall_strength = ui_corr.strength
+                overall_confidence = ui_corr.confidence_score
+            
+            # Generate flow description
+            description = self._generate_flow_description(ui_corr, related_navs)
                 
                 flow = FullFlowCorrelation(
                     flow_id=f"flow_{ui_corr.ui_event_id}",
