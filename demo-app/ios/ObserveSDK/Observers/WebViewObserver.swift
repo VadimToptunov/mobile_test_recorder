@@ -280,7 +280,7 @@ public class WebViewObserver: NSObject {
         
         // Inject observer script
         let script = WKUserScript(
-            source: Self.injectionScript,
+            source: WebViewJavaScript.injectionScript,
             injectionTime: .atDocumentEnd,
             forMainFrameOnly: false
         )
@@ -408,6 +408,14 @@ private class WebViewMessageHandler: NSObject, WKScriptMessageHandler {
             attributes["href"] = href
         }
         
+        // Convert allSelectors to JSON string
+        var allSelectorsJSON: String? = nil
+        if let allSelectors = data["allSelectors"] as? [String: Any],
+           let jsonData = try? JSONSerialization.data(withJSONObject: allSelectors, options: []),
+           let jsonString = String(data: jsonData, encoding: .utf8) {
+            allSelectorsJSON = jsonString
+        }
+        
         let event = WebViewEvent(
             timestamp: Int64(Date().timeIntervalSince1970 * 1000),
             sessionId: ObserveSDK.shared.session?.id ?? "",
@@ -421,7 +429,11 @@ private class WebViewMessageHandler: NSObject, WKScriptMessageHandler {
             elementAttributes: attributes.isEmpty ? nil : attributes,
             x: data["x"] as? Double,
             y: data["y"] as? Double,
-            innerHTML: data["innerHTML"] as? String
+            innerHTML: data["innerHTML"] as? String,
+            xpath: data["xpath"] as? String,
+            xpathIndexed: data["xpathIndexed"] as? String,
+            cssSelector: data["cssSelector"] as? String,
+            allSelectors: allSelectorsJSON
         )
         
         eventBus.publish(event: event)
@@ -496,9 +508,13 @@ private class WebViewNavigationDelegate: NSObject, WKNavigationDelegate {
     
     // Delegate decidePolicyFor to original delegate
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
-        if let originalDelegate = originalDelegate {
+        // Check if original delegate exists and implements the method
+        if let originalDelegate = originalDelegate,
+           originalDelegate.responds(to: #selector(WKNavigationDelegate.webView(_:decidePolicyFor:decisionHandler:))) {
+            // Call original delegate - it's responsible for calling decisionHandler
             originalDelegate.webView?(webView, decidePolicyFor: navigationAction, decisionHandler: decisionHandler)
         } else {
+            // No original delegate or it doesn't implement this method - allow by default
             decisionHandler(.allow)
         }
     }

@@ -43,6 +43,7 @@ class WebViewObserver(
                 // Capture click events
                 document.addEventListener('click', function(e) {
                     var target = e.target;
+                    var selectors = getAllSelectors(target);
                     var data = {
                         eventType: 'click',
                         tag: target.tagName.toLowerCase(),
@@ -55,8 +56,10 @@ class WebViewObserver(
                         type: target.type || null,
                         x: e.clientX,
                         y: e.clientY,
-                        xpath: getXPath(target),
-                        cssSelector: getCSSSelector(target),
+                        xpath: selectors.xpath,
+                        xpathIndexed: selectors.xpathIndexed,
+                        cssSelector: selectors.cssSelector,
+                        allSelectors: selectors,
                         innerHTML: target.innerHTML ? target.innerHTML.substring(0, 200) : null
                     };
                     
@@ -72,6 +75,7 @@ class WebViewObserver(
                     var target = e.target;
                     if (target.tagName.toLowerCase() === 'input' || 
                         target.tagName.toLowerCase() === 'textarea') {
+                        var selectors = getAllSelectors(target);
                         var data = {
                             eventType: 'input',
                             tag: target.tagName.toLowerCase(),
@@ -80,8 +84,10 @@ class WebViewObserver(
                             name: target.name || null,
                             type: target.type || null,
                             value: target.value ? '***' : null, // Masked for security
-                            xpath: getXPath(target),
-                            cssSelector: getCSSSelector(target)
+                            xpath: selectors.xpath,
+                            xpathIndexed: selectors.xpathIndexed,
+                            cssSelector: selectors.cssSelector,
+                            allSelectors: selectors
                         };
                         
                         try {
@@ -137,20 +143,115 @@ class WebViewObserver(
                     }
                 }
                 
-                // Helper: Get CSS Selector of element
+                // Helper: Get unique CSS Selector with fallback strategies
                 function getCSSSelector(element) {
+                    // Strategy 1: ID (most reliable)
                     if (element.id) {
                         return '#' + element.id;
                     }
                     
-                    if (element.className) {
-                        var classes = element.className.split(/\s+/).filter(c => c.length > 0);
-                        if (classes.length > 0) {
-                            return element.tagName.toLowerCase() + '.' + classes.join('.');
+                    // Strategy 2: name attribute (for forms)
+                    if (element.name) {
+                        var nameSelector = element.tagName.toLowerCase() + '[name="' + element.name + '"]';
+                        if (document.querySelectorAll(nameSelector).length === 1) {
+                            return nameSelector;
                         }
                     }
                     
+                    // Strategy 3: Unique combination of tag + classes
+                    if (element.className) {
+                        var classes = element.className.split(/\s+/).filter(c => c.length > 0);
+                        if (classes.length > 0) {
+                            var classSelector = element.tagName.toLowerCase() + '.' + classes.join('.');
+                            if (document.querySelectorAll(classSelector).length === 1) {
+                                return classSelector;
+                            }
+                        }
+                    }
+                    
+                    // Strategy 4: Tag + text content (for buttons/links)
+                    if (element.innerText && element.innerText.length > 0 && element.innerText.length < 50) {
+                        var text = element.innerText.trim();
+                        var textSelector = element.tagName.toLowerCase() + ':contains("' + text + '")';
+                        // Note: :contains is not standard CSS, will need XPath alternative
+                    }
+                    
+                    // Strategy 5: nth-child with parent context
+                    var parent = element.parentNode;
+                    if (parent) {
+                        var index = Array.from(parent.children).indexOf(element) + 1;
+                        var parentSelector = parent.id ? '#' + parent.id : parent.tagName.toLowerCase();
+                        return parentSelector + ' > ' + element.tagName.toLowerCase() + ':nth-child(' + index + ')';
+                    }
+                    
+                    // Fallback: just tag name
                     return element.tagName.toLowerCase();
+                }
+                
+                // Helper: Get unique XPath with multiple strategies
+                function getUniqueXPath(element) {
+                    // Strategy 1: ID-based
+                    if (element.id) {
+                        return '//*[@id="' + element.id + '"]';
+                    }
+                    
+                    // Strategy 2: Name attribute
+                    if (element.name) {
+                        var xpath = '//' + element.tagName.toLowerCase() + '[@name="' + element.name + '"]';
+                        try {
+                            if (document.evaluate(xpath, document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null).snapshotLength === 1) {
+                                return xpath;
+                            }
+                        } catch(e) {}
+                    }
+                    
+                    // Strategy 3: Text content
+                    if (element.innerText && element.innerText.length > 0 && element.innerText.length < 100) {
+                        var text = element.innerText.trim().replace(/"/g, '\\"');
+                        var xpath = '//' + element.tagName.toLowerCase() + '[text()="' + text + '"]';
+                        try {
+                            if (document.evaluate(xpath, document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null).snapshotLength === 1) {
+                                return xpath;
+                            }
+                            // Try contains for partial match
+                            xpath = '//' + element.tagName.toLowerCase() + '[contains(text(),"' + text + '")]';
+                            if (document.evaluate(xpath, document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null).snapshotLength === 1) {
+                                return xpath;
+                            }
+                        } catch(e) {}
+                    }
+                    
+                    // Strategy 4: Class-based
+                    if (element.className) {
+                        var classes = element.className.split(/\s+/).filter(c => c.length > 0);
+                        if (classes.length > 0) {
+                            var classXPath = '//' + element.tagName.toLowerCase();
+                            for (var i = 0; i < classes.length; i++) {
+                                classXPath += '[contains(@class,"' + classes[i] + '")]';
+                            }
+                            try {
+                                if (document.evaluate(classXPath, document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null).snapshotLength === 1) {
+                                    return classXPath;
+                                }
+                            } catch(e) {}
+                        }
+                    }
+                    
+                    // Strategy 5: Indexed path (fallback)
+                    return getXPath(element);
+                }
+                
+                // Helper: Get all possible selectors for an element
+                function getAllSelectors(element) {
+                    return {
+                        xpath: getUniqueXPath(element),
+                        xpathIndexed: getXPath(element),
+                        cssSelector: getCSSSelector(element),
+                        id: element.id || null,
+                        name: element.name || null,
+                        className: element.className || null,
+                        tagName: element.tagName.toLowerCase()
+                    };
                 }
                 
                 // Capture page hierarchy (like HierarchyCollector)
@@ -325,7 +426,11 @@ class WebViewObserver(
             }
             
             override fun onPageStarted(view: WebView?, url: String?, favicon: android.graphics.Bitmap?) {
-                originalClient?.onPageStarted(view, url, favicon) ?: super.onPageStarted(view, url, favicon)
+                if (originalClient != null) {
+                    originalClient.onPageStarted(view, url, favicon)
+                } else {
+                    super.onPageStarted(view, url, favicon)
+                }
             }
         }
         

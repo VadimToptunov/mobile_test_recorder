@@ -395,16 +395,98 @@ class SelectorHealer:
                 reason="No screenshot available"
             )
         
-        # Visual-based healing would require VisualDetector integration
-        # For now, return not implemented
-        return HealingResult(
-            success=False,
-            original_selector=str(broken_selector),
-            healed_selector=None,
-            strategy=HealingStrategy.VISUAL_BASED,
-            confidence=0.0,
-            reason="Visual-based healing not yet implemented"
-        )
+        try:
+            from framework.ml.visual_detector import VisualDetector
+            from pathlib import Path
+            
+            # Initialize visual detector
+            visual_detector = VisualDetector()
+            
+            # Get element bounds from selector context
+            bounds = context.get('bounds')
+            if not bounds:
+                return HealingResult(
+                    success=False,
+                    original_selector=str(broken_selector),
+                    healed_selector=None,
+                    strategy=HealingStrategy.VISUAL_BASED,
+                    confidence=0.0,
+                    reason="No element bounds in context"
+                )
+            
+            # Try to find element by visual similarity
+            screenshot_path = Path(screenshot)
+            if not screenshot_path.exists():
+                return HealingResult(
+                    success=False,
+                    original_selector=str(broken_selector),
+                    healed_selector=None,
+                    strategy=HealingStrategy.VISUAL_BASED,
+                    confidence=0.0,
+                    reason=f"Screenshot not found: {screenshot}"
+                )
+            
+            # Extract element region from original bounds
+            x, y, width, height = bounds['x'], bounds['y'], bounds['width'], bounds['height']
+            
+            # Find similar elements in current screenshot
+            matches = visual_detector.find_similar_elements(
+                screenshot_path,
+                target_bounds=(x, y, width, height),
+                similarity_threshold=0.8
+            )
+            
+            if matches:
+                # Use the best match (highest similarity)
+                best_match = max(matches, key=lambda m: m['similarity'])
+                
+                # Generate new selector based on best match position
+                new_selector = f"visual_position:{best_match['x']},{best_match['y']}"
+                
+                self.healing_stats['visual_based']['successes'] += 1
+                
+                return HealingResult(
+                    success=True,
+                    original_selector=str(broken_selector),
+                    healed_selector=new_selector,
+                    strategy=HealingStrategy.VISUAL_BASED,
+                    confidence=best_match['similarity'],
+                    reason=f"Found visually similar element at ({best_match['x']}, {best_match['y']})"
+                )
+            else:
+                self.healing_stats['visual_based']['failures'] += 1
+                
+                return HealingResult(
+                    success=False,
+                    original_selector=str(broken_selector),
+                    healed_selector=None,
+                    strategy=HealingStrategy.VISUAL_BASED,
+                    confidence=0.0,
+                    reason="No visually similar elements found"
+                )
+                
+        except ImportError:
+            return HealingResult(
+                success=False,
+                original_selector=str(broken_selector),
+                healed_selector=None,
+                strategy=HealingStrategy.VISUAL_BASED,
+                confidence=0.0,
+                reason="VisualDetector not available"
+            )
+        except Exception as e:
+            logger.error(f"Visual-based healing failed: {e}")
+            self.healing_stats['visual_based']['failures'] += 1
+            
+            return HealingResult(
+                success=False,
+                original_selector=str(broken_selector),
+                healed_selector=None,
+                strategy=HealingStrategy.VISUAL_BASED,
+                confidence=0.0,
+                reason=f"Visual healing error: {str(e)}"
+            )
+
     
     def get_healing_stats(self) -> Dict[str, Any]:
         """Get statistics about healing attempts."""

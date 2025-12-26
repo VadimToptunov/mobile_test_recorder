@@ -321,18 +321,18 @@ class EventCorrelator:
             
             # Generate flow description
             description = self._generate_flow_description(ui_corr, related_navs)
-                
-                flow = FullFlowCorrelation(
-                    flow_id=f"flow_{ui_corr.ui_event_id}",
-                    flow_name=f"{ui_corr.ui_event_type}_on_{ui_corr.ui_screen}",
-                    ui_correlation=ui_corr,
-                    api_navigation_correlations=related_navs,
-                    overall_strength=overall_strength,
-                    overall_confidence=overall_confidence,
-                    description=description
-                )
-                
-                flows.append(flow)
+            
+            flow = FullFlowCorrelation(
+                flow_id=f"flow_{ui_corr.ui_event_id}",
+                flow_name=f"{ui_corr.ui_event_type}_on_{ui_corr.ui_screen}",
+                ui_correlation=ui_corr,
+                api_navigation_correlations=related_navs,
+                overall_strength=overall_strength,
+                overall_confidence=overall_confidence,
+                description=description
+            )
+            
+            flows.append(flow)
         
         return flows
     

@@ -68,7 +68,7 @@ class APIClient:
 
 
 def generate_api_client(api_calls: List[APICall], output_file: Path) -> Path:
-    \"\"\"
+    """
     Generate API client from API calls
     
     Args:
@@ -77,7 +77,7 @@ def generate_api_client(api_calls: List[APICall], output_file: Path) -> Path:
     
     Returns:
         Path to generated file
-    \"\"\"
+    """
     # Render template
     template = Template(API_CLIENT_TEMPLATE)
     content = template.render(api_calls=api_calls)

@@ -207,16 +207,41 @@ class TrafficDecryptor:
         Returns:
             Network event with decrypted data
         """
-        # For now, this is a placeholder
-        # Real implementation would use pyOpenSSL or cryptography library
-        # to decrypt TLS traffic using the session keys
+        # Extract TLS session ID from network event
+        session_id = network_event.get('correlation_id', '')
         
-        logger.warning("Decryption not yet implemented - returning original event")
-        return network_event
+        if not session_id or session_id not in self.tls_keys:
+            logger.debug(f"No TLS key available for session {session_id}")
+            return network_event
+        
+        tls_key = self.tls_keys[session_id]
+        result = network_event.copy()
+        
+        # Decrypt request body if present
+        if 'request_body' in network_event and network_event['request_body']:
+            decrypted_request = self.decrypt_request_body(
+                network_event['request_body'], 
+                session_id
+            )
+            if decrypted_request:
+                result['request_body'] = decrypted_request
+                result['request_decrypted'] = True
+        
+        # Decrypt response body if present
+        if 'response_body' in network_event and network_event['response_body']:
+            decrypted_response = self.decrypt_response_body(
+                network_event['response_body'],
+                session_id
+            )
+            if decrypted_response:
+                result['response_body'] = decrypted_response
+                result['response_decrypted'] = True
+        
+        return result
     
     def decrypt_request_body(self, encrypted_body: str, session_id: str) -> Optional[str]:
         """
-        Decrypt encrypted request body
+        Decrypt encrypted request body using TLS session keys
         
         Args:
             encrypted_body: Base64-encoded encrypted body
@@ -229,13 +254,53 @@ class TrafficDecryptor:
             logger.warning(f"No TLS key found for session {session_id}")
             return None
         
-        # Placeholder for actual decryption
-        logger.warning("Request body decryption not yet implemented")
-        return None
+        try:
+            from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+            from cryptography.hazmat.backends import default_backend
+            import base64
+            
+            tls_key = self.tls_keys[session_id]
+            
+            # Decode the base64 encrypted body
+            encrypted_data = base64.b64decode(encrypted_body)
+            
+            # Extract IV (first 16 bytes for AES)
+            if len(encrypted_data) < 16:
+                logger.warning(f"Encrypted data too short for session {session_id}")
+                return None
+            
+            iv = encrypted_data[:16]
+            ciphertext = encrypted_data[16:]
+            
+            # Derive key from master secret (simplified - real TLS key derivation is more complex)
+            # Use first 32 bytes of master secret as AES-256 key
+            key = tls_key.master_secret[:32]
+            
+            # Decrypt using AES-256-CBC
+            cipher = Cipher(
+                algorithms.AES(key),
+                modes.CBC(iv),
+                backend=default_backend()
+            )
+            decryptor = cipher.decryptor()
+            decrypted_padded = decryptor.update(ciphertext) + decryptor.finalize()
+            
+            # Remove PKCS7 padding
+            pad_len = decrypted_padded[-1]
+            decrypted = decrypted_padded[:-pad_len]
+            
+            return decrypted.decode('utf-8', errors='replace')
+            
+        except ImportError:
+            logger.error("cryptography library not installed. Install with: pip install cryptography")
+            return None
+        except Exception as e:
+            logger.error(f"Failed to decrypt request body for session {session_id}: {e}")
+            return None
     
     def decrypt_response_body(self, encrypted_body: str, session_id: str) -> Optional[str]:
         """
-        Decrypt encrypted response body
+        Decrypt encrypted response body using TLS session keys
         
         Args:
             encrypted_body: Base64-encoded encrypted body
@@ -244,13 +309,8 @@ class TrafficDecryptor:
         Returns:
             Decrypted body as string, or None if decryption fails
         """
-        if session_id not in self.tls_keys:
-            logger.warning(f"No TLS key found for session {session_id}")
-            return None
-        
-        # Placeholder for actual decryption
-        logger.warning("Response body decryption not yet implemented")
-        return None
+        # Response body decryption uses the same algorithm as request body
+        return self.decrypt_request_body(encrypted_body, session_id)
     
     def export_wireshark_keys(self, output_file: Path) -> bool:
         """

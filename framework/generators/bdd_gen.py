@@ -75,7 +75,7 @@ def {{ step.function_name }}({{ step.params }}):
 
 
 def generate_feature_file(flow: Flow, output_dir: Path) -> Path:
-    \"\"\"
+    """
     Generate Gherkin feature file
     
     Args:
@@ -84,7 +84,7 @@ def generate_feature_file(flow: Flow, output_dir: Path) -> Path:
     
     Returns:
         Path to generated feature file
-    \"\"\"
+    """
     template = Template(FEATURE_TEMPLATE)
     content = template.render(flow=flow)
     
@@ -97,7 +97,7 @@ def generate_feature_file(flow: Flow, output_dir: Path) -> Path:
 
 
 def generate_step_definitions(flow: Flow, feature_file: str, output_dir: Path) -> Path:
-    \"\"\"
+    """
     Generate pytest-bdd step definitions
     
     Args:
@@ -107,7 +107,7 @@ def generate_step_definitions(flow: Flow, feature_file: str, output_dir: Path) -
     
     Returns:
         Path to generated step file
-    \"\"\"
+    """
     # Extract steps from scenarios
     given_steps = []
     when_steps = []
@@ -146,10 +146,10 @@ def generate_step_definitions(flow: Flow, feature_file: str, output_dir: Path) -
 
 
 def _step_to_function_name(step_text: str) -> str:
-    \"\"\"Convert step text to valid Python function name\"\"\"
+    """Convert step text to valid Python function name"""
     # Remove special characters and convert to snake_case
     name = step_text.lower()
-    name = name.replace(\"'\", \"\").replace('\"', '')
+    name = name.replace("'", "").replace('"', '')
     name = ''.join(c if c.isalnum() or c == ' ' else '_' for c in name)
     name = '_'.join(name.split())
     return name
