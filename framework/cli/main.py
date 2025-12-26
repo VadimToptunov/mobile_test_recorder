@@ -910,16 +910,23 @@ def analyze_selectors(model_file: str, detailed: bool):
 @click.option('--correlations', type=click.Path(exists=True),
               help='Pre-computed correlations JSON file (optional)')
 @click.option('--use-ml', is_flag=True, help='Use ML classifier for element types (Phase 4)')
-@click.option('--ml-model', type=click.Path(), default='ml_models/element_classifier.pkl',
-              help='Path to trained ML model (only validated when --use-ml is set)')
+@click.option('--ml-model', type=click.Path(), 
+              default='ml_models/universal_element_classifier.pkl',
+              help='Path to trained ML model (universal model by default, only validated when --use-ml is set)')
 def build(session_id: str, app_version: str, platform: str, output: str, correlations: Optional[str],
           use_ml: bool, ml_model: str):
     """
     Build AppModel from recorded session
     
-    Example:
-        observe model build --session-id session_20250119_142345 --app-version 1.0.0
+    Examples:
+        # Without ML (rule-based only)
+        observe model build --session-id session_123 --app-version 1.0.0
+        
+        # With universal ML model (recommended, works for any app)
         observe model build --session-id session_123 --app-version 1.0.0 --use-ml
+        
+        # With custom ML model
+        observe model build --session-id session_123 --app-version 1.0.0 --use-ml --ml-model my_model.pkl
     """
     click.echo(f"🏗️  Building AppModel from session...")
     click.echo(f"   Session: {session_id}")
@@ -934,9 +941,13 @@ def build(session_id: str, app_version: str, platform: str, output: str, correla
         # Validate ML model file exists only when ML is enabled
         ml_model_path = Path(ml_model)
         if not ml_model_path.exists():
-            click.echo(f"\n❌ Error: ML model file not found: {ml_model}", err=True)
-            click.echo(f"\n💡 Train a model first using:", err=True)
-            click.echo(f"   observe ml train --session-id <session_id>", err=True)
+            click.echo(f"\n❌ Error: ML model file not found: {ml_model_path}", err=True)
+            click.echo(f"\n💡 Solutions:", err=True)
+            click.echo(f"   1. Create universal pre-trained model (RECOMMENDED - works for ANY app):", err=True)
+            click.echo(f"      observe ml create-universal-model", err=True)
+            click.echo(f"", err=True)
+            click.echo(f"   2. Or train on your specific app:", err=True)
+            click.echo(f"      observe ml train --session-id {session_id} --auto-label", err=True)
             raise click.Abort()
     
     try:
@@ -1195,18 +1206,25 @@ def ml():
 @click.option('--output', type=click.Path(), default='ml_models/element_classifier.pkl',
               help='Output path for trained model')
 @click.option('--test-size', default=0.2, help='Test set size (0.0-1.0)')
-def train(session_id: str, output: str, test_size: float):
+@click.option('--auto-label', is_flag=True, help='Auto-label data using rule-based heuristics')
+def train(session_id: str, output: str, test_size: float, auto_label: bool):
     """
     Train ML element classifier from recorded sessions
     
     Example:
-        observe ml train --session-id session_20250119_142345
+        # Train with auto-labeled data
+        observe ml train --session-id session_20250119_142345 --auto-label
+        
+        # Or generate synthetic training data first:
+        observe ml generate-training-data --output training_data/synthetic.json
+        observe ml train --session-id session_123
     """
     click.echo(f"🤖 Training ML element classifier...")
     click.echo(f"   Session: {session_id}")
     
     try:
         from framework.ml.element_classifier import ElementClassifier
+        from framework.ml.training_data_generator import TrainingDataGenerator
         from framework.storage.event_store import EventStore
         
         # Load events
@@ -1219,16 +1237,33 @@ def train(session_id: str, output: str, test_size: float):
         
         if not hierarchy_events:
             click.echo(f"\n❌ No hierarchy events found for session {session_id}", err=True)
+            click.echo(f"\n💡 Tips:", err=True)
+            click.echo(f"   1. Make sure you recorded a session with HierarchyCollector enabled", err=True)
+            click.echo(f"   2. Or generate synthetic training data:", err=True)
+            click.echo(f"      observe ml generate-training-data", err=True)
             raise click.Abort()
         
         click.echo(f"\n📊 Loaded {len(hierarchy_events)} hierarchy events")
+        
+        # Auto-label if requested
+        if auto_label:
+            click.echo(f"\n🏷️  Auto-labeling data using rule-based heuristics...")
+            generator = TrainingDataGenerator()
+            hierarchy_events = generator.auto_label_hierarchy_events(hierarchy_events)
+            click.echo(f"   ✅ All elements labeled")
         
         # Initialize classifier
         classifier = ElementClassifier()
         
         # Prepare training data
         click.echo(f"\n🔄 Preparing training data...")
-        features, labels = classifier.prepare_training_data(hierarchy_events)
+        try:
+            features, labels = classifier.prepare_training_data(hierarchy_events)
+        except ValueError as e:
+            click.echo(f"\n❌ Error: {e}", err=True)
+            click.echo(f"\n💡 Solution: Use --auto-label flag to automatically label elements", err=True)
+            click.echo(f"   observe ml train --session-id {session_id} --auto-label", err=True)
+            raise click.Abort()
         
         # Train model
         click.echo(f"\n🎓 Training Random Forest classifier...")
@@ -1243,6 +1278,13 @@ def train(session_id: str, output: str, test_size: float):
         click.echo(f"   Train Samples:  {metrics['train_samples']}")
         click.echo(f"   Test Samples:   {metrics['test_samples']}")
         
+        # Check if meets target
+        if metrics['test_accuracy'] >= 0.85:
+            click.echo(f"\n🎯 Target accuracy (>85%) achieved! ✅")
+        else:
+            click.echo(f"\n⚠️  Target accuracy (>85%) not reached, but model saved")
+            click.echo(f"   Consider collecting more training data")
+        
         # Save model
         output_path = Path(output)
         classifier.save_model(output_path)
@@ -1251,6 +1293,124 @@ def train(session_id: str, output: str, test_size: float):
         click.echo(f"\n🎯 Next steps:")
         click.echo(f"   1. Use ML classifier in model building:")
         click.echo(f"      observe model build --session-id {session_id} --use-ml --ml-model {output_path}")
+        
+    except Exception as e:
+        click.echo(f"\n❌ Error: {e}", err=True)
+        import traceback
+        traceback.print_exc()
+        raise click.Abort()
+
+
+@ml.command('generate-training-data')
+@click.option('--type', 'data_type', type=click.Choice(['synthetic', 'from-session']),
+              default='synthetic', help='Training data type')
+@click.option('--session-id', help='Session ID (for from-session type)')
+@click.option('--num-samples', default=500, help='Number of synthetic samples to generate')
+@click.option('--output', type=click.Path(), default='training_data/elements.json',
+              help='Output file for training data')
+def generate_training_data(data_type: str, session_id: Optional[str], num_samples: int, output: str):
+    """
+    Generate training data for ML classifier
+    
+    Examples:
+        # Generate synthetic data (no session required)
+        observe ml generate-training-data --type synthetic --num-samples 1000
+        
+        # Auto-label data from recorded session
+        observe ml generate-training-data --type from-session --session-id session_123
+    """
+    click.echo(f"🏷️  Generating training data...")
+    
+    try:
+        from framework.ml.training_data_generator import TrainingDataGenerator
+        from framework.storage.event_store import EventStore
+        
+        generator = TrainingDataGenerator()
+        output_path = Path(output)
+        
+        if data_type == 'synthetic':
+            click.echo(f"   Type: Synthetic")
+            click.echo(f"   Samples: {num_samples}")
+            
+            # Generate synthetic data
+            generator.generate_synthetic_dataset(num_samples=num_samples, output_path=output_path)
+            
+            click.echo(f"\n✅ Generated {num_samples} synthetic training samples")
+            
+        elif data_type == 'from-session':
+            if not session_id:
+                click.echo(f"❌ --session-id required for from-session type", err=True)
+                raise click.Abort()
+            
+            click.echo(f"   Type: From session")
+            click.echo(f"   Session: {session_id}")
+            
+            # Load events
+            store = EventStore()
+            hierarchy_events = store.get_events(
+                session_id=session_id,
+                event_type='HierarchyEvent',
+                limit=10000
+            )
+            
+            if not hierarchy_events:
+                click.echo(f"\n❌ No hierarchy events found", err=True)
+                raise click.Abort()
+            
+            click.echo(f"   Events: {len(hierarchy_events)}")
+            
+            # Auto-label
+            click.echo(f"\n🏷️  Auto-labeling elements...")
+            labeled_events = generator.auto_label_hierarchy_events(hierarchy_events)
+            
+            # Save
+            generator.save_labeled_data(labeled_events, output_path)
+            
+            click.echo(f"\n✅ Labeled {len(labeled_events)} events")
+        
+        click.echo(f"\n📄 Training data saved to: {output_path}")
+        click.echo(f"\n🎯 Next step:")
+        click.echo(f"   Train ML classifier:")
+        click.echo(f"   observe ml train --session-id <session_id>")
+        
+    except Exception as e:
+        click.echo(f"\n❌ Error: {e}", err=True)
+        import traceback
+        traceback.print_exc()
+        raise click.Abort()
+
+
+@ml.command('create-universal-model')
+def create_universal_model():
+    """
+    Create universal pre-trained model that works for ANY application.
+    
+    This model is trained on synthetic data covering common Android/iOS patterns.
+    It works out-of-the-box without requiring app-specific training.
+    
+    Example:
+        observe ml create-universal-model
+    """
+    click.echo("🌍 Creating universal pre-trained model...")
+    click.echo("   This will generate 2000+ training samples and train a model")
+    click.echo("   that works for ANY Android/iOS application!\n")
+    
+    try:
+        from framework.ml.universal_model import create_universal_pretrained_model
+        
+        model_path = create_universal_pretrained_model()
+        
+        click.echo(f"\n✅ Universal model created!")
+        click.echo(f"   Location: {model_path}")
+        click.echo(f"\n💡 This model is now the default for all applications!")
+        click.echo(f"\n🎯 Usage:")
+        click.echo(f"   # Model is used automatically when --use-ml is set")
+        click.echo(f"   observe model build --session-id <session_id> --use-ml")
+        click.echo(f"\n   # Or specify it explicitly")
+        click.echo(f"   observe model build \\")
+        click.echo(f"     --session-id <session_id> \\")
+        click.echo(f"     --use-ml \\")
+        click.echo(f"     --ml-model {model_path}")
         
     except Exception as e:
         click.echo(f"\n❌ Error: {e}", err=True)

@@ -2,6 +2,7 @@ package com.observe.sdk
 
 import android.app.Application
 import android.util.Log
+import android.webkit.WebView
 import com.observe.sdk.core.ObserveConfig
 import com.observe.sdk.core.ObserveSession
 import com.observe.sdk.events.Event
@@ -10,6 +11,7 @@ import com.observe.sdk.export.EventExporter
 import com.observe.sdk.observers.NavigationObserver
 import com.observe.sdk.observers.NetworkObserver
 import com.observe.sdk.observers.UIObserver
+import com.observe.sdk.observers.WebViewObserver
 import com.observe.sdk.security.CryptoKeyExporter
 import java.io.File
 import java.util.UUID
@@ -48,6 +50,7 @@ object ObserveSDK {
     private lateinit var uiObserver: UIObserver
     private lateinit var navigationObserver: NavigationObserver
     private lateinit var networkObserver: NetworkObserver
+    private lateinit var webViewObserver: WebViewObserver
     
     /**
      * Initialize SDK with configuration
@@ -91,6 +94,7 @@ object ObserveSDK {
         uiObserver = UIObserver(app, eventBus)
         navigationObserver = NavigationObserver(app, eventBus)
         networkObserver = NetworkObserver(eventBus)
+        webViewObserver = WebViewObserver(app, eventBus)
         
         // Subscribe to events
         subscribeToEvents()
@@ -128,6 +132,7 @@ object ObserveSDK {
         uiObserver.start()
         navigationObserver.start()
         networkObserver.start()
+        webViewObserver.start()
         
         // Emit session start event
         eventBus.publish(Event.SessionEvent(
@@ -171,6 +176,7 @@ object ObserveSDK {
         uiObserver.stop()
         navigationObserver.stop()
         networkObserver.stop()
+        webViewObserver.stop()
         
         // Stop exporter (will flush events)
         eventExporter.stop()
@@ -305,6 +311,44 @@ object ObserveSDK {
         
         Log.i(TAG, "Exporting TLS keys (NSS format)...")
         return CryptoKeyExporter.exportNSSKeyLog(application, session.sessionId)
+    }
+    
+    /**
+     * Register a WebView for observation
+     * 
+     * Call this when creating a WebView to observe:
+     * - Page loads
+     * - DOM element clicks
+     * - Form inputs
+     * - Form submissions
+     * - Element hierarchy
+     * 
+     * Example:
+     * ```kotlin
+     * val webView = WebView(context)
+     * ObserveSDK.observeWebView(webView, "PaymentScreen")
+     * ```
+     */
+    fun observeWebView(webView: WebView, screenName: String) {
+        if (!isInitialized) {
+            Log.w(TAG, "Cannot observe WebView - SDK not initialized")
+            return
+        }
+        
+        if (!isStarted) {
+            Log.w(TAG, "Cannot observe WebView - SDK not started")
+            return
+        }
+        
+        webViewObserver.observeWebView(webView, screenName)
+    }
+    
+    /**
+     * Stop observing a WebView
+     */
+    fun stopObservingWebView(webView: WebView) {
+        if (!isInitialized || !isStarted) return
+        webViewObserver.stopObservingWebView(webView)
     }
     
     /**

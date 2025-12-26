@@ -16,6 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import com.observe.sdk.ObserveSDK
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -191,6 +192,23 @@ private fun PaymentWebViewStep(
     onPaymentCancel: () -> Unit
 ) {
     var isLoading by remember { mutableStateOf(true) }
+    var webView by remember { mutableStateOf<WebView?>(null) }
+
+    // Register WebView with ObserveSDK when created
+    LaunchedEffect(webView) {
+        webView?.let {
+            ObserveSDK.observeWebView(it, "TopUpPaymentScreen")
+        }
+    }
+    
+    // Cleanup when composable leaves composition or webView changes
+    DisposableEffect(webView) {
+        onDispose {
+            webView?.let {
+                ObserveSDK.stopObservingWebView(it)
+            }
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -201,6 +219,8 @@ private fun PaymentWebViewStep(
         AndroidView(
             factory = { context ->
                 WebView(context).apply {
+                    webView = this  // Store reference
+                    
                     webViewClient = object : WebViewClient() {
                         override fun onPageFinished(view: WebView?, url: String?) {
                             isLoading = false

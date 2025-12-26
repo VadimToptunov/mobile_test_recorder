@@ -196,6 +196,10 @@ struct WebView: UIViewRepresentable {
     func makeUIView(context: Context) -> WKWebView {
         let webView = WKWebView()
         webView.navigationDelegate = context.coordinator
+        
+        // Register WebView for observation
+        context.coordinator.registerObservation(webView: webView)
+        
         return webView
     }
     
@@ -210,9 +214,27 @@ struct WebView: UIViewRepresentable {
     
     class Coordinator: NSObject, WKNavigationDelegate {
         let onSuccess: () -> Void
+        private var webViewObserved = false
+        private weak var observedWebView: WKWebView?
         
         init(onSuccess: @escaping () -> Void) {
             self.onSuccess = onSuccess
+        }
+        
+        func registerObservation(webView: WKWebView) {
+            guard !webViewObserved else { return }
+            
+            // Register WebView with ObserveSDK
+            ObserveSDK.shared.observeWebView(webView, screenName: "TopUpPaymentScreen")
+            observedWebView = webView
+            webViewObserved = true
+        }
+        
+        deinit {
+            // Unregister WebView from ObserveSDK to prevent resource leak
+            if let webView = observedWebView {
+                ObserveSDK.shared.stopObservingWebView(webView)
+            }
         }
         
         func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {

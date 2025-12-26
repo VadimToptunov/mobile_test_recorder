@@ -8,6 +8,7 @@
 import Foundation
 import UIKit
 import SwiftUI
+import WebKit
 
 /// Main SDK class for observing app behavior
 public class ObserveSDK {
@@ -34,6 +35,7 @@ public class ObserveSDK {
     private var navigationObserver: NavigationObserver?
     private var networkObserver: NetworkObserver?
     private var hierarchyCollector: HierarchyCollector?
+    private var webViewObserver: WebViewObserver?
     
     // MARK: - Public API
     
@@ -76,6 +78,7 @@ public class ObserveSDK {
         navigationObserver = NavigationObserver(eventBus: eventBus!)
         networkObserver = NetworkObserver(eventBus: eventBus!)
         hierarchyCollector = HierarchyCollector(eventBus: eventBus!)
+        webViewObserver = WebViewObserver(eventBus: eventBus!)
         
         // Subscribe to events
         subscribeToEvents()
@@ -115,6 +118,7 @@ public class ObserveSDK {
         navigationObserver?.start()
         networkObserver?.start()
         hierarchyCollector?.start()
+        webViewObserver?.start()
         
         print("[ObserveSDK] Started")
     }
@@ -133,6 +137,7 @@ public class ObserveSDK {
         navigationObserver?.stop()
         networkObserver?.stop()
         hierarchyCollector?.stop()
+        webViewObserver?.stop()
         
         // Stop exporter (will flush remaining events)
         eventExporter?.stop()
@@ -151,6 +156,7 @@ public class ObserveSDK {
         navigationObserver = nil
         networkObserver = nil
         hierarchyCollector = nil
+        webViewObserver = nil
         eventExporter = nil
         eventBus = nil
         
@@ -191,6 +197,34 @@ public class ObserveSDK {
     
     internal func getUIObserver() -> UIObserver? {
         return uiObserver
+    }
+    
+    // MARK: - WebView Observation
+    
+    /// Register a WKWebView for observation
+    /// Call this when a WKWebView is displayed on screen
+    /// - Parameters:
+    ///   - webView: The WKWebView instance to observe
+    ///   - screenName: Name of the screen containing the WebView
+    public func observeWebView(_ webView: WKWebView, screenName: String) {
+        guard isInitializedFlag else {
+            print("[ObserveSDK] Cannot observe WebView - not initialized")
+            return
+        }
+        
+        guard config?.enabled == true else {
+            print("[ObserveSDK] Cannot observe WebView - disabled by config")
+            return
+        }
+        
+        webViewObserver?.observe(webView: webView, screenName: screenName)
+    }
+    
+    /// Stop observing a WKWebView
+    /// Call this when the WebView is removed from screen
+    /// - Parameter webView: The WKWebView instance to stop observing
+    public func stopObservingWebView(_ webView: WKWebView) {
+        webViewObserver?.stopObserving(webView: webView)
     }
     
     // MARK: - Private Methods
