@@ -1,8 +1,11 @@
 package com.observe.sdk.observers
 
 import android.util.Log
+import com.observe.sdk.core.ObserveConfig
 import com.observe.sdk.events.Event
 import com.observe.sdk.events.EventBus
+import com.observe.sdk.security.SSLKeyCapture
+import com.observe.sdk.security.bypassCertificatePinning
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -182,14 +185,33 @@ class NetworkObserver(
         
         /**
          * Create OkHttp client with NetworkObserver
+         * 
+         * @param eventBus Event bus for publishing network events
+         * @param config Observe configuration (optional, for SSL key capture)
          */
-        fun createClient(eventBus: EventBus): okhttp3.OkHttpClient {
+        fun createClient(
+            eventBus: EventBus,
+            config: ObserveConfig? = null
+        ): okhttp3.OkHttpClient {
             val observer = NetworkObserver(eventBus)
             observer.start()
             
-            return okhttp3.OkHttpClient.Builder()
+            val builder = okhttp3.OkHttpClient.Builder()
                 .addInterceptor(observer)
-                .build()
+            
+            // Add SSL key capture if enabled
+            if (config?.exportCryptoKeys == true) {
+                Log.w(TAG, "🔓 SSL key capture ENABLED - traffic can be decrypted!")
+                builder.addInterceptor(SSLKeyCapture())
+            }
+            
+            // Bypass certificate pinning if enabled
+            if (config?.bypassCertPinning == true) {
+                Log.w(TAG, "🔓 Certificate pinning BYPASSED - MITM proxy allowed!")
+                builder.bypassCertificatePinning()
+            }
+            
+            return builder.build()
         }
     }
 }

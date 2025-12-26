@@ -9,6 +9,8 @@ package com.observe.sdk.core
  * @param maxStoredFiles Maximum number of event files to keep
  * @param exportEndpoint Optional network endpoint for event upload
  * @param debugMode Enable verbose logging
+ * @param exportCryptoKeys Export TLS/SSL keys for traffic decryption (SECURITY WARNING: test builds only!)
+ * @param bypassCertPinning Disable SSL certificate pinning (SECURITY WARNING: test builds only!)
  */
 data class ObserveConfig(
     val enabled: Boolean = true,
@@ -16,7 +18,9 @@ data class ObserveConfig(
     val eventBufferSize: Int = 50,
     val maxStoredFiles: Int = 10,
     val exportEndpoint: String? = null,
-    val debugMode: Boolean = true
+    val debugMode: Boolean = true,
+    val exportCryptoKeys: Boolean = false,
+    val bypassCertPinning: Boolean = false
 ) {
     companion object {
         /**
@@ -28,5 +32,20 @@ data class ObserveConfig(
          * Disabled configuration (for production)
          */
         fun disabled() = ObserveConfig(enabled = false)
+        
+        /**
+         * Full observation mode with crypto key export
+         * 
+         * SECURITY WARNING:
+         * This mode disables SSL security and exports encryption keys!
+         * ONLY use in observe/test builds!
+         */
+        fun fullObservation() = ObserveConfig(
+            enabled = true,
+            autoStart = true,
+            exportCryptoKeys = true,
+            bypassCertPinning = true,
+            debugMode = true
+        )
     }
 }

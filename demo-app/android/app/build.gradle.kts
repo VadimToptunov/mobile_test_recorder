@@ -35,6 +35,11 @@ android {
             buildConfigField("Boolean", "OBSERVE_ENABLED", "true")
             buildConfigField("Boolean", "TEST_MODE", "false")
             
+            // Security settings - RELAXED for testing
+            buildConfigField("Boolean", "CRYPTO_EXPORT_ENABLED", "true")
+            buildConfigField("Boolean", "CERT_PINNING_ENABLED", "false")
+            buildConfigField("Boolean", "ROOT_DETECTION_ENABLED", "false")
+            
             // Custom app name for observe variant
             resValue("string", "app_name", "FinDemo 🎯")
             
@@ -50,6 +55,11 @@ android {
             buildConfigField("Boolean", "OBSERVE_ENABLED", "false")
             buildConfigField("Boolean", "TEST_MODE", "true")
             
+            // Security settings - RELAXED for automated testing
+            buildConfigField("Boolean", "CRYPTO_EXPORT_ENABLED", "false")
+            buildConfigField("Boolean", "CERT_PINNING_ENABLED", "false")
+            buildConfigField("Boolean", "ROOT_DETECTION_ENABLED", "false")
+            
             resValue("string", "app_name", "FinDemo 🧪")
             
             // Disable minification for tests
@@ -58,12 +68,17 @@ android {
             manifestPlaceholders["appIcon"] = "@mipmap/ic_launcher_test"
         }
         
-        create("prod") {
+        create("production") {
             dimension = "environment"
             
-            // Production build (future)
+            // Production build - MAXIMUM SECURITY
             buildConfigField("Boolean", "OBSERVE_ENABLED", "false")
             buildConfigField("Boolean", "TEST_MODE", "false")
+            
+            // Security settings - STRICT for production
+            buildConfigField("Boolean", "CRYPTO_EXPORT_ENABLED", "false")
+            buildConfigField("Boolean", "CERT_PINNING_ENABLED", "true")
+            buildConfigField("Boolean", "ROOT_DETECTION_ENABLED", "true")
             
             resValue("string", "app_name", "FinDemo")
             
@@ -160,6 +175,21 @@ dependencies {
     
     // Gson
     implementation("com.google.code.gson:gson:2.10.1")
+    
+    // ============================================================
+    // SECURITY DEPENDENCIES
+    // ============================================================
+    
+    // Encrypted SharedPreferences (for secure token storage)
+    implementation("androidx.security:security-crypto:1.1.0-alpha06")
+    
+    // Biometric Authentication
+    implementation("androidx.biometric:biometric:1.2.0-alpha05")
+    
+    // Security providers
+    implementation("com.google.crypto.tink:tink-android:1.11.0")
+    
+    // ============================================================
     
     // Regula Document Reader SDK for KYC
     implementation("com.regula.documentreader:api:7.6.+@aar") {

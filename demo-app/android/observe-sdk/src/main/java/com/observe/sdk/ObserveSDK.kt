@@ -10,6 +10,8 @@ import com.observe.sdk.export.EventExporter
 import com.observe.sdk.observers.NavigationObserver
 import com.observe.sdk.observers.NetworkObserver
 import com.observe.sdk.observers.UIObserver
+import com.observe.sdk.security.CryptoKeyExporter
+import java.io.File
 import java.util.UUID
 
 /**
@@ -78,6 +80,12 @@ object ObserveSDK {
                 maxStoredFiles = cfg.maxStoredFiles
             )
         )
+        
+        // Initialize crypto key exporter if enabled
+        if (cfg.exportCryptoKeys) {
+            Log.w(TAG, "🔐 Crypto key export ENABLED - this build can decrypt traffic!")
+            CryptoKeyExporter.initialize(cfg)
+        }
         
         // Initialize observers
         uiObserver = UIObserver(app, eventBus)
@@ -253,6 +261,61 @@ object ObserveSDK {
         } else {
             0
         }
+    }
+    
+    /**
+     * Export crypto keys for traffic decryption
+     * 
+     * SECURITY WARNING:
+     * This exports TLS/SSL session keys and device encryption keys!
+     * Only call this in test/observe builds!
+     * 
+     * Returns: File with exported keys (JSON format)
+     */
+    fun exportCryptoKeys(): File? {
+        if (!isInitialized) {
+            Log.w(TAG, "Cannot export crypto keys - SDK not initialized")
+            return null
+        }
+        
+        if (!config.exportCryptoKeys) {
+            Log.w(TAG, "Crypto key export is disabled in config")
+            return null
+        }
+        
+        Log.i(TAG, "Exporting crypto keys...")
+        return CryptoKeyExporter.exportKeys(application, session.sessionId)
+    }
+    
+    /**
+     * Export TLS keys in NSS Key Log format (for Wireshark)
+     * 
+     * Returns: File with TLS keys in Wireshark-compatible format
+     */
+    fun exportTLSKeys(): File? {
+        if (!isInitialized) {
+            Log.w(TAG, "Cannot export TLS keys - SDK not initialized")
+            return null
+        }
+        
+        if (!config.exportCryptoKeys) {
+            Log.w(TAG, "Crypto key export is disabled in config")
+            return null
+        }
+        
+        Log.i(TAG, "Exporting TLS keys (NSS format)...")
+        return CryptoKeyExporter.exportNSSKeyLog(application, session.sessionId)
+    }
+    
+    /**
+     * Get crypto key export stats
+     */
+    fun getCryptoKeyStats(): Map<String, Any>? {
+        if (!isInitialized || !config.exportCryptoKeys) {
+            return null
+        }
+        
+        return CryptoKeyExporter.getStats()
     }
     
     private const val TAG = "ObserveSDK"

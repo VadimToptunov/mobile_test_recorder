@@ -108,15 +108,20 @@ def analyze(platform: str, source: str, output: str):
         import json
         
         if platform == 'android':
-            from framework.analyzers import AndroidAnalyzer
+            from framework.analyzers.android_analyzer import AndroidAnalyzer
             
             click.echo(f"\n🤖 Running Android static analyzer...")
             analyzer = AndroidAnalyzer()
             result = analyzer.analyze(source)
             
         elif platform == 'ios':
-            click.echo(f"\n❌ iOS static analysis not yet implemented")
-            return
+            from framework.analyzers.ios_analyzer import IOSAnalyzer
+            from pathlib import Path
+            
+            click.echo(f"\n🍎 Running iOS static analyzer...")
+            analyzer = IOSAnalyzer(project_path=Path(source))
+            result = analyzer.analyze()
+            
         else:
             click.echo(f"\n❌ Unknown platform: {platform}")
             return
@@ -983,6 +988,137 @@ def build(session_id: str, app_version: str, platform: str, output: str, correla
         raise click.Abort()
 
 
+@cli.group()
+def crypto():
+    """
+    Crypto key management for traffic decryption
+    
+    Commands for working with TLS/SSL keys exported from observe builds.
+    
+    ⚠️  SECURITY WARNING: These operations handle encryption keys!
+    """
+    pass
+
+
+@crypto.command()
+@click.option('--session-id', required=True, help='Session ID to pull keys for')
+@click.option('--package', default='com.findemo', help='App package name')
+@click.option('--output', type=click.Path(), default='.', help='Output directory')
+def pull(session_id: str, package: str, output: str):
+    """
+    Pull crypto keys from device via ADB
+    
+    Example:
+        observe crypto pull --session-id session_20250119_142345
+    """
+    click.echo(f"🔐 Pulling crypto keys from device...")
+    click.echo(f"   Session: {session_id}")
+    click.echo(f"   Package: {package}")
+    
+    try:
+        from framework.security.traffic_decryptor import pull_keys_from_device
+        
+        keys_file = pull_keys_from_device(session_id, package)
+        
+        if keys_file:
+            click.echo(f"\n✅ Keys pulled successfully!")
+            click.echo(f"   File: {keys_file}")
+            click.echo(f"\n📊 Next steps:")
+            click.echo(f"   1. Inspect keys: observe crypto show --keys-file {keys_file}")
+            click.echo(f"   2. Export for Wireshark: observe crypto export --keys-file {keys_file}")
+        else:
+            click.echo(f"\n❌ Failed to pull keys from device", err=True)
+            raise click.Abort()
+            
+    except Exception as e:
+        click.echo(f"\n❌ Error: {e}", err=True)
+        import traceback
+        traceback.print_exc()
+        raise click.Abort()
+
+
+@crypto.command()
+@click.option('--keys-file', required=True, type=click.Path(exists=True),
+              help='Path to crypto keys JSON file')
+def show(keys_file: str):
+    """
+    Show information about exported crypto keys
+    
+    Example:
+        observe crypto show --keys-file crypto_keys_session123.json
+    """
+    click.echo(f"🔐 Loading crypto keys...")
+    
+    try:
+        from framework.security.traffic_decryptor import TrafficDecryptor
+        
+        decryptor = TrafficDecryptor()
+        if decryptor.load_keys_from_file(Path(keys_file)):
+            stats = decryptor.get_stats()
+            sessions = decryptor.list_sessions()
+            
+            click.echo(f"\n✅ Crypto Keys Loaded!")
+            click.echo(f"\n📊 Statistics:")
+            click.echo(f"   TLS Keys: {stats['tls_keys_loaded']}")
+            click.echo(f"   Device Keys: {'Yes' if stats['device_keys_loaded'] else 'No'}")
+            click.echo(f"   Source: {stats['keys_file']}")
+            
+            if sessions:
+                click.echo(f"\n🔑 TLS Sessions:")
+                for session in sessions[:10]:  # Show first 10
+                    click.echo(f"   • {session}")
+                
+                if len(sessions) > 10:
+                    click.echo(f"   ... and {len(sessions) - 10} more")
+        else:
+            click.echo(f"\n❌ Failed to load keys", err=True)
+            raise click.Abort()
+            
+    except Exception as e:
+        click.echo(f"\n❌ Error: {e}", err=True)
+        raise click.Abort()
+
+
+@crypto.command()
+@click.option('--keys-file', required=True, type=click.Path(exists=True),
+              help='Path to crypto keys JSON file')
+@click.option('--output', type=click.Path(), default='tls_keys.txt',
+              help='Output file for Wireshark keys')
+def export(keys_file: str, output: str):
+    """
+    Export TLS keys to Wireshark-compatible format
+    
+    Example:
+        observe crypto export --keys-file crypto_keys.json --output tls_keys.txt
+    """
+    click.echo(f"🔐 Exporting TLS keys for Wireshark...")
+    
+    try:
+        from framework.security.traffic_decryptor import TrafficDecryptor
+        
+        decryptor = TrafficDecryptor()
+        if not decryptor.load_keys_from_file(Path(keys_file)):
+            click.echo(f"\n❌ Failed to load keys", err=True)
+            raise click.Abort()
+        
+        output_path = Path(output)
+        if decryptor.export_wireshark_keys(output_path):
+            click.echo(f"\n✅ TLS keys exported!")
+            click.echo(f"   File: {output_path}")
+            click.echo(f"\n📖 How to use in Wireshark:")
+            click.echo(f"   1. Open Wireshark")
+            click.echo(f"   2. Edit → Preferences → Protocols → TLS")
+            click.echo(f"   3. Set '(Pre)-Master-Secret log filename' to: {output_path.absolute()}")
+            click.echo(f"   4. Restart capture - HTTPS traffic will be decrypted!")
+        else:
+            click.echo(f"\n❌ Failed to export keys", err=True)
+            raise click.Abort()
+            
+    except Exception as e:
+        click.echo(f"\n❌ Error: {e}", err=True)
+        raise click.Abort()
+
+
 @cli.command()
 def info():
     """Show framework information"""
@@ -1007,12 +1143,14 @@ def info():
    record     - Record observe sessions
    generate   - Generate test code
    model      - Model operations
+   crypto     - Crypto key management (TLS/SSL decryption)
    info       - This information
 
 💡 Examples:
    observe init --platform android --output ./my-project
    observe record start --device emulator-5554
    observe generate pages --model app_model.yaml
+   observe crypto pull --session-id session_123
 """)
 
 

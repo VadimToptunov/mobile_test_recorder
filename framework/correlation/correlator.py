@@ -377,4 +377,3 @@ class EventCorrelator:
         
         # Fallback
         return {}
-

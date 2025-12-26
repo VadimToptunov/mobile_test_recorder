@@ -25,6 +25,7 @@ fun LoginScreen(
     var password by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var showForgotPasswordDialog by remember { mutableStateOf(false) }
     
     Column(
         modifier = modifier
@@ -49,7 +50,7 @@ fun LoginScreen(
             modifier = Modifier.padding(bottom = 32.dp)
         )
         
-        // Email field
+        // Email field - NO TEST TAG (test XPath generation)
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
@@ -61,14 +62,13 @@ fun LoginScreen(
                 keyboardType = KeyboardType.Email
             ),
             modifier = Modifier
-                .fillMaxWidth()
-                .testTag("email_input"),
+                .fillMaxWidth(),
             singleLine = true
         )
         
         Spacer(modifier = Modifier.height(16.dp))
         
-        // Password field
+        // Password field - NO TEST TAG (test XPath generation)
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
@@ -81,8 +81,7 @@ fun LoginScreen(
                 keyboardType = KeyboardType.Password
             ),
             modifier = Modifier
-                .fillMaxWidth()
-                .testTag("password_input"),
+                .fillMaxWidth(),
             singleLine = true
         )
         
@@ -98,12 +97,11 @@ fun LoginScreen(
         
         Spacer(modifier = Modifier.height(8.dp))
         
-        // Forgot password
+        // Forgot password - NO TEST TAG (test XPath with text)
         TextButton(
-            onClick = { /* TODO: Implement forgot password */ },
+            onClick = { showForgotPasswordDialog = true },
             modifier = Modifier
                 .align(Alignment.End)
-                .testTag("forgot_password_button")
         ) {
             Text("Forgot Password?")
         }
@@ -149,13 +147,27 @@ fun LoginScreen(
                 text = "Don't have an account? ",
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
             )
+            // NO TEST TAG - test XPath by text and position
             TextButton(
-                onClick = onNavigateToRegister,
-                modifier = Modifier.testTag("register_link")
+                onClick = onNavigateToRegister
             ) {
                 Text("Register")
             }
         }
+    }
+    
+    // Forgot password dialog
+    if (showForgotPasswordDialog) {
+        AlertDialog(
+            onDismissRequest = { showForgotPasswordDialog = false },
+            title = { Text("Forgot Password") },
+            text = { Text("Password reset functionality coming soon!") },
+            confirmButton = {
+                TextButton(onClick = { showForgotPasswordDialog = false }) {
+                    Text("OK")
+                }
+            }
+        )
     }
 }
 
