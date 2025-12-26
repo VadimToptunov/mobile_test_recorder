@@ -1995,5 +1995,347 @@ def framework_recommendations(project_dir: str):
         raise click.Abort()
 
 
+
+
+# ============================================================================
+# PHASE 5: PROJECT INTEGRATION COMMANDS
+# ============================================================================
+
+@cli.group()
+def framework():
+    """
+    Analyze and integrate with existing test projects
+    
+    Commands for discovering existing test automation projects,
+    learning their patterns, and generating compatible tests.
+    """
+    pass
+
+
+@framework.command('analyze')
+@click.option('--project-dir', type=click.Path(exists=True), default='.',
+              help='Path to existing test project')
+@click.option('--output', type=click.Path(), default='output/project_analysis.json',
+              help='Output file for analysis results')
+def framework_analyze(project_dir: str, output: str):
+    """
+    Analyze existing test automation project
+    
+    Discovers project structure, conventions, and coverage.
+    
+    Example:
+        observe framework analyze --project-dir ./tests
+        observe framework analyze --project-dir /path/to/project --output analysis.json
+    """
+    from framework.integration.project_detector import ProjectDetector
+    
+    click.echo(f"\n🔍 Analyzing existing test project...")
+    click.echo(f"  Project directory: {project_dir}")
+    
+    try:
+        detector = ProjectDetector(Path(project_dir))
+        structure = detector.scan()
+        
+        # Display summary
+        click.echo(f"\n📊 Project Analysis Summary")
+        click.echo(f"  {'='*50}")
+        click.echo(f"  Test Framework: {click.style(structure.test_framework, fg='cyan')}")
+        click.echo(f"  Total Tests: {click.style(str(structure.total_tests), fg='green')}")
+        click.echo(f"  Page Objects: {click.style(str(structure.total_page_objects), fg='green')}")
+        click.echo(f"  Screens Covered: {click.style(str(len(structure.screens_covered)), fg='green')}")
+        
+        if structure.page_objects_dir:
+            click.echo(f"\n  📁 Structure:")
+            click.echo(f"    Page Objects: {structure.page_objects_dir.relative_to(structure.root_dir)}")
+            click.echo(f"    Tests: {structure.tests_dir.relative_to(structure.root_dir) if structure.tests_dir else 'N/A'}")
+            click.echo(f"    Fixtures: {structure.fixtures_dir.relative_to(structure.root_dir) if structure.fixtures_dir else 'N/A'}")
+        
+        if structure.screens_covered:
+            click.echo(f"\n  📱 Covered Screens:")
+            for screen in sorted(structure.screens_covered)[:10]:  # Show first 10
+                click.echo(f"    - {screen}")
+            if len(structure.screens_covered) > 10:
+                click.echo(f"    ... and {len(structure.screens_covered) - 10} more")
+        
+        # Save full analysis
+        detector.save_analysis(Path(output))
+        
+        click.echo(f"\n✅ Next Steps:")
+        click.echo(f"  1. Review analysis: {output}")
+        click.echo(f"  2. Generate matching tests: observe generate tests --match-style")
+        click.echo(f"  3. Validate integration: observe test run --dry-run")
+        
+    except Exception as e:
+        click.echo(f"\n❌ Error analyzing project: {e}", err=True)
+        import traceback
+        traceback.print_exc()
+        raise click.Abort()
+
+
+@framework.command('recommendations')
+@click.option('--project-dir', type=click.Path(exists=True), default='.',
+              help='Path to existing test project')
+def framework_recommendations(project_dir: str):
+    """
+    Get recommendations for test generation and integration
+    
+    Analyzes project and suggests best practices for integration.
+    
+    Example:
+        observe framework recommendations
+    """
+    from framework.integration.project_detector import ProjectDetector
+    
+    click.echo(f"\n🔍 Analyzing project for recommendations...")
+    
+    try:
+        detector = ProjectDetector(Path(project_dir))
+        structure = detector.scan()
+        
+        click.echo(f"\n💡 Integration Recommendations")
+        click.echo(f"  {'='*50}")
+        
+        # Check for Page Objects
+        if not structure.page_objects_dir:
+            click.echo(f"\n  ⚠️  No Page Objects directory found")
+            click.echo(f"    ✨ We recommend creating: tests/page_objects/")
+            click.echo(f"    📈 This will improve test maintainability")
+        else:
+            click.echo(f"\n  ✅ Page Objects structure: Good")
+            click.echo(f"    📁 Location: {structure.page_objects_dir.relative_to(structure.root_dir)}")
+        
+        # Check for fixtures
+        if not structure.fixture_files:
+            click.echo(f"\n  ⚠️  No fixtures found")
+            click.echo(f"    ✨ Consider adding conftest.py for shared fixtures")
+        else:
+            click.echo(f"\n  ✅ Fixtures: {len(structure.fixture_files)} found")
+        
+        # Check test coverage
+        if structure.total_tests < 10:
+            click.echo(f"\n  📊 Low test coverage ({structure.total_tests} tests)")
+            click.echo(f"    ✨ We can generate comprehensive tests based on observation")
+        elif structure.total_tests < 50:
+            click.echo(f"\n  📊 Moderate test coverage ({structure.total_tests} tests)")
+            click.echo(f"    ✨ We can fill gaps and enhance existing tests")
+        else:
+            click.echo(f"\n  ✅ Good test coverage ({structure.total_tests} tests)")
+            click.echo(f"    ✨ We can add tests for new features and edge cases")
+        
+        # Recommendations based on framework
+        if structure.test_framework == "pytest":
+            click.echo(f"\n  ✅ pytest detected: Excellent choice!")
+            click.echo(f"    🎯 We'll generate pytest-compatible tests with fixtures")
+        elif structure.test_framework == "unittest":
+            click.echo(f"\n  ℹ️  unittest detected")
+            click.echo(f"    💡 Consider migrating to pytest for better fixtures and plugins")
+        
+        # Integration strategy
+        click.echo(f"\n  🎯 Suggested Integration Strategy:")
+        click.echo(f"    1. Use existing Page Object base class: {structure.base_page_class or 'BasePage'}")
+        click.echo(f"    2. Follow naming convention: {structure.page_object_suffix}")
+        click.echo(f"    3. Reuse existing fixtures from conftest.py")
+        click.echo(f"    4. Generate tests matching detected style")
+        click.echo(f"    5. Run side-by-side with existing tests")
+        
+    except Exception as e:
+        click.echo(f"\n❌ Error: {e}", err=True)
+        raise click.Abort()
+
+
+# ============================================================================
+# DEVICE MANAGEMENT COMMANDS
+# ============================================================================
+
+@cli.group()
+def devices():
+    """
+    Manage devices for test execution
+    
+    Commands for discovering, managing, and orchestrating devices across
+    emulators, real devices, and cloud platforms.
+    """
+    pass
+
+
+@devices.command('list')
+@click.option('--platform', type=click.Choice(['android', 'ios', 'all']), default='all',
+              help='Filter by platform')
+@click.option('--verbose', '-v', is_flag=True,
+              help='Show detailed device information')
+@click.option('--output', type=click.Path(), default=None,
+              help='Save device list to JSON file')
+def devices_list(platform: str, verbose: bool, output: Optional[str]):
+    """
+    List all available devices
+    
+    Discovers and displays devices from all sources:
+    - Connected Android devices (ADB)
+    - Android emulators
+    - Connected iOS devices
+    - iOS simulators
+    
+    Example:
+        observe devices list
+        observe devices list --platform android
+        observe devices list --verbose --output devices.json
+    """
+    from framework.devices.device_manager import DeviceManager
+    
+    click.echo("\n🔍 Discovering devices...")
+    
+    try:
+        manager = DeviceManager()
+        devices = manager.discover_all()
+        
+        # Filter by platform
+        if platform != 'all':
+            devices = [d for d in devices if d.platform == platform]
+        
+        if not devices:
+            click.echo("\n⚠️  No devices found.")
+            click.echo("\nTips:")
+            click.echo("  - Connect a device via USB")
+            click.echo("  - Start an emulator/simulator")
+            click.echo("  - Check that ADB/instruments are in PATH")
+            return
+        
+        # Display devices
+        manager.list_devices(verbose=verbose)
+        
+        # Save to file if requested
+        if output:
+            manager.save_devices(Path(output))
+        
+    except Exception as e:
+        click.echo(f"\n❌ Error: {e}", err=True)
+        import traceback
+        traceback.print_exc()
+        raise click.Abort()
+
+
+@devices.command('info')
+@click.argument('device_id')
+def devices_info(device_id: str):
+    """
+    Show detailed information about a specific device
+    
+    Example:
+        observe devices info emulator-5554
+        observe devices info udid-12345
+    """
+    from framework.devices.device_manager import DeviceManager
+    
+    try:
+        manager = DeviceManager()
+        manager.discover_all()
+        
+        device = manager.get_device(device_id)
+        
+        if not device:
+            click.echo(f"\n❌ Device not found: {device_id}")
+            return
+        
+        click.echo(f"\n📱 Device Information")
+        click.echo(f"  {'='*50}")
+        click.echo(f"  ID: {device.id}")
+        click.echo(f"  Name: {device.name}")
+        click.echo(f"  Type: {device.type.value}")
+        click.echo(f"  Status: {device.status.value}")
+        click.echo(f"  Platform: {device.platform} {device.platform_version}")
+        
+        if device.model:
+            click.echo(f"  Model: {device.model}")
+        if device.manufacturer:
+            click.echo(f"  Manufacturer: {device.manufacturer}")
+        if device.screen_size:
+            click.echo(f"  Screen: {device.screen_size}")
+        if device.ram:
+            click.echo(f"  RAM: {device.ram} MB")
+        
+        click.echo(f"\n  Provider: {device.provider}")
+        
+        if device.capabilities:
+            click.echo(f"\n  Capabilities:")
+            for key, value in device.capabilities.items():
+                click.echo(f"    {key}: {value}")
+        
+    except Exception as e:
+        click.echo(f"\n❌ Error: {e}", err=True)
+        raise click.Abort()
+
+
+@devices.command('pool')
+@click.argument('action', type=click.Choice(['create', 'list', 'add', 'remove']))
+@click.option('--name', help='Pool name')
+@click.option('--device', help='Device ID to add/remove')
+@click.option('--filter', help='Device filter (e.g., "platform=android,version>=12")')
+def devices_pool(action: str, name: Optional[str], device: Optional[str], filter: Optional[str]):
+    """
+    Manage device pools for parallel execution
+    
+    Examples:
+        observe devices pool create --name android-pool
+        observe devices pool add --name android-pool --device emulator-5554
+        observe devices pool list
+        observe devices pool remove --name android-pool --device emulator-5554
+    """
+    from framework.devices.device_manager import DeviceManager
+    from framework.devices.device_pool import PoolManager, PoolStrategy
+    
+    pool_manager = PoolManager()
+    
+    try:
+        if action == 'create':
+            if not name:
+                click.echo("❌ Error: --name is required for 'create'", err=True)
+                return
+            
+            pool = pool_manager.create_pool(name, strategy=PoolStrategy.ROUND_ROBIN)
+            click.echo(f"\n✅ Created pool: '{name}'")
+        
+        elif action == 'list':
+            pool_manager.list_pools()
+        
+        elif action == 'add':
+            if not name or not device:
+                click.echo("❌ Error: --name and --device are required for 'add'", err=True)
+                return
+            
+            pool = pool_manager.get_pool(name)
+            if not pool:
+                click.echo(f"❌ Error: Pool '{name}' not found", err=True)
+                return
+            
+            # Discover devices to get full device object
+            device_manager = DeviceManager()
+            device_manager.discover_all()
+            
+            device_obj = device_manager.get_device(device)
+            if not device_obj:
+                click.echo(f"❌ Error: Device '{device}' not found", err=True)
+                return
+            
+            pool.add_device(device_obj)
+            click.echo(f"\n✅ Added device '{device}' to pool '{name}'")
+        
+        elif action == 'remove':
+            if not name or not device:
+                click.echo("❌ Error: --name and --device are required for 'remove'", err=True)
+                return
+            
+            pool = pool_manager.get_pool(name)
+            if not pool:
+                click.echo(f"❌ Error: Pool '{name}' not found", err=True)
+                return
+            
+            pool.remove_device(device)
+            click.echo(f"\n✅ Removed device '{device}' from pool '{name}'")
+    
+    except Exception as e:
+        click.echo(f"\n❌ Error: {e}", err=True)
+        raise click.Abort()
+
+
 if __name__ == '__main__':
     cli()
