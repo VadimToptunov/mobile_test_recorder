@@ -353,7 +353,14 @@ object ObserveSDK {
      * @param webView The WebView to stop observing
      */
     fun stopObservingWebView(webView: WebView) {
-        // NO guard here - cleanup must always proceed to prevent resource leaks
+        // Guard against uninitialized SDK
+        // While cleanup should always proceed, we can't access lateinit property if not initialized
+        if (!isInitialized) {
+            Log.w(TAG, "Cannot stop observing WebView - SDK not initialized (webViewObserver not created)")
+            return
+        }
+        
+        // NO further guards - cleanup must always proceed to prevent resource leaks
         // Even if SDK is stopped, WebViews may still be deallocated and need cleanup
         webViewObserver.stopObservingWebView(webView)
     }
