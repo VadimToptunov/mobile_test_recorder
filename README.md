@@ -1,135 +1,135 @@
-# 🎯 Mobile Observe & Test Framework
+# Mobile Observe & Test Framework
 
 **Intelligent Mobile Testing Platform** - Observe, Analyze, Automate
 
 ---
 
-## 📖 Overview
+## Overview
 
 Mobile Observe & Test Framework is a platform for automatic generation of mobile application tests based on observing real user behavior.
 
 ### What does it do?
 
-1. **Observe** 👀 - Records QA engineer actions in a special build of the application
-2. **Analyze** 🧠 - Creates a semantic model of the application (screens, elements, transitions, APIs)
-3. **Correlate** 🔗 - Intelligently links UI events with API calls and navigation
-4. **Generate** ⚡ - Automatically generates Page Objects, API tests, and BDD scenarios
-5. **Execute** 🚀 - Runs tests on a clean build (without SDK)
+1. **Observe** - Records QA engineer actions in a special build of the application
+2. **Analyze** - Creates a semantic model of the application (screens, elements, transitions, APIs)
+3. **Correlate** - Intelligently links UI events with API calls and navigation
+4. **Generate** - Automatically generates Page Objects, API tests, and BDD scenarios
+5. **Execute** - Runs tests on a clean build (without SDK)
 
 ### Key Benefits
 
-- ✅ **Minimal Manual Work** - QA engineers just walk through scenarios, tests generate automatically
-- ✅ **Intelligent Correlation** - Automatically discovers relationships between UI, API, and navigation
-- ✅ **80-90% API Tests** - Fast and stable tests instead of slow UI
-- ✅ **Cross-platform Selectors** - Android and iOS from single model
-- ✅ **Smart Fallbacks** - Automatic handling of fragile locators
-- ✅ **Complex Cases Support** - Swipe, WebView, dynamic UI, hierarchy capture
+- **Minimal Manual Work** - QA engineers just walk through scenarios, tests generate automatically
+- **Intelligent Correlation** - Automatically discovers relationships between UI, API, and navigation
+- **80-90% API Tests** - Fast and stable tests instead of slow UI
+- **Cross-platform Selectors** - Android and iOS from single model
+- **Smart Fallbacks** - Automatic handling of fragile locators
+- **Complex Cases Support** - Swipe, WebView, dynamic UI, hierarchy capture
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 ```
-┌────────────────────────────────────────────┐
-│              CLI / Orchestrator             │
-└──────────────┬─────────────────────────────┘
-               │
-┌──────────────┴─────────────────────────────┐
-│        Knowledge Acquisition                │
-│  ┌──────────────┐  ┌────────────────────┐  │
-│  │ Static       │  │ Observe Runtime    │  │
-│  │ Analyzer     │  │ (Android / iOS)    │  │
-│  └──────────────┘  └────────────────────┘  │
-└──────────────┬─────────────────────────────┘
-               │
-┌──────────────┴─────────────────────────────┐
-│            App Model Core                   │
-│   (Screens, States, APIs, Flows)            │
-└──────────────┬─────────────────────────────┘
-               │
-┌──────────────┴─────────────────────────────┐
-│          Generators Layer                   │
-│  (Python, pytest-bdd, Appium, API)          │
-└──────────────┬─────────────────────────────┘
-               │
-┌──────────────┴─────────────────────────────┐
-│      Execution & Reporting Layer            │
-│       (Stage builds, CI, TestRail)          │
-└─────────────────────────────────────────────┘
+
+              CLI / Orchestrator             
+
+               
+
+        Knowledge Acquisition                
+      
+   Static          Observe Runtime      
+   Analyzer        (Android / iOS)      
+      
+
+               
+
+            App Model Core                   
+   (Screens, States, APIs, Flows)            
+
+               
+
+          Generators Layer                   
+  (Python, pytest-bdd, Appium, API)          
+
+               
+
+      Execution & Reporting Layer            
+       (Stage builds, CI, TestRail)          
+
 ```
 
 ---
 
-## 📦 Project Structure
+## Project Structure
 
 ```
 mobile_test_recorder/
-├── demo-app/                    # Demo Fintech application
-│   ├── android/                 # Android demo app (Jetpack Compose)
-│   │   ├── app/
-│   │   │   ├── src/
-│   │   │   │   ├── main/       # Main code
-│   │   │   │   ├── observe/    # Observe build variant
-│   │   │   │   └── test/       # Test build variant
-│   │   │   └── build.gradle.kts
-│   │   └── observe-sdk/         # Android Observe SDK
-│   │       └── src/
-│   ├── ios/                     # iOS demo app (SwiftUI) ✅
-│   └── mock-backend/            # Mock API server
-│       └── main.py
-│
-├── framework/                   # Core Framework
-│   ├── cli/                     # CLI interface
-│   │   ├── __init__.py
-│   │   ├── main.py
-│   │   └── commands/
-│   │       ├── analyze.py
-│   │       ├── observe.py
-│   │       ├── generate.py
-│   │       └── model.py
-│   │
-│   ├── analyzer/                # Static Analysis
-│   │   ├── android_analyzer.py
-│   │   └── ios_analyzer.py
-│   │
-│   ├── model/                   # App Model Core
-│   │   ├── app_model.py
-│   │   ├── schema.py
-│   │   ├── state_machine.py
-│   │   └── diff_engine.py
-│   │
-│   ├── correlation/             # Event Correlation
-│   │   ├── correlation_engine.py
-│   │   └── strategies.py
-│   │
-│   ├── storage/                 # Event Store
-│   │   ├── event_store.py
-│   │   └── sqlite_adapter.py
-│   │
-│   └── generators/              # Code Generators
-│       ├── page_object_gen.py
-│       ├── api_client_gen.py
-│       ├── selector_gen.py
-│       └── bdd_gen.py
-│
-├── tests/                       # Generated tests (example)
-│   ├── pages/
-│   ├── api/
-│   └── features/
-│
-├── docs/                        # Documentation
-│   ├── architecture.md
-│   ├── roadmap.md
-│   └── examples/
-│
-├── requirements.txt             # Python dependencies
-├── pyproject.toml              # Python project config
-└── README.md                   # This file
+ demo-app/                    # Demo Fintech application
+    android/                 # Android demo app (Jetpack Compose)
+       app/
+          src/
+             main/       # Main code
+             observe/    # Observe build variant
+             test/       # Test build variant
+          build.gradle.kts
+       observe-sdk/         # Android Observe SDK
+           src/
+    ios/                     # iOS demo app (SwiftUI) 
+    mock-backend/            # Mock API server
+        main.py
+
+ framework/                   # Core Framework
+    cli/                     # CLI interface
+       __init__.py
+       main.py
+       commands/
+           analyze.py
+           observe.py
+           generate.py
+           model.py
+   
+    analyzer/                # Static Analysis
+       android_analyzer.py
+       ios_analyzer.py
+   
+    model/                   # App Model Core
+       app_model.py
+       schema.py
+       state_machine.py
+       diff_engine.py
+   
+    correlation/             # Event Correlation
+       correlation_engine.py
+       strategies.py
+   
+    storage/                 # Event Store
+       event_store.py
+       sqlite_adapter.py
+   
+    generators/              # Code Generators
+        page_object_gen.py
+        api_client_gen.py
+        selector_gen.py
+        bdd_gen.py
+
+ tests/                       # Generated tests (example)
+    pages/
+    api/
+    features/
+
+ docs/                        # Documentation
+    architecture.md
+    roadmap.md
+    examples/
+
+ requirements.txt             # Python dependencies
+ pyproject.toml              # Python project config
+ README.md                   # This file
 ```
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
@@ -187,12 +187,12 @@ adb install app/build/outputs/apk/observe/debug/app-observe-debug.apk
 
 ### Demo App Features
 
-✅ **Onboarding** - Swipeable welcome screens  
-✅ **Login** - Email/password authentication  
-✅ **KYC** - Document scanning with Regula SDK  
-✅ **Home** - Balance and quick actions  
-🚧 **Top-up** - Card top-up with WebView (coming soon)  
-🚧 **Send Money** - Transfer to friends (coming soon)
+**Onboarding** - Swipeable welcome screens  
+**Login** - Email/password authentication  
+**KYC** - Document scanning with Regula SDK  
+**Home** - Balance and quick actions  
+ **Top-up** - Card top-up with WebView (coming soon)  
+ **Send Money** - Transfer to friends (coming soon)
 
 **Note:** KYC camera works best on real device. Use "Skip" button for emulator testing.
 
@@ -222,7 +222,7 @@ observe generate tests --output tests/
 
 ---
 
-## 📚 Documentation
+##  Documentation
 
 - [RFC Specification](mobile_observe_test_framework_RFC.md) - Full technical specification
 - [Demo App Overview](demo-app/README.md) - Demo app features and setup
@@ -232,14 +232,14 @@ observe generate tests --output tests/
 
 ---
 
-## 🎯 Roadmap
+## Roadmap
 
-### ✅ Phase 1: MVP (6-8 weeks) - 100% COMPLETE! 🎉
+### Phase 1: MVP (6-8 weeks) - 100% COMPLETE! 
 - [x] Project structure
 - [x] Python virtual environment setup (3.13)
 - [x] CLI framework (Click)
 - [x] App Model Core (Pydantic)
-- [x] Demo Android App ✅
+- [x] Demo Android App 
   - [x] Onboarding (swipeable screens)
   - [x] Login screen
   - [x] KYC screen with Regula SDK
@@ -254,28 +254,28 @@ observe generate tests --output tests/
   - [x] NetworkObserver (OkHttp interceptor)
   - [x] EventExporter (JSON export)
   - [x] EventBus & Session management
-- [x] Event Store (SQLite) ✅
+- [x] Event Store (SQLite) 
   - [x] SQLite schema & indexing
   - [x] Event import/export
   - [x] Query API with filters
   - [x] Session management
   - [x] Session tracking
   - [x] Query API
-- [x] Code Generators ✅
+- [x] Code Generators 
   - [x] Page Object Generator
   - [x] API Client Generator
   - [x] pytest-bdd Generator
   - [x] Jinja2 templates
   - [x] CLI integration
 
-### ✅ Phase 2: Production Ready (4-6 weeks) - 100% COMPLETE! 🎉
-- [x] **Event Correlation Engine** ✅
+### Phase 2: Production Ready (4-6 weeks) - 100% COMPLETE! 
+- [x] **Event Correlation Engine** 
   - [x] UI → API correlation (5 strategies)
   - [x] API → Navigation correlation
   - [x] Full flow generation
   - [x] Confidence scoring
   - [x] CLI command: `observe record correlate`
-- [x] **Automatic Model Builder** ✅
+- [x] **Automatic Model Builder** 
   - [x] Generate AppModel from events
   - [x] Screen inference
   - [x] Element extraction
@@ -283,23 +283,23 @@ observe generate tests --output tests/
   - [x] Flow generation
   - [x] State machine construction
   - [x] CLI command: `observe model build`
-- [x] **HierarchyCollector** ✅
+- [x] **HierarchyCollector** 
   - [x] Full UI hierarchy capture
   - [x] View + Compose support
   - [x] Element attribute extraction
   - [x] Parent-child relationships
-- [x] **Android Static Analyzer** ✅
+- [x] **Android Static Analyzer** 
   - [x] Kotlin source code parsing
   - [x] Compose UI detection
   - [x] Navigation routes extraction
   - [x] Retrofit API discovery
   - [x] Test tag extraction
   - [x] CLI command: `observe analyze android`
-- [x] **Documentation** ✅
+- [x] **Documentation** 
   - [x] Complete usage guide
   - [x] Workflow examples
   - [x] Best practices
-- [x] **Advanced Selector Strategies** ✅
+- [x] **Advanced Selector Strategies** 
   - [x] Selector stability scoring
   - [x] Intelligent selector builder
   - [x] Selector optimizer
@@ -307,8 +307,8 @@ observe generate tests --output tests/
   - [x] Duplicate detection
   - [x] CLI command: `observe model analyze-selectors`
 
-### ✅ Phase 3: iOS Support (6-8 weeks) - 100% COMPLETE! 🍎
-- [x] **iOS Demo App** ✅
+### Phase 3: iOS Support (6-8 weeks) - 100% COMPLETE! 
+- [x] **iOS Demo App** 
   - [x] SwiftUI implementation
   - [x] Onboarding (swipeable TabView)
   - [x] Login screen
@@ -317,7 +317,7 @@ observe generate tests --output tests/
   - [x] Top-up with WebView payment
   - [x] Send Money flow
   - [x] Full accessibility identifiers
-- [x] **iOS Observe SDK** ✅
+- [x] **iOS Observe SDK** 
   - [x] Swift SDK architecture
   - [x] UIObserver (UIKit + SwiftUI)
   - [x] NavigationObserver
@@ -325,27 +325,27 @@ observe generate tests --output tests/
   - [x] HierarchyCollector
   - [x] EventExporter (JSON)
   - [x] Combine-based EventBus
-- [x] **iOS Static Analyzer** ✅
+- [x] **iOS Static Analyzer** 
   - [x] Swift/SwiftUI parsing
   - [x] View hierarchy analysis
   - [x] Accessibility identifier extraction
   - [x] Navigation route discovery
   - [x] API endpoint detection
   - [x] CLI command: `observe analyze ios`
-- [x] **Cross-platform Generators** ✅
+- [x] **Cross-platform Generators** 
   - [x] Page Object generator (Android + iOS selectors)
   - [x] API client generator (platform-agnostic)
   - [x] BDD generator (unified Gherkin)
   - [x] Platform detection in generated code
 
-### ✅ Phase 4: AI/ML & Advanced Features (8-10 weeks) - 100% COMPLETE! 🤖✨
+### Phase 4: AI/ML & Advanced Features (8-10 weeks) - 100% COMPLETE! 
 - [x] **ML-Based Element Classification** 🧠
   - [x] Training dataset from recorded sessions
   - [x] Element type classifier (>85% accuracy target)
   - [x] Confidence-based fallback to rules
   - [x] Integration into ModelBuilder
   - [x] Training data generator (auto-labeling + synthetic)
-  - [x] **UNIVERSAL PRE-TRAINED MODEL** 🌍
+  - [x] **UNIVERSAL PRE-TRAINED MODEL** 
     - [x] Works for ANY Android/iOS app out-of-the-box
     - [x] No app-specific training required
     - [x] 2500+ synthetic training samples
@@ -355,42 +355,42 @@ observe generate tests --output tests/
       - [x] Flutter (Dart) - Cross-platform
       - [x] React Native (JS/TS) - Cross-platform
     - [x] One-command setup: `observe ml create-universal-model`
-- [x] **Visual Element Detection** 👁️
+- [x] **Visual Element Detection** 
   - [x] Screenshot capture & processing
   - [x] Image similarity matching (SSIM, MSE, Histogram)
   - [x] OCR integration (Tesseract)
   - [x] Visual regression testing
   - [x] Template matching (OpenCV)
-- [x] **Smart Selector Healing** 🔧
+- [x] **Smart Selector Healing** 
   - [x] Broken selector detection
   - [x] Alternative selector generation
   - [x] Self-healing test scripts
   - [x] 5 healing strategies with prioritization
   - [x] Healing statistics tracking
-- [x] **Flow Pattern Recognition** 🔍
+- [x] **Flow Pattern Recognition** 
   - [x] Common flow detection
   - [x] Critical path identification
   - [x] Test scenario suggestions
   - [x] Anomaly detection (dead ends, loops, unusual paths)
   - [x] Sequential pattern mining
   - [x] Automatic Gherkin generation
-- [x] **Analytics Dashboard** 📊
+- [x] **Analytics Dashboard** 
   - [x] Interactive HTML reports (Plotly)
   - [x] Test execution metrics
   - [x] Coverage analysis (screens, flows, APIs)
   - [x] Selector stability reports
   - [x] Visual charts & gauges
   - [x] Trend analysis
-- [x] **CLI Integration** 🖥️
+- [x] **CLI Integration** 
   - [x] `observe ml train` - Train ML classifier
   - [x] `observe ml analyze-patterns` - Flow analysis
   - [x] `observe ml heal-selectors` - Selector healing
   - [x] `observe ml visual-diff` - Visual regression
   - [x] `observe ml report` - Analytics dashboards
-  - [x] `observe ml create-universal-model` - 🌍 Create universal model
+  - [x] `observe ml create-universal-model` -  Create universal model
   - [x] `observe model build --use-ml` - ML-powered model building
 
-### 🌟 Future Phases
+###  Future Phases
 - [ ] CI/CD integration (Jenkins, GitHub Actions)
 - [ ] TestRail integration
 - [ ] Web support (Selenium/Playwright)
@@ -407,21 +407,21 @@ This is currently a private project. Contact the maintainer for contribution gui
 
 ---
 
-## 📄 License
+##  License
 
 TBD
 
 ---
 
-## 👤 Author
+##  Author
 
 **Vadim Toptunov**
 
-Built with ❤️ for QA Engineers who deserve better tools.
+Built with  for QA Engineers who deserve better tools.
 
 ---
 
-## 🙏 Acknowledgments
+##  Acknowledgments
 
 - Inspired by production testing challenges in fintech
 - Built with modern tech stack (Compose, SwiftUI, Python)

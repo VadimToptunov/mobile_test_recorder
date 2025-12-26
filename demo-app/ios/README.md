@@ -1,22 +1,22 @@
-# 📱 iOS Demo App
+#  iOS Demo App
 
 iOS version of FinDemo application built with SwiftUI.
 
 ---
 
-## 📋 Features
+##  Features
 
-### ✅ Implemented:
-- ✅ Onboarding (swipeable pages with TabView)
-- ✅ Authentication (Login screen)
-- ✅ KYC screen (mock document scanning)
-- ✅ Home screen with balance and quick actions
-- ✅ Top-up with amount input and WebView payment
-- ✅ Send money flow with recipient selection
-- ✅ Transaction history display
-- ✅ Accessibility identifiers on all interactive elements
+###  Implemented:
+-  Onboarding (swipeable pages with TabView)
+-  Authentication (Login screen)
+-  KYC screen (mock document scanning)
+-  Home screen with balance and quick actions
+-  Top-up with amount input and WebView payment
+-  Send money flow with recipient selection
+-  Transaction history display
+-  Accessibility identifiers on all interactive elements
 
-### 🚧 TODO (For Production):
+###  TODO (For Production):
 - [ ] Regula Document Reader SDK integration
 - [ ] Real API integration (currently mock)
 - [ ] Biometric authentication
@@ -26,27 +26,27 @@ iOS version of FinDemo application built with SwiftUI.
 
 ---
 
-## 🏗 Project Structure
+##  Project Structure
 
 ```
 FinDemo/
-├── FinDemo.xcodeproj/        # Xcode project file
-└── FinDemo/
-    ├── FinDemoApp.swift       # App entry point + AppState
-    ├── ContentView.swift      # Main navigation controller
-    ├── Views/
-    │   ├── OnboardingView.swift    # Swipeable onboarding screens
-    │   ├── LoginView.swift         # Login with username/password
-    │   ├── KYCView.swift           # Document verification (mock)
-    │   ├── HomeView.swift          # Main screen with balance
-    │   ├── TopUpView.swift         # Add funds with WebView
-    │   └── SendMoneyView.swift     # Transfer money flow
-    └── Assets.xcassets/       # Images and colors
+ FinDemo.xcodeproj/        # Xcode project file
+ FinDemo/
+     FinDemoApp.swift       # App entry point + AppState
+     ContentView.swift      # Main navigation controller
+     Views/
+        OnboardingView.swift    # Swipeable onboarding screens
+        LoginView.swift         # Login with username/password
+        KYCView.swift           # Document verification (mock)
+        HomeView.swift          # Main screen with balance
+        TopUpView.swift         # Add funds with WebView
+        SendMoneyView.swift     # Transfer money flow
+     Assets.xcassets/       # Images and colors
 ```
 
 ---
 
-## 🎨 Tech Stack
+##  Tech Stack
 
 - **SwiftUI** - Modern declarative UI framework
 - **Combine** - Reactive state management via `@Published`
@@ -56,7 +56,7 @@ FinDemo/
 
 ---
 
-## 🔑 Accessibility Identifiers
+##  Accessibility Identifiers
 
 All interactive elements have `accessibilityIdentifier` for test automation:
 
@@ -134,7 +134,7 @@ All interactive elements have `accessibilityIdentifier` for test automation:
 
 ---
 
-## 🚀 How to Build & Run
+##  How to Build & Run
 
 ### Requirements:
 - macOS with Xcode 15.0+
@@ -163,7 +163,7 @@ All interactive elements have `accessibilityIdentifier` for test automation:
 
 ---
 
-## 🔧 Configuration
+##  Configuration
 
 ### Build Settings:
 - **Deployment Target:** iOS 16.0
@@ -178,7 +178,7 @@ All interactive elements have `accessibilityIdentifier` for test automation:
 
 ---
 
-## 📝 App Flow
+##  App Flow
 
 ```
 Onboarding (3 screens)
@@ -188,14 +188,14 @@ Login Screen
 KYC Verification
     ↓
 Home Screen
-    ├─→ Top-Up (with WebView payment)
-    ├─→ Send Money (recipient + amount)
-    └─→ Scan QR (TODO)
+    → Top-Up (with WebView payment)
+    → Send Money (recipient + amount)
+    → Scan QR (TODO)
 ```
 
 ---
 
-## 🔐 Security Notes
+##  Security Notes
 
 - Passwords are NOT stored (demo only)
 - No real payment processing
@@ -206,7 +206,7 @@ Home Screen
 
 ---
 
-## 📊 Current Status
+##  Current Status
 
 **Status:** 🟢 Core Demo Complete (Phase 3 - Step 1)  
 **Next Steps:**
@@ -217,7 +217,7 @@ Home Screen
 
 ---
 
-## 💡 Implementation Notes
+##  Implementation Notes
 
 ### SwiftUI vs Jetpack Compose Parity:
 | Feature | Android (Compose) | iOS (SwiftUI) |
@@ -246,5 +246,5 @@ The app is ready for:
 
 ---
 
-**Phase 3 - iOS Demo App:** ✅ Complete!
+**Phase 3 - iOS Demo App:**  Complete!
 

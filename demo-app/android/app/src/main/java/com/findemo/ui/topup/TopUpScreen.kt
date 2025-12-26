@@ -219,8 +219,7 @@ private fun PaymentWebViewStep(
         AndroidView(
             factory = { context ->
                 WebView(context).apply {
-                    webView = this  // Store reference
-                    
+                    // Set WebViewClient FIRST before storing reference
                     webViewClient = object : WebViewClient() {
                         override fun onPageFinished(view: WebView?, url: String?) {
                             isLoading = false
@@ -231,6 +230,9 @@ private fun PaymentWebViewStep(
                             }
                         }
                     }
+                    
+                    // Store reference AFTER WebViewClient is set
+                    webView = this
                     
                     settings.javaScriptEnabled = true
                     settings.domStorageEnabled = true
@@ -390,11 +392,11 @@ private fun getMockPaymentHTML(amount: String): String {
         </head>
         <body>
             <div class="container">
-                <h2>🔒 Secure Payment</h2>
+                <h2> Secure Payment</h2>
                 <p>Confirm your top-up amount:</p>
                 <div class="amount">$$amount</div>
                 <div class="info">
-                    ℹ️ This is a mock payment gateway for demo purposes
+                    ℹ This is a mock payment gateway for demo purposes
                 </div>
                 <button class="button" onclick="confirmPayment()" id="confirmBtn">
                     Confirm Payment

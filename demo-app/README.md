@@ -1,10 +1,10 @@
-# 📱 Demo FinTech Application
+#  Demo FinTech Application
 
 Simplified fintech application to demonstrate Mobile Observe & Test Framework capabilities.
 
 ---
 
-## 🎯 Features
+##  Features
 
 ### Core Flows:
 1. **Onboarding** (Swipeable screens)
@@ -36,7 +36,7 @@ Simplified fintech application to demonstrate Mobile Observe & Test Framework ca
 
 ---
 
-## 🏗️ Architecture
+##  Architecture
 
 ### Tech Stack:
 - **Kotlin** - Primary language
@@ -57,7 +57,7 @@ prod     - Production build (future)
 
 ---
 
-## 🚀 Getting Started
+##  Getting Started
 
 ### Prerequisites:
 - Android Studio Hedgehog+ (2023.1.1+)
@@ -84,107 +84,107 @@ adb install app/build/outputs/apk/observe/debug/app-observe-debug.apk
 
 ---
 
-## 📦 Project Structure
+##  Project Structure
 
 ```
 android/
-├── app/
-│   ├── src/
-│   │   ├── main/              # Shared code
-│   │   │   ├── java/
-│   │   │   │   └── com/findemo/
-│   │   │   │       ├── ui/
-│   │   │   │       │   ├── onboarding/
-│   │   │   │       │   ├── auth/
-│   │   │   │       │   ├── home/
-│   │   │   │       │   ├── topup/
-│   │   │   │       │   └── send/
-│   │   │   │       ├── data/
-│   │   │   │       └── domain/
-│   │   │   └── res/
-│   │   │
-│   │   ├── observe/           # Observe build specific
-│   │   │   └── java/
-│   │   │       └── ObserveInitializer.kt
-│   │   │
-│   │   └── test/              # Test build specific
-│   │       └── java/
-│   │
-│   └── build.gradle.kts
-│
-└── observe-sdk/               # Observe SDK module
-    ├── src/
-    │   └── main/
-    │       └── java/
-    │           └── com/observe/sdk/
-    │               ├── core/
-    │               ├── observers/
-    │               └── export/
-    └── build.gradle.kts
+ app/
+    src/
+       main/              # Shared code
+          java/
+             com/findemo/
+                 ui/
+                    onboarding/
+                    auth/
+                    home/
+                    topup/
+                    send/
+                 data/
+                 domain/
+          res/
+      
+       observe/           # Observe build specific
+          java/
+              ObserveInitializer.kt
+      
+       test/              # Test build specific
+           java/
+   
+    build.gradle.kts
+
+ observe-sdk/               # Observe SDK module
+     src/
+        main/
+            java/
+                com/observe/sdk/
+                    core/
+                    observers/
+                    export/
+     build.gradle.kts
 ```
 
 ---
 
-## 🎨 Screens Overview
+##  Screens Overview
 
 ### 1. Onboarding (ViewPager)
 ```kotlin
 OnboardingScreen
-├── Page 1: Welcome
-├── Page 2: Features
-└── Page 3: Get Started
-    └── → LoginScreen
+ Page 1: Welcome
+ Page 2: Features
+ Page 3: Get Started
+     → LoginScreen
 ```
 
 ### 2. Authentication
 ```kotlin
 LoginScreen
-├── Username input
-├── Password input
-├── Login button → HomeScreen
-└── Register link → RegisterScreen
+ Username input
+ Password input
+ Login button → HomeScreen
+ Register link → RegisterScreen
 
 RegisterScreen
-├── Email input
-├── Password input
-├── Confirm password
-└── Register button → HomeScreen
+ Email input
+ Password input
+ Confirm password
+ Register button → HomeScreen
 ```
 
 ### 3. Home
 ```kotlin
 HomeScreen
-├── Balance Card
-├── Quick Actions
-│   ├── Top-up → TopUpScreen
-│   └── Send → SendMoneyScreen
-└── Transaction List
+ Balance Card
+ Quick Actions
+    Top-up → TopUpScreen
+    Send → SendMoneyScreen
+ Transaction List
 ```
 
 ### 4. Top-up (with WebView)
 ```kotlin
 TopUpScreen
-└── Amount input
-    └── → TopUpWebViewScreen
-        └── WebView (payment gateway)
-            ├── Card number
-            ├── Expiry
-            ├── CVV
-            └── Confirm → TopUpSuccessScreen
+ Amount input
+     → TopUpWebViewScreen
+         WebView (payment gateway)
+             Card number
+             Expiry
+             CVV
+             Confirm → TopUpSuccessScreen
 ```
 
 ### 5. Send Money
 ```kotlin
 SendMoneyScreen
-├── Recipient input
-└── Amount input
-    └── → SendConfirmationScreen
-        └── Confirm → SendSuccessScreen
+ Recipient input
+ Amount input
+     → SendConfirmationScreen
+         Confirm → SendSuccessScreen
 ```
 
 ---
 
-## 🔧 Configuration
+##  Configuration
 
 ### Build Variants
 
@@ -242,7 +242,7 @@ pytest tests/
 
 ---
 
-## 📝 Notes
+##  Notes
 
 - **Observe build** includes SDK and records events
 - **Test build** is clean, without SDK, for automated tests
@@ -251,7 +251,7 @@ pytest tests/
 
 ---
 
-## 🐛 Troubleshooting
+##  Troubleshooting
 
 ### Build fails:
 ```bash
@@ -266,7 +266,7 @@ pytest tests/
 
 ---
 
-## 📚 Resources
+##  Resources
 
 - [Jetpack Compose Docs](https://developer.android.com/jetpack/compose)
 - [Navigation Component](https://developer.android.com/guide/navigation)
@@ -275,6 +275,6 @@ pytest tests/
 
 ---
 
-**Status:** 🚧 In Development  
+**Status:**  In Development  
 **Last Updated:** 2025-12-19
 

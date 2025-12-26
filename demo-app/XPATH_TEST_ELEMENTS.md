@@ -2,7 +2,7 @@
 
 This document lists UI elements that **intentionally have NO test identifiers** to test the framework's XPath generation capabilities.
 
-## 🎯 Purpose
+##  Purpose
 
 Real-world applications often have elements without proper test IDs. This creates "challenging" scenarios where the framework must:
 - Build robust XPath selectors
@@ -12,7 +12,7 @@ Real-world applications often have elements without proper test IDs. This create
 
 ---
 
-## 📱 Android App - Elements Without `testTag`
+##  Android App - Elements Without `testTag`
 
 ### LoginScreen
 
@@ -56,7 +56,7 @@ Real-world applications often have elements without proper test IDs. This create
 
 ---
 
-## 🍎 iOS App - Elements Without `accessibilityIdentifier`
+##  iOS App - Elements Without `accessibilityIdentifier`
 
 ### LoginView
 
@@ -128,19 +128,19 @@ Real-world applications often have elements without proper test IDs. This create
 
 ---
 
-## 📊 Coverage Matrix
+##  Coverage Matrix
 
 | Screen | Total Elements | With ID | Without ID | XPath Required |
 |--------|---------------|---------|------------|----------------|
-| **Android LoginScreen** | 7 | 3 (43%) | 4 (57%) | ✅ Yes |
-| **Android SendMoneyScreen** | 6 | 4 (67%) | 2 (33%) | ✅ Yes |
-| **iOS LoginView** | 7 | 3 (43%) | 4 (57%) | ✅ Yes |
-| **iOS SendMoneyView** | 5 | 4 (80%) | 1 (20%) | ✅ Yes |
-| **TOTAL** | 25 | 14 (56%) | 11 (44%) | ✅ Yes |
+| **Android LoginScreen** | 7 | 3 (43%) | 4 (57%) |  Yes |
+| **Android SendMoneyScreen** | 6 | 4 (67%) | 2 (33%) |  Yes |
+| **iOS LoginView** | 7 | 3 (43%) | 4 (57%) |  Yes |
+| **iOS SendMoneyView** | 5 | 4 (80%) | 1 (20%) |  Yes |
+| **TOTAL** | 25 | 14 (56%) | 11 (44%) |  Yes |
 
 ---
 
-## 🎯 Expected Framework Behavior
+##  Expected Framework Behavior
 
 ### Selector Strategy Fallbacks
 
@@ -160,11 +160,11 @@ Real-world applications often have elements without proper test IDs. This create
 ### XPath Quality Checks
 
 The framework should generate XPath selectors that:
-- ✅ Are as short as possible
-- ✅ Use unique attributes when available
-- ✅ Include position only when necessary
-- ✅ Handle dynamic content (string interpolation)
-- ✅ Provide stability warnings
+-  Are as short as possible
+-  Use unique attributes when available
+-  Include position only when necessary
+-  Handle dynamic content (string interpolation)
+-  Provide stability warnings
 
 ### Example Generated Selectors
 
@@ -194,7 +194,7 @@ Selector(
 
 ---
 
-## 🔍 How to Test
+##  How to Test
 
 ### 1. Run Static Analysis
 ```bash
@@ -246,7 +246,7 @@ observe generate pages --model app_model.yaml
 
 ---
 
-## ⚠️ Intentional Design
+##  Intentional Design
 
 These missing IDs are **NOT bugs** - they are **intentional test cases** for:
 
@@ -258,7 +258,7 @@ These missing IDs are **NOT bugs** - they are **intentional test cases** for:
 
 ---
 
-## 📚 Related Documentation
+##  Related Documentation
 
 - `framework/selectors/selector_builder.py` - Selector generation logic
 - `framework/selectors/selector_scorer.py` - Stability scoring
@@ -269,5 +269,5 @@ These missing IDs are **NOT bugs** - they are **intentional test cases** for:
 ---
 
 **Last Updated:** 2025-01-19  
-**Status:** ✅ Intentional - Do Not "Fix" by adding IDs!
+**Status:**  Intentional - Do Not "Fix" by adding IDs!
 

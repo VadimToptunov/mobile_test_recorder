@@ -1,4 +1,4 @@
-# 🔐 Regula KYC Integration Guide
+#  Regula KYC Integration Guide
 
 ## Overview
 
@@ -6,7 +6,7 @@ FinDemo integrates **Regula Document Reader SDK** for KYC (Know Your Customer) v
 
 ---
 
-## 📦 Dependencies
+##  Dependencies
 
 ### Gradle Configuration
 
@@ -31,7 +31,7 @@ implementation("androidx.camera:camera-view:1.3.1")
 
 ---
 
-## 🎯 Features
+##  Features
 
 ### KYC Screen Capabilities:
 1. **Document Scanning** - Uses device camera to scan documents
@@ -42,7 +42,7 @@ implementation("androidx.camera:camera-view:1.3.1")
 
 ---
 
-## 🚀 Usage
+##  Usage
 
 ### 1. Initialize SDK
 
@@ -104,7 +104,7 @@ val documentNumber = results.getTextFieldValueByType(
 
 ---
 
-## 📱 User Flow
+##  User Flow
 
 ```
 Login → KYC Screen → Scan Document → Home Screen
@@ -122,7 +122,7 @@ Login → KYC Screen → Scan Document → Home Screen
 
 ---
 
-## 🔑 License
+##  License
 
 ### Trial Mode (Current):
 - SDK works in trial mode without license
@@ -141,7 +141,7 @@ DocumentReader.Instance().initializeReader(context, config, callback)
 
 ---
 
-## 🎨 UI Components
+##  UI Components
 
 ### KYC Screen Layout:
 - **Title**: "Identity Verification"
@@ -193,7 +193,7 @@ DocumentReader.Instance().initializeReader(context, config, callback)
 
 ---
 
-## 🔒 Permissions
+##  Permissions
 
 ### Required Permissions:
 
@@ -218,7 +218,7 @@ val cameraPermissionLauncher = rememberLauncherForActivityResult(
 
 ---
 
-## 📊 Supported Documents
+##  Supported Documents
 
 Regula SDK supports:
 - **Passports** (all countries)
@@ -236,7 +236,7 @@ Regula SDK supports:
 
 ---
 
-## 🐛 Troubleshooting
+##  Troubleshooting
 
 ### Issue 1: SDK Fails to Initialize
 **Solution:**
@@ -259,7 +259,7 @@ Regula SDK supports:
 
 ---
 
-## 🔗 Resources
+##  Resources
 
 - [Regula Documentation](https://docs.regulaforensics.com/)
 - [Android Integration Guide](https://docs.regulaforensics.com/android)
@@ -268,7 +268,7 @@ Regula SDK supports:
 
 ---
 
-## 📝 Notes for Observe SDK
+##  Notes for Observe SDK
 
 ### Events to Capture:
 ```json
@@ -301,7 +301,7 @@ KYC screen will generate:
 
 ---
 
-**Status:** ✅ Integrated  
+**Status:**  Integrated  
 **Version:** 7.6.x  
 **Last Updated:** 2025-12-19
 

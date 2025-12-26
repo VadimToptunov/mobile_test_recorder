@@ -115,26 +115,26 @@ class SelectorOptimizer:
         
         if low > total * 0.2:
             recommendations.append(
-                f"⚠️  {low} low-stability selectors detected ({low/total*100:.1f}%). "
+                f"  {low} low-stability selectors detected ({low/total*100:.1f}%). "
                 "Add test tags or accessibility IDs to improve stability."
             )
         
         if low + unknown > total * 0.3:
             recommendations.append(
-                f"⚠️  {low + unknown} unstable selectors ({(low+unknown)/total*100:.1f}%). "
+                f"  {low + unknown} unstable selectors ({(low+unknown)/total*100:.1f}%). "
                 "Consider using test IDs, resource IDs, or accessibility IDs."
             )
         
         xpath_count = strategies.get('xpath', 0)
         if xpath_count > total * 0.5:
             recommendations.append(
-                f"⚠️  {xpath_count} XPath selectors ({xpath_count/total*100:.1f}%). "
+                f"  {xpath_count} XPath selectors ({xpath_count/total*100:.1f}%). "
                 "XPath is fragile. Add stable IDs to UI elements."
             )
         
         if avg_score >= 0.8:
             recommendations.append(
-                f"✅ Good selector quality! Average stability: {avg_score:.2f}"
+                f" Good selector quality! Average stability: {avg_score:.2f}"
             )
         
         return {
@@ -200,36 +200,36 @@ class SelectorOptimizer:
         # Check stability
         if selector.stability == ModelStability.LOW or selector.stability == ModelStability.UNKNOWN:
             suggestions.append(
-                "⚠️  Low stability. Add test tags or accessibility IDs to UI elements."
+                "  Low stability. Add test tags or accessibility IDs to UI elements."
             )
         
         # Check if using XPath
         if selector.xpath:
             suggestions.append(
-                "💡 Using XPath. Consider adding resource-id or test tag for better stability."
+                " Using XPath. Consider adding resource-id or test tag for better stability."
             )
         
         # Check if using text
         if selector.android and 'text:' in selector.android:
             suggestions.append(
-                "⚠️  Text-based selector. May break if content changes or is localized."
+                "  Text-based selector. May break if content changes or is localized."
             )
         
         # Check if missing iOS selector
         if selector.android and not selector.ios:
             suggestions.append(
-                "💡 Missing iOS selector. Add for cross-platform support."
+                " Missing iOS selector. Add for cross-platform support."
             )
         
         # Check fallback strategies
         total_fallbacks = len(selector.android_fallback) + len(selector.ios_fallback)
         if total_fallbacks < 2:
             suggestions.append(
-                "💡 Add more fallback strategies for resilience."
+                " Add more fallback strategies for resilience."
             )
         
         if not suggestions:
-            suggestions.append("✅ Selector looks good!")
+            suggestions.append(" Selector looks good!")
         
         return suggestions
 

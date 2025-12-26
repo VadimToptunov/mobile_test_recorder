@@ -41,7 +41,7 @@ android {
             buildConfigField("Boolean", "ROOT_DETECTION_ENABLED", "false")
             
             // Custom app name for observe variant
-            resValue("string", "app_name", "FinDemo 🎯")
+            resValue("string", "app_name", "FinDemo ")
             
             manifestPlaceholders["appIcon"] = "@mipmap/ic_launcher_observe"
         }

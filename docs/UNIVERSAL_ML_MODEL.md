@@ -1,31 +1,31 @@
-# Universal Pre-Trained ML Model 🌍🤖
+# Universal Pre-Trained ML Model 
 
 ## Overview
 
 The **Universal Pre-Trained Model** is a machine learning classifier that works **out-of-the-box** for ANY mobile application, supporting **ALL mobile technologies**:
 
-### Supported Frameworks & Technologies ✨
+### Supported Frameworks & Technologies 
 
 **Native Development:**
-- 🤖 **Android**: View, Jetpack Compose, Material Design
-- 🍎 **iOS**: UIKit, SwiftUI
+-  **Android**: View, Jetpack Compose, Material Design
+-  **iOS**: UIKit, SwiftUI
 
 **Cross-Platform Development:**
 - 🦋 **Flutter** (Dart)
-- ⚛️ **React Native** (JavaScript/TypeScript)
+-  **React Native** (JavaScript/TypeScript)
 
 **Languages:**
 - Java, Kotlin, Swift, Objective-C, Dart, JavaScript, TypeScript
 
 ### Key Benefits
 
-✅ **Zero Setup** - No training data collection needed  
-✅ **Works Immediately** - Pre-trained on 2500+ synthetic samples  
-✅ **ALL Frameworks** - Native, Flutter, React Native  
-✅ **Cross-Platform** - Android & iOS support  
-✅ **High Accuracy** - Target 85%+ element classification accuracy  
-✅ **Framework Agnostic** - Works with any UI framework  
-✅ **Continuously Improving** - Can be fine-tuned with app-specific data
+ **Zero Setup** - No training data collection needed  
+ **Works Immediately** - Pre-trained on 2500+ synthetic samples  
+ **ALL Frameworks** - Native, Flutter, React Native  
+ **Cross-Platform** - Android & iOS support  
+ **High Accuracy** - Target 85%+ element classification accuracy  
+ **Framework Agnostic** - Works with any UI framework  
+ **Continuously Improving** - Can be fine-tuned with app-specific data
 
 ---
 
@@ -59,7 +59,7 @@ observe ml create-universal-model
 
 **Output:**
 ```
-🌍 Creating universal pre-trained model...
+ Creating universal pre-trained model...
    This will generate 2000+ training samples and train a model
    that works for ANY Android/iOS application!
 
@@ -68,7 +68,7 @@ Generating 200 samples for input
 Generating 200 samples for text
 ...
 
-✅ UNIVERSAL PRE-TRAINED MODEL CREATED!
+ UNIVERSAL PRE-TRAINED MODEL CREATED!
 ======================================================================
 Samples: 2000+
 Accuracy: 87.3%
@@ -76,7 +76,7 @@ Model: ml_models/universal_element_classifier.pkl
 ======================================================================
 
 This model works out-of-the-box for ANY mobile application!
-No app-specific training required! 🚀
+No app-specific training required! 
 ```
 
 ### 2. Use It In Model Building
@@ -92,7 +92,7 @@ observe model build \
 # is used automatically!
 ```
 
-**That's it!** No training, no data collection, no setup. It just works! ✨
+**That's it!** No training, no data collection, no setup. It just works! 
 
 ---
 
@@ -156,7 +156,7 @@ The classifier analyzes multiple element attributes:
 
 ## Workflow Comparison
 
-### ❌ Old Way (App-Specific Training)
+###  Old Way (App-Specific Training)
 
 ```bash
 # 1. Record session
@@ -176,10 +176,10 @@ observe model build --session-id session_123 --use-ml
 
 **Problems:**
 - ⏰ Time-consuming setup
-- 📚 Requires data collection
-- 🔄 Must repeat for each app
+-  Requires data collection
+-  Must repeat for each app
 
-### ✅ New Way (Universal Model)
+###  New Way (Universal Model)
 
 ```bash
 # One-time setup (framework maintainer does this)
@@ -190,9 +190,9 @@ observe model build --session-id session_123 --use-ml
 ```
 
 **Benefits:**
-- ⚡ Instant usage
-- 🌍 Works for any app
-- 🎯 No setup required
+-  Instant usage
+-  Works for any app
+-  No setup required
 
 ---
 
@@ -237,12 +237,12 @@ Your colleagues don't need to understand ML! They just:
 3. **Use `--use-ml` flag** when building models
 
 That's it! The ML model automatically:
-- ✅ Classifies element types
-- ✅ Generates better selectors
-- ✅ Improves Page Object quality
-- ✅ Reduces manual editing
+-  Classifies element types
+-  Generates better selectors
+-  Improves Page Object quality
+-  Reduces manual editing
 
-**No training, no data science, no headaches!** 🎉
+**No training, no data science, no headaches!** 
 
 ---
 
@@ -305,12 +305,12 @@ This ensures the model generalizes well to real applications.
 
 ## Limitations
 
-### What It Can Do ✅
+### What It Can Do 
 - Classify standard UI elements
 - Work with common frameworks
 - Handle typical patterns
 
-### What It Can't Do ❌
+### What It Can't Do 
 - Recognize custom widgets without training
 - Understand app-specific semantics
 - Achieve 100% accuracy on first try
@@ -338,18 +338,18 @@ This ensures the model generalizes well to real applications.
 
 ```
 ml_models/
-├── universal_training_data.json     # 2000+ training samples
-└── universal_element_classifier.pkl # Pre-trained model
+ universal_training_data.json     # 2000+ training samples
+ universal_element_classifier.pkl # Pre-trained model
 ```
 
 ---
 
 ## Summary
 
-🌍 **Universal Model** = Zero-setup ML for ANY mobile app  
-🚀 **One Command** = `observe ml create-universal-model`  
-✅ **Just Works** = No training, no data, no ML expertise needed  
-🎯 **For Teams** = QA engineers can use ML without understanding it  
+ **Universal Model** = Zero-setup ML for ANY mobile app  
+ **One Command** = `observe ml create-universal-model`  
+ **Just Works** = No training, no data, no ML expertise needed  
+ **For Teams** = QA engineers can use ML without understanding it  
 
-**Your colleagues will thank you!** 🙏
+**Your colleagues will thank you!** 
 

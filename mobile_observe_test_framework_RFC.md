@@ -88,32 +88,32 @@ Pain points:
 # 5. High-Level System Overview
 
 ```
-┌────────────┐
-│    CLI     │
-└─────┬──────┘
-      │
-┌─────▼──────────┐
-│ Static Analyzer│
-└─────┬──────────┘
-      │
-┌─────▼──────────┐
-│ Observe Runtime│
-│  (Android/iOS) │
-└─────┬──────────┘
-      │
-┌─────▼──────────┐
-│   App Model    │
-│ (Source of    │
-│   Truth)       │
-└─────┬──────────┘
-      │
-┌─────▼──────────┐
-│ Code Generators│
-└─────┬──────────┘
-      │
-┌─────▼──────────┐
-│ Test Projects  │
-└────────────────┘
+
+    CLI     
+
+      
+
+ Static Analyzer
+
+      
+
+ Observe Runtime
+  (Android/iOS) 
+
+      
+
+   App Model    
+ (Source of    
+   Truth)       
+
+      
+
+ Code Generators
+
+      
+
+ Test Projects  
+
 ```
 
 ---

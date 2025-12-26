@@ -279,10 +279,14 @@ class WebViewObserver(
             JS_INTERFACE_NAME
         )
         
-        // Inject observer script on every page load
+        // Store the original WebViewClient
+        val originalClient = webView.webViewClient
+        
+        // Create a delegating WebViewClient that preserves original behavior
         webView.webViewClient = object : android.webkit.WebViewClient() {
             override fun onPageFinished(view: WebView?, url: String?) {
-                super.onPageFinished(view, url)
+                // Call original client first
+                originalClient?.onPageFinished(view, url)
                 
                 url?.let {
                     Log.d(TAG, "Page finished loading: $it")
@@ -314,7 +318,19 @@ class WebViewObserver(
                     }
                 }
             }
+            
+            // Delegate all other methods to original client
+            override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
+                return originalClient?.shouldOverrideUrlLoading(view, url) ?: super.shouldOverrideUrlLoading(view, url)
+            }
+            
+            override fun onPageStarted(view: WebView?, url: String?, favicon: android.graphics.Bitmap?) {
+                originalClient?.onPageStarted(view, url, favicon) ?: super.onPageStarted(view, url, favicon)
+            }
         }
+        
+        // Store the original client to restore later
+        webView.setTag(R.id.webview_original_client_tag, originalClient)
         
         Log.d(TAG, "WebView observation enabled for screen: $screenName")
     }
@@ -324,9 +340,16 @@ class WebViewObserver(
      */
     fun stopObservingWebView(webView: WebView) {
         observedWebViews.remove(webView)
+        
+        // Remove JavaScript interface
         webView.removeJavascriptInterface(JS_INTERFACE_NAME)
         
-        Log.d(TAG, "WebView observation disabled")
+        // Restore original WebViewClient if it was stored
+        val originalClient = webView.getTag(R.id.webview_original_client_tag) as? android.webkit.WebViewClient
+        webView.webViewClient = originalClient ?: android.webkit.WebViewClient()
+        webView.setTag(R.id.webview_original_client_tag, null)
+        
+        Log.d(TAG, "WebView observation disabled - all resources cleaned up")
     }
     
     /**

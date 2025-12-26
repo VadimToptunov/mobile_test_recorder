@@ -46,7 +46,7 @@ object CertificatePinningBypass {
      * - Accept any hostname
      */
     fun createUnsafeOkHttpClient(): OkHttpClient.Builder {
-        Log.w(TAG, "⚠️ CREATING UNSAFE SSL CLIENT - CERT PINNING DISABLED ⚠️")
+        Log.w(TAG, " CREATING UNSAFE SSL CLIENT - CERT PINNING DISABLED ")
         Log.w(TAG, "This client trusts ALL certificates and hostnames!")
         Log.w(TAG, "ONLY use in observe/test builds!")
         
@@ -106,9 +106,9 @@ object CertificatePinningBypass {
      * Log warning about security implications
      */
     fun logSecurityWarning() {
-        Log.w(TAG, "═══════════════════════════════════════════════════════")
-        Log.w(TAG, "⚠️  SSL CERTIFICATE VALIDATION DISABLED  ⚠️")
-        Log.w(TAG, "═══════════════════════════════════════════════════════")
+        Log.w(TAG, "")
+        Log.w(TAG, "  SSL CERTIFICATE VALIDATION DISABLED  ")
+        Log.w(TAG, "")
         Log.w(TAG, "")
         Log.w(TAG, "This build accepts ALL SSL certificates!")
         Log.w(TAG, "Traffic can be intercepted and decrypted!")
@@ -119,7 +119,7 @@ object CertificatePinningBypass {
         Log.w(TAG, "  • TLS key export for automation")
         Log.w(TAG, "")
         Log.w(TAG, "THIS BUILD MUST NOT BE RELEASED TO USERS!")
-        Log.w(TAG, "═══════════════════════════════════════════════════════")
+        Log.w(TAG, "")
     }
 }
 

@@ -27,7 +27,7 @@ class FinDemoApplication : Application() {
     }
     
     private fun initializeObserveMode() {
-        Log.i(TAG, "🎯 Observe mode enabled - SDK will record events")
+        Log.i(TAG, " Observe mode enabled - SDK will record events")
         // ObserveSDK will be initialized here
         // This is done in observe source set
     }
@@ -39,7 +39,7 @@ class FinDemoApplication : Application() {
     }
     
     private fun initializeProductionMode() {
-        Log.i(TAG, "🚀 Production mode")
+        Log.i(TAG, " Production mode")
         // Normal app initialization
         // Analytics, crashlytics, etc.
     }

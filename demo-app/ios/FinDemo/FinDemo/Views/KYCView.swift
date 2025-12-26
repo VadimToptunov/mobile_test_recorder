@@ -59,7 +59,7 @@ struct KYCView: View {
                         .accessibilityIdentifier("kyc_document_icon")
                     
                     if documentScanned {
-                        Text("Document Verified ✓")
+                        Text("Document Verified ")
                             .font(.headline)
                             .foregroundColor(.green)
                             .accessibilityIdentifier("kyc_verification_status")

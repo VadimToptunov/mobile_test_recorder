@@ -1,46 +1,46 @@
-# 📡 iOS Observe SDK
+#  iOS Observe SDK
 
 Swift framework for capturing UI interactions, navigation, and network events in iOS applications.
 
 ---
 
-## 🎯 Overview
+##  Overview
 
 The iOS Observe SDK is a lightweight, non-intrusive instrumentation framework that captures:
 
-- ✅ **UI Events** - Taps, swipes, text input
-- ✅ **Navigation** - Screen transitions and routing
-- ✅ **Network** - HTTP requests/responses with correlation
-- ✅ **Hierarchy** - UI view tree snapshots
-- ✅ **WebView** - Embedded web interactions
+-  **UI Events** - Taps, swipes, text input
+-  **Navigation** - Screen transitions and routing
+-  **Network** - HTTP requests/responses with correlation
+-  **Hierarchy** - UI view tree snapshots
+-  **WebView** - Embedded web interactions
 
 **Zero impact on production:** Compile-time gated via build schemes.
 
 ---
 
-## 🏗 Architecture
+##  Architecture
 
 ```
 ObserveSDK
-├── ObserveSDK.swift          # Main SDK singleton
-├── Core/
-│   ├── ObserveConfig.swift   # Configuration
-│   └── ObserveSession.swift  # Session metadata
-├── Events/
-│   ├── EventBus.swift        # Internal pub/sub
-│   └── Event.swift           # Event models
-├── Observers/
-│   ├── UIObserver.swift           # UI interactions
-│   ├── NavigationObserver.swift   # Screen changes
-│   ├── NetworkObserver.swift      # HTTP traffic
-│   └── HierarchyCollector.swift   # View hierarchy
-└── Export/
-    └── EventExporter.swift   # JSON file export
+ ObserveSDK.swift          # Main SDK singleton
+ Core/
+    ObserveConfig.swift   # Configuration
+    ObserveSession.swift  # Session metadata
+ Events/
+    EventBus.swift        # Internal pub/sub
+    Event.swift           # Event models
+ Observers/
+    UIObserver.swift           # UI interactions
+    NavigationObserver.swift   # Screen changes
+    NetworkObserver.swift      # HTTP traffic
+    HierarchyCollector.swift   # View hierarchy
+ Export/
+     EventExporter.swift   # JSON file export
 ```
 
 ---
 
-## 🚀 Integration
+##  Integration
 
 ### 1. Add SDK to Project
 
@@ -93,7 +93,7 @@ Create three build configurations:
 
 ---
 
-## ⚙️ Configuration
+##  Configuration
 
 ### Development (High Detail)
 ```swift
@@ -125,7 +125,7 @@ ObserveSDK.shared.initialize(application: UIApplication.shared, config: config)
 
 ---
 
-## 📊 Event Types
+##  Event Types
 
 ### UI Event
 ```swift
@@ -183,7 +183,7 @@ HierarchyEvent(
 
 ---
 
-## 📁 Event Export
+##  Event Export
 
 Events are automatically exported to:
 ```
@@ -223,7 +223,7 @@ Or use Xcode's "Download Container" feature.
 
 ---
 
-## 🔍 Accessibility Identifiers
+##  Accessibility Identifiers
 
 **Critical for robust selectors!**
 
@@ -241,7 +241,7 @@ TextField("Username", text: $username)
 
 ---
 
-## 🎛 SDK Control
+##  SDK Control
 
 ### Manual Start/Stop
 ```swift
@@ -297,7 +297,7 @@ The SDK is designed to be **completely transparent** in test builds:
 
 ---
 
-## 🔐 Privacy & Security
+##  Privacy & Security
 
 ### What is Captured:
 - UI element identifiers and types
@@ -324,7 +324,7 @@ The SDK is designed to be **completely transparent** in test builds:
 
 ---
 
-## 📊 Performance Impact
+##  Performance Impact
 
 ### When Enabled (Observe Build):
 - **CPU Overhead:** ~2-5% during active interaction
@@ -338,7 +338,7 @@ The SDK is designed to be **completely transparent** in test builds:
 
 ---
 
-## 🐛 Troubleshooting
+##  Troubleshooting
 
 ### Events Not Captured
 
@@ -364,21 +364,21 @@ The SDK is designed to be **completely transparent** in test builds:
 
 ---
 
-## 🔄 Comparison with Android SDK
+##  Comparison with Android SDK
 
 | Feature | Android | iOS |
 |---------|---------|-----|
-| UI Observation | ✅ Compose + View | ✅ SwiftUI + UIKit |
-| Navigation | ✅ NavController | ✅ NavigationView |
-| Network | ✅ OkHttp Interceptor | ✅ URLProtocol |
-| Hierarchy | ✅ View tree + Compose semantics | ✅ UIView hierarchy |
+| UI Observation |  Compose + View |  SwiftUI + UIKit |
+| Navigation |  NavController |  NavigationView |
+| Network |  OkHttp Interceptor |  URLProtocol |
+| Hierarchy |  View tree + Compose semantics |  UIView hierarchy |
 | Export Format | JSON | JSON (identical) |
 | Build Variants | Gradle flavors | Xcode schemes |
 | Test IDs | `testTag` | `accessibilityIdentifier` |
 
 ---
 
-## 📚 Next Steps
+##  Next Steps
 
 1. **Integrate SDK** into FinDemo app
 2. **Test observation** on simulator/device
@@ -388,9 +388,9 @@ The SDK is designed to be **completely transparent** in test builds:
 
 ---
 
-## 🎯 Status
+##  Status
 
-**Current:** ✅ iOS Observe SDK Complete (Phase 3 - Step 2)
+**Current:**  iOS Observe SDK Complete (Phase 3 - Step 2)
 
 **Next:**
 - iOS Static Analyzer (Swift/SwiftUI parsing)
@@ -399,5 +399,5 @@ The SDK is designed to be **completely transparent** in test builds:
 
 ---
 
-**The SDK is production-ready and mirrors the Android implementation!** 🚀
+**The SDK is production-ready and mirrors the Android implementation!** 
 

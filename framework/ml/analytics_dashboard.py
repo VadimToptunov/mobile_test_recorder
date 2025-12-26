@@ -144,7 +144,7 @@ class AnalyticsDashboard:
         # Add summary metrics
         summary_html = f"""
         <div style="background: #f8f9fa; padding: 20px; margin: 20px 0; border-radius: 8px;">
-            <h2>📊 Summary Metrics</h2>
+            <h2> Summary Metrics</h2>
             <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-top: 20px;">
                 <div style="background: white; padding: 15px; border-radius: 5px; text-align: center;">
                     <div style="font-size: 32px; font-weight: bold; color: #007bff;">{total_tests}</div>
@@ -192,7 +192,7 @@ class AnalyticsDashboard:
         </head>
         <body>
             <div class="container">
-                <h1>🎯 Mobile Test Execution Dashboard</h1>
+                <h1> Mobile Test Execution Dashboard</h1>
                 {summary_html}
                 <div id="charts"></div>
             </div>
@@ -347,14 +347,14 @@ class AnalyticsDashboard:
         </head>
         <body>
             <div class="container">
-                <h1>📊 Test Coverage Dashboard</h1>
+                <h1> Test Coverage Dashboard</h1>
                 <p style="color: #6c757d;">Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
                 
                 <div id="gauges"></div>
                 <div id="coverage-bars"></div>
                 
                 <div class="metric-card">
-                    <h2>🎯 Coverage Summary</h2>
+                    <h2> Coverage Summary</h2>
                     <ul>
                         <li><strong>Screens:</strong> {len(covered_screens)}/{total_screens} covered ({screen_coverage:.1f}%)</li>
                         <li><strong>Flows:</strong> {executed_flow_count}/{total_flows} executed ({flow_coverage:.1f}%)</li>
@@ -363,7 +363,7 @@ class AnalyticsDashboard:
                 </div>
                 
                 <div class="metric-card">
-                    <h2>⚠️ Uncovered Areas</h2>
+                    <h2> Uncovered Areas</h2>
                     <ul>
                         <li>Uncovered Screens: {total_screens - len(covered_screens)}</li>
                         <li>Unexecuted Flows: {total_flows - executed_flow_count}</li>
@@ -435,7 +435,7 @@ class AnalyticsDashboard:
         if fragile_selectors:
             fragile_table_html = """
             <div class="metric-card">
-                <h2>⚠️ Fragile Selectors (Needs Attention)</h2>
+                <h2> Fragile Selectors (Needs Attention)</h2>
                 <table style="width: 100%; border-collapse: collapse;">
                     <thead>
                         <tr style="background: #f8f9fa;">
@@ -498,13 +498,13 @@ class AnalyticsDashboard:
         </head>
         <body>
             <div class="container">
-                <h1>🔍 Selector Stability Report</h1>
+                <h1> Selector Stability Report</h1>
                 <p style="color: #6c757d;">Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
                 
                 <div id="stability-chart"></div>
                 
                 <div class="metric-card">
-                    <h2>📊 Stability Breakdown</h2>
+                    <h2> Stability Breakdown</h2>
                     <ul>
                         <li><strong>HIGH:</strong> {stability_counts['HIGH']} selectors (Stable, test ID based)</li>
                         <li><strong>MEDIUM:</strong> {stability_counts['MEDIUM']} selectors (Moderately stable, text based)</li>
@@ -516,7 +516,7 @@ class AnalyticsDashboard:
                 {fragile_table_html}
                 
                 <div class="metric-card">
-                    <h2>💡 Recommendations</h2>
+                    <h2> Recommendations</h2>
                     <ul>
                         <li>Consider adding test IDs to elements with LOW stability selectors</li>
                         <li>Use ML-based selector healing for fragile selectors</li>

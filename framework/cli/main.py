@@ -13,7 +13,7 @@ from framework import __version__
 @click.pass_context
 def cli(ctx):
     """
-    🎯 Mobile Observe & Test Framework
+     Mobile Observe & Test Framework
     
     Intelligent Mobile Testing Platform - Observe, Analyze, Automate
     """
@@ -32,7 +32,7 @@ def init(platform: str, output: str):
     Example:
         observe init --platform android --output ./my-project
     """
-    click.echo(f"🚀 Initializing {platform} observe project...")
+    click.echo(f" Initializing {platform} observe project...")
     
     output_path = Path(output)
     output_path.mkdir(parents=True, exist_ok=True)
@@ -73,7 +73,7 @@ generation:
   features_output: "tests/features"
 """)
     
-    click.echo(f"✅ Project initialized at: {output_path.absolute()}")
+    click.echo(f" Project initialized at: {output_path.absolute()}")
     click.echo(f"\nNext steps:")
     click.echo(f"  1. Update config/observe.yaml with your app paths")
     click.echo(f"  2. Run: observe analyze {platform} --source <path-to-source>")
@@ -93,14 +93,14 @@ def analyze(platform: str, source: str, output: str):
     Example:
         observe analyze android --source ./demo-app/android
     """
-    click.echo(f"🔍 Analyzing {platform} source code...")
+    click.echo(f" Analyzing {platform} source code...")
     
     if not source:
-        click.echo("❌ Error: --source is required", err=True)
+        click.echo(" Error: --source is required", err=True)
         return
     
-    click.echo(f"📂 Source: {source}")
-    click.echo(f"📄 Output: {output}")
+    click.echo(f" Source: {source}")
+    click.echo(f" Output: {output}")
     
     try:
         from pathlib import Path
@@ -110,7 +110,7 @@ def analyze(platform: str, source: str, output: str):
         if platform == 'android':
             from framework.analyzers.android_analyzer import AndroidAnalyzer
             
-            click.echo(f"\n🤖 Running Android static analyzer...")
+            click.echo(f"\n Running Android static analyzer...")
             analyzer = AndroidAnalyzer()
             result = analyzer.analyze(source)
             
@@ -118,12 +118,12 @@ def analyze(platform: str, source: str, output: str):
             from framework.analyzers.ios_analyzer import IOSAnalyzer
             from pathlib import Path
             
-            click.echo(f"\n🍎 Running iOS static analyzer...")
+            click.echo(f"\n Running iOS static analyzer...")
             analyzer = IOSAnalyzer(project_path=Path(source))
             result = analyzer.analyze()
             
         else:
-            click.echo(f"\n❌ Unknown platform: {platform}")
+            click.echo(f"\n Unknown platform: {platform}")
             return
         
         # Save results
@@ -137,8 +137,8 @@ def analyze(platform: str, source: str, output: str):
                 yaml.dump(result.model_dump(), f, default_flow_style=False, sort_keys=False)
         
         # Print summary
-        click.echo(f"\n✅ Static analysis complete!")
-        click.echo(f"\n📊 Results:")
+        click.echo(f"\n Static analysis complete!")
+        click.echo(f"\n Results:")
         click.echo(f"   Files analyzed: {result.files_analyzed}")
         click.echo(f"   Screens found: {len(result.screens)}")
         click.echo(f"   UI elements found: {len(result.ui_elements)}")
@@ -146,21 +146,21 @@ def analyze(platform: str, source: str, output: str):
         click.echo(f"   API endpoints: {len(result.api_endpoints)}")
         
         if result.errors:
-            click.echo(f"\n⚠️  Errors: {len(result.errors)}")
+            click.echo(f"\n  Errors: {len(result.errors)}")
             for error in result.errors[:5]:  # Show first 5
                 click.echo(f"   • {error}")
         
         if result.warnings:
-            click.echo(f"\n⚠️  Warnings: {len(result.warnings)}")
+            click.echo(f"\n  Warnings: {len(result.warnings)}")
         
-        click.echo(f"\n📄 Results saved to: {output_path}")
+        click.echo(f"\n Results saved to: {output_path}")
         click.echo(f"\nNext steps:")
         click.echo(f"  1. Review the analysis results")
         click.echo(f"  2. Record a session: observe record start")
         click.echo(f"  3. Merge static + dynamic: observe model build")
         
     except Exception as e:
-        click.echo(f"\n❌ Error during analysis: {e}", err=True)
+        click.echo(f"\n Error during analysis: {e}", err=True)
         import traceback
         traceback.print_exc()
         raise click.Abort()
@@ -190,11 +190,11 @@ def start(device: str, session_name: str, package: str):
     
     session_id = session_name or f"session_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
     
-    click.echo(f"🎯 Starting recording session...")
+    click.echo(f" Starting recording session...")
     click.echo(f"   Session ID: {session_id}")
     click.echo(f"   Device: {device}")
     click.echo(f"   Package: {package}")
-    click.echo(f"\n📱 Perform actions in the app...")
+    click.echo(f"\n Perform actions in the app...")
     click.echo(f"   Press Ctrl+C to stop recording\n")
     
     try:
@@ -211,7 +211,7 @@ def start(device: str, session_name: str, package: str):
         device_path = f'/sdcard/Android/data/{package}/files/observe/'
         
         # Start monitoring (pull events from device)
-        click.echo("📡 Monitoring device for events...")
+        click.echo(" Monitoring device for events...")
         click.echo(f"   Pulling events from: {device_path}")
         click.echo("   Press Ctrl+C to stop\n")
         
@@ -240,7 +240,7 @@ def start(device: str, session_name: str, package: str):
                             # Import to event store
                             try:
                                 store.import_from_json(local_path)
-                                click.echo(f"   ✅ Imported: {file}")
+                                click.echo(f"    Imported: {file}")
                                 
                                 # Delete from device
                                 subprocess.run(
@@ -249,27 +249,27 @@ def start(device: str, session_name: str, package: str):
                                     capture_output=True
                                 )
                             except Exception as e:
-                                click.echo(f"   ⚠️  Failed to import {file}: {e}")
+                                click.echo(f"     Failed to import {file}: {e}")
                 
                 time.sleep(2)  # Poll every 2 seconds
                 
         except KeyboardInterrupt:
-            click.echo("\n\n🛑 Recording stopped by user")
+            click.echo("\n\n Recording stopped by user")
             
         # Show summary
         events = store.get_events(session_id=session_id)
-        click.echo(f"\n✅ Recording complete!")
+        click.echo(f"\n Recording complete!")
         click.echo(f"   Total events: {len(events)}")
         click.echo(f"   Session ID: {session_id}")
-        click.echo(f"\n💡 Next steps:")
+        click.echo(f"\n Next steps:")
         click.echo(f"   1. Correlate events: observe record correlate --session-id {session_id}")
         click.echo(f"   2. Build model: observe model build --session-id {session_id}")
         
     except ImportError as e:
-        click.echo(f"❌ Error: {e}")
+        click.echo(f" Error: {e}")
         click.echo("   Make sure all dependencies are installed")
     except Exception as e:
-        click.echo(f"❌ Error: {e}")
+        click.echo(f" Error: {e}")
 
 
 @record.command()
@@ -278,7 +278,7 @@ def start(device: str, session_name: str, package: str):
               help='App package name (e.g., com.myapp)')
 def stop(device: str, package: str):
     """Stop current recording session and pull remaining events"""
-    click.echo("🛑 Stopping recording session...")
+    click.echo(" Stopping recording session...")
     click.echo(f"   Device: {device}")
     click.echo(f"   Package: {package}")
     
@@ -297,7 +297,7 @@ def stop(device: str, package: str):
         
         if result.returncode == 0 and result.stdout.strip():
             files = result.stdout.strip().split('\n')
-            click.echo(f"\n📥 Pulling {len(files)} remaining event file(s)...")
+            click.echo(f"\n Pulling {len(files)} remaining event file(s)...")
             
             for file in files:
                 if file.endswith('.json'):
@@ -310,7 +310,7 @@ def stop(device: str, package: str):
                     )
                     
                     if pull_result.returncode == 0:
-                        click.echo(f"   ✅ Pulled: {file}")
+                        click.echo(f"    Pulled: {file}")
                         
                         # Delete from device
                         subprocess.run(
@@ -319,13 +319,13 @@ def stop(device: str, package: str):
                             capture_output=True
                         )
                     else:
-                        click.echo(f"   ⚠️  Failed to pull: {file}")
+                        click.echo(f"     Failed to pull: {file}")
         
-        click.echo("\n✅ Recording stopped successfully")
+        click.echo("\n Recording stopped successfully")
         click.echo("   All event files pulled from device")
         
     except Exception as e:
-        click.echo(f"❌ Error: {e}")
+        click.echo(f" Error: {e}")
 
 
 @record.command()
@@ -339,7 +339,7 @@ def correlate(session_id: str, output: str):
     Example:
         observe record correlate --session-id session_20250119_142345
     """
-    click.echo(f"🔗 Correlating events for session: {session_id}")
+    click.echo(f" Correlating events for session: {session_id}")
     click.echo(f"   Output: {output}")
     
     try:
@@ -365,8 +365,8 @@ def correlate(session_id: str, output: str):
             json.dump(result.model_dump(), f, indent=2, default=str)
         
         # Print summary
-        click.echo(f"\n✅ Correlation complete!")
-        click.echo(f"\n📊 Statistics:")
+        click.echo(f"\n Correlation complete!")
+        click.echo(f"\n Statistics:")
         click.echo(f"   Total UI events: {result.total_ui_events}")
         click.echo(f"   Total API events: {result.total_api_events}")
         click.echo(f"   Total Navigation events: {result.total_navigation_events}")
@@ -377,10 +377,10 @@ def correlate(session_id: str, output: str):
         click.echo(f"   ")
         click.echo(f"   Correlation rate: {result.correlation_rate:.1%}")
         click.echo(f"   ")
-        click.echo(f"📄 Results saved to: {output_path}")
+        click.echo(f" Results saved to: {output_path}")
         
     except Exception as e:
-        click.echo(f"\n❌ Error during correlation: {e}", err=True)
+        click.echo(f"\n Error during correlation: {e}", err=True)
         import traceback
         traceback.print_exc()
         raise click.Abort()
@@ -407,7 +407,7 @@ def pages(model: str, output: str, platform: str):
     Example:
         observe generate pages --model models/app_model.yaml --output tests/pages
     """
-    click.echo(f"⚡ Generating Page Objects...")
+    click.echo(f" Generating Page Objects...")
     click.echo(f"   Model: {model}")
     click.echo(f"   Output: {output}")
     click.echo(f"   Platform: {platform}")
@@ -432,12 +432,12 @@ def pages(model: str, output: str, platform: str):
         output_path = Path(output)
         generated_files = generate_all_page_objects(list(app_model.screens.values()), output_path)
         
-        click.echo(f"\n✅ Generated {len(generated_files)} Page Object files:")
+        click.echo(f"\n Generated {len(generated_files)} Page Object files:")
         for file_path in generated_files:
-            click.echo(f"   📄 {file_path}")
+            click.echo(f"    {file_path}")
         
     except Exception as e:
-        click.echo(f"\n❌ Error generating Page Objects: {e}", err=True)
+        click.echo(f"\n Error generating Page Objects: {e}", err=True)
         raise click.Abort()
 
 
@@ -448,7 +448,7 @@ def pages(model: str, output: str, platform: str):
               help='Output directory for API clients')
 def api(model: str, output: str):
     """Generate API client classes"""
-    click.echo(f"⚡ Generating API clients...")
+    click.echo(f" Generating API clients...")
     click.echo(f"   Model: {model}")
     click.echo(f"   Output: {output}")
     
@@ -472,11 +472,11 @@ def api(model: str, output: str):
         output_path = Path(output) / "api_client.py"
         generated_file = generate_api_client(list(app_model.api_calls.values()), output_path)
         
-        click.echo(f"\n✅ Generated API client:")
-        click.echo(f"   📄 {generated_file}")
+        click.echo(f"\n Generated API client:")
+        click.echo(f"    {generated_file}")
         
     except Exception as e:
-        click.echo(f"\n❌ Error generating API client: {e}", err=True)
+        click.echo(f"\n Error generating API client: {e}", err=True)
         raise click.Abort()
 
 
@@ -487,7 +487,7 @@ def api(model: str, output: str):
               help='Output directory for feature files')
 def features(model: str, output: str):
     """Generate BDD feature files"""
-    click.echo(f"⚡ Generating BDD features...")
+    click.echo(f" Generating BDD features...")
     click.echo(f"   Model: {model}")
     click.echo(f"   Output: {output}")
     
@@ -511,12 +511,12 @@ def features(model: str, output: str):
         output_path = Path(output)
         generated_files = generate_all_features(app_model.flows, output_path)
         
-        click.echo(f"\n✅ Generated {len(generated_files)} feature files:")
+        click.echo(f"\n Generated {len(generated_files)} feature files:")
         for file_path in generated_files:
-            click.echo(f"   📄 {file_path}")
+            click.echo(f"    {file_path}")
         
     except Exception as e:
-        click.echo(f"\n❌ Error generating BDD features: {e}", err=True)
+        click.echo(f"\n Error generating BDD features: {e}", err=True)
         raise click.Abort()
 
 
@@ -538,7 +538,7 @@ def diff(old_model: str, new_model: str, output: str):
     Example:
         observe model diff model_v1.yaml model_v2.yaml
     """
-    click.echo(f"🔄 Comparing models...")
+    click.echo(f" Comparing models...")
     click.echo(f"   Old: {old_model}")
     click.echo(f"   New: {new_model}")
     click.echo(f"   Output: {output}")
@@ -631,47 +631,47 @@ def diff(old_model: str, new_model: str, output: str):
         )
         
         # Print results
-        click.echo(f"\n📊 Model Comparison Results:")
+        click.echo(f"\n Model Comparison Results:")
         click.echo(f"   Old version: {old_app_model.meta.app_version}")
         click.echo(f"   New version: {new_app_model.meta.app_version}")
         click.echo(f"   Total changes: {total_changes}")
         
         if diff_result['screens']['added']:
-            click.echo(f"\n➕ Screens Added ({len(diff_result['screens']['added'])}):")
+            click.echo(f"\n Screens Added ({len(diff_result['screens']['added'])}):")
             for screen in diff_result['screens']['added']:
                 click.echo(f"   • {screen}")
         
         if diff_result['screens']['removed']:
-            click.echo(f"\n➖ Screens Removed ({len(diff_result['screens']['removed'])}):")
+            click.echo(f"\n Screens Removed ({len(diff_result['screens']['removed'])}):")
             for screen in diff_result['screens']['removed']:
                 click.echo(f"   • {screen}")
         
         if diff_result['screens']['modified']:
-            click.echo(f"\n🔄 Screens Modified ({len(diff_result['screens']['modified'])}):")
+            click.echo(f"\n Screens Modified ({len(diff_result['screens']['modified'])}):")
             for mod in diff_result['screens']['modified']:
                 click.echo(f"   • {mod['name']}")
                 if mod['elements_added']:
-                    click.echo(f"     ➕ Elements: {', '.join(mod['elements_added'])}")
+                    click.echo(f"      Elements: {', '.join(mod['elements_added'])}")
                 if mod['elements_removed']:
-                    click.echo(f"     ➖ Elements: {', '.join(mod['elements_removed'])}")
+                    click.echo(f"      Elements: {', '.join(mod['elements_removed'])}")
         
         if diff_result['api_calls']['added']:
-            click.echo(f"\n➕ API Calls Added ({len(diff_result['api_calls']['added'])}):")
+            click.echo(f"\n API Calls Added ({len(diff_result['api_calls']['added'])}):")
             for api in diff_result['api_calls']['added']:
                 click.echo(f"   • {api}")
         
         if diff_result['api_calls']['removed']:
-            click.echo(f"\n➖ API Calls Removed ({len(diff_result['api_calls']['removed'])}):")
+            click.echo(f"\n API Calls Removed ({len(diff_result['api_calls']['removed'])}):")
             for api in diff_result['api_calls']['removed']:
                 click.echo(f"   • {api}")
         
         if diff_result['flows']['added']:
-            click.echo(f"\n➕ Flows Added ({len(diff_result['flows']['added'])}):")
+            click.echo(f"\n Flows Added ({len(diff_result['flows']['added'])}):")
             for flow in diff_result['flows']['added']:
                 click.echo(f"   • {flow}")
         
         if diff_result['flows']['removed']:
-            click.echo(f"\n➖ Flows Removed ({len(diff_result['flows']['removed'])}):")
+            click.echo(f"\n Flows Removed ({len(diff_result['flows']['removed'])}):")
             for flow in diff_result['flows']['removed']:
                 click.echo(f"   • {flow}")
         
@@ -681,12 +681,12 @@ def diff(old_model: str, new_model: str, output: str):
             output_path.parent.mkdir(parents=True, exist_ok=True)
             with open(output_path, 'w') as f:
                 json.dump(diff_result, f, indent=2)
-            click.echo(f"\n💾 Diff saved to: {output}")
+            click.echo(f"\n Diff saved to: {output}")
         
-        click.echo(f"\n✅ Comparison complete")
+        click.echo(f"\n Comparison complete")
         
     except Exception as e:
-        click.echo(f"❌ Error: {e}")
+        click.echo(f" Error: {e}")
         import traceback
         traceback.print_exc()
 
@@ -695,7 +695,7 @@ def diff(old_model: str, new_model: str, output: str):
 @click.argument('model_file', type=click.Path(exists=True))
 def validate(model_file: str):
     """Validate app model against JSON schema"""
-    click.echo(f"✔️  Validating model: {model_file}")
+    click.echo(f"  Validating model: {model_file}")
     
     try:
         import yaml
@@ -752,11 +752,11 @@ def validate(model_file: str):
                         errors.append(f"State machine references unknown screen '{state}'")
             
             # Print results
-            click.echo("\n📋 Validation Results:")
+            click.echo("\n Validation Results:")
             
             if not errors and not warnings:
-                click.echo("   ✅ Model is valid!")
-                click.echo(f"\n📊 Model Statistics:")
+                click.echo("    Model is valid!")
+                click.echo(f"\n Model Statistics:")
                 click.echo(f"   Screens: {len(app_model.screens)}")
                 click.echo(f"   API Calls: {len(app_model.api_calls)}")
                 click.echo(f"   Flows: {len(app_model.flows)}")
@@ -769,30 +769,30 @@ def validate(model_file: str):
                     click.echo(f"   Transitions: {len(app_model.state_machine.transitions)}")
             else:
                 if errors:
-                    click.echo(f"\n❌ Errors ({len(errors)}):")
+                    click.echo(f"\n Errors ({len(errors)}):")
                     for error in errors:
                         click.echo(f"   • {error}")
                 
                 if warnings:
-                    click.echo(f"\n⚠️  Warnings ({len(warnings)}):")
+                    click.echo(f"\n  Warnings ({len(warnings)}):")
                     for warning in warnings:
                         click.echo(f"   • {warning}")
                 
                 if errors:
-                    click.echo("\n❌ Validation failed")
+                    click.echo("\n Validation failed")
                     exit(1)
                 else:
-                    click.echo("\n✅ Validation passed with warnings")
+                    click.echo("\n Validation passed with warnings")
         
         except ValidationError as e:
-            click.echo("\n❌ Validation failed:")
+            click.echo("\n Validation failed:")
             for error in e.errors():
                 location = ' → '.join(str(loc) for loc in error['loc'])
                 click.echo(f"   • {location}: {error['msg']}")
             exit(1)
     
     except Exception as e:
-        click.echo(f"❌ Error: {e}")
+        click.echo(f" Error: {e}")
         import traceback
         traceback.print_exc()
         exit(1)
@@ -808,7 +808,7 @@ def analyze_selectors(model_file: str, detailed: bool):
     Example:
         observe model analyze-selectors models/app_model.yaml
     """
-    click.echo(f"🔍 Analyzing selectors in model...")
+    click.echo(f" Analyzing selectors in model...")
     click.echo(f"   Model: {model_file}")
     
     try:
@@ -838,42 +838,42 @@ def analyze_selectors(model_file: str, detailed: bool):
         analysis = optimizer.analyze_selectors(all_selectors)
         
         # Print results
-        click.echo(f"\n📊 Selector Analysis Results:")
+        click.echo(f"\n Selector Analysis Results:")
         click.echo(f"   Total selectors: {analysis['total']}")
         
         if analysis['total'] == 0:
-            click.echo("\n⚠️  No selectors found in the model.")
+            click.echo("\n  No selectors found in the model.")
             return
         
         click.echo(f"   Average stability: {analysis['average_stability']:.2f}")
         
-        click.echo(f"\n📈 Stability Distribution:")
+        click.echo(f"\n Stability Distribution:")
         dist = analysis['stability_distribution']
-        click.echo(f"   ✨ Excellent: {dist['excellent']} ({dist['excellent']/analysis['total']*100:.1f}%)")
-        click.echo(f"   ✅ Good:      {dist['good']} ({dist['good']/analysis['total']*100:.1f}%)")
-        click.echo(f"   ⚠️  Fair:      {dist['fair']} ({dist['fair']/analysis['total']*100:.1f}%)")
-        click.echo(f"   ❌ Poor:      {dist['poor']} ({dist['poor']/analysis['total']*100:.1f}%)")
-        click.echo(f"   💥 Fragile:   {dist['fragile']} ({dist['fragile']/analysis['total']*100:.1f}%)")
+        click.echo(f"    Excellent: {dist['excellent']} ({dist['excellent']/analysis['total']*100:.1f}%)")
+        click.echo(f"    Good:      {dist['good']} ({dist['good']/analysis['total']*100:.1f}%)")
+        click.echo(f"     Fair:      {dist['fair']} ({dist['fair']/analysis['total']*100:.1f}%)")
+        click.echo(f"    Poor:      {dist['poor']} ({dist['poor']/analysis['total']*100:.1f}%)")
+        click.echo(f"    Fragile:   {dist['fragile']} ({dist['fragile']/analysis['total']*100:.1f}%)")
         
-        click.echo(f"\n🎯 Strategy Distribution:")
+        click.echo(f"\n Strategy Distribution:")
         for strategy, count in sorted(analysis['strategy_distribution'].items(), key=lambda x: x[1], reverse=True):
             percentage = count / analysis['total'] * 100
             click.echo(f"   {strategy}: {count} ({percentage:.1f}%)")
         
-        click.echo(f"\n💡 Recommendations:")
+        click.echo(f"\n Recommendations:")
         for rec in analysis['recommendations']:
             click.echo(f"   {rec}")
         
         # Detailed analysis if requested
         if detailed:
-            click.echo(f"\n🔬 Detailed Selector Analysis:")
+            click.echo(f"\n Detailed Selector Analysis:")
             
             # Find problematic selectors (LOW stability)
             from framework.model.app_model import SelectorStability
             problematic = [s for s in all_selectors if s.stability == SelectorStability.LOW]
             
             if problematic:
-                click.echo(f"\n⚠️  {len(problematic)} problematic selectors found:")
+                click.echo(f"\n  {len(problematic)} problematic selectors found:")
                 for selector in problematic[:10]:  # Show first 10
                     # Determine which selector string to display
                     selector_str = selector.android or selector.ios or selector.test_id or selector.xpath or "unknown"
@@ -887,14 +887,14 @@ def analyze_selectors(model_file: str, detailed: bool):
             # Check for duplicates
             duplicates = optimizer.find_duplicate_selectors(all_selectors)
             if duplicates:
-                click.echo(f"\n⚠️  {len(duplicates)} duplicate selectors found:")
+                click.echo(f"\n  {len(duplicates)} duplicate selectors found:")
                 for elem1, elem2 in duplicates[:5]:
                     click.echo(f"   • {elem1} and {elem2} have identical selectors")
         
-        click.echo(f"\n✅ Analysis complete!")
+        click.echo(f"\n Analysis complete!")
         
     except Exception as e:
-        click.echo(f"\n❌ Error analyzing selectors: {e}", err=True)
+        click.echo(f"\n Error analyzing selectors: {e}", err=True)
         import traceback
         traceback.print_exc()
         raise click.Abort()
@@ -928,21 +928,21 @@ def build(session_id: str, app_version: str, platform: str, output: str, correla
         # With custom ML model
         observe model build --session-id session_123 --app-version 1.0.0 --use-ml --ml-model my_model.pkl
     """
-    click.echo(f"🏗️  Building AppModel from session...")
+    click.echo(f"  Building AppModel from session...")
     click.echo(f"   Session: {session_id}")
     click.echo(f"   App Version: {app_version}")
     click.echo(f"   Platform: {platform}")
     click.echo(f"   Output: {output}")
     
     if use_ml:
-        click.echo(f"   🤖 ML Classifier: ENABLED")
+        click.echo(f"    ML Classifier: ENABLED")
         click.echo(f"   ML Model: {ml_model}")
         
         # Validate ML model file exists only when ML is enabled
         ml_model_path = Path(ml_model)
         if not ml_model_path.exists():
-            click.echo(f"\n❌ Error: ML model file not found: {ml_model_path}", err=True)
-            click.echo(f"\n💡 Solutions:", err=True)
+            click.echo(f"\n Error: ML model file not found: {ml_model_path}", err=True)
+            click.echo(f"\n Solutions:", err=True)
             click.echo(f"   1. Create universal pre-trained model (RECOMMENDED - works for ANY app):", err=True)
             click.echo(f"      observe ml create-universal-model", err=True)
             click.echo(f"", err=True)
@@ -973,7 +973,7 @@ def build(session_id: str, app_version: str, platform: str, output: str, correla
         # Load correlations if provided
         correlation_result = None
         if correlations:
-            click.echo(f"\n📊 Loading correlations from: {correlations}")
+            click.echo(f"\n Loading correlations from: {correlations}")
             with open(correlations, 'r') as f:
                 corr_data = json.load(f)
                 correlation_result = CorrelationResult(**corr_data)
@@ -982,7 +982,7 @@ def build(session_id: str, app_version: str, platform: str, output: str, correla
         platform_enum = Platform.ANDROID if platform == 'android' else Platform.IOS
         
         # Build model
-        click.echo(f"\n🔨 Building model...")
+        click.echo(f"\n Building model...")
         app_model = builder.build_from_session(
             session_id=session_id,
             app_version=app_version,
@@ -1001,8 +1001,8 @@ def build(session_id: str, app_version: str, platform: str, output: str, correla
                 yaml.dump(app_model.model_dump(), f, default_flow_style=False, sort_keys=False)
         
         # Print summary
-        click.echo(f"\n✅ AppModel built successfully!")
-        click.echo(f"\n📊 Model Statistics:")
+        click.echo(f"\n AppModel built successfully!")
+        click.echo(f"\n Model Statistics:")
         click.echo(f"   Screens: {len(app_model.screens)}")
         click.echo(f"   API Calls: {len(app_model.api_calls)}")
         click.echo(f"   Flows: {len(app_model.flows)}")
@@ -1011,13 +1011,13 @@ def build(session_id: str, app_version: str, platform: str, output: str, correla
             click.echo(f"   States: {len(app_model.state_machine.states)}")
             click.echo(f"   Transitions: {len(app_model.state_machine.transitions)}")
         
-        click.echo(f"\n📄 Model saved to: {output_path}")
+        click.echo(f"\n Model saved to: {output_path}")
         click.echo(f"\nNext steps:")
         click.echo(f"  1. Review the generated model")
         click.echo(f"  2. Generate tests: observe generate pages --model {output}")
         
     except Exception as e:
-        click.echo(f"\n❌ Error building model: {e}", err=True)
+        click.echo(f"\n Error building model: {e}", err=True)
         import traceback
         traceback.print_exc()
         raise click.Abort()
@@ -1030,7 +1030,7 @@ def crypto():
     
     Commands for working with TLS/SSL keys exported from observe builds.
     
-    ⚠️  SECURITY WARNING: These operations handle encryption keys!
+      SECURITY WARNING: These operations handle encryption keys!
     """
     pass
 
@@ -1046,7 +1046,7 @@ def pull(session_id: str, package: str, output: str):
     Example:
         observe crypto pull --session-id session_20250119_142345
     """
-    click.echo(f"🔐 Pulling crypto keys from device...")
+    click.echo(f" Pulling crypto keys from device...")
     click.echo(f"   Session: {session_id}")
     click.echo(f"   Package: {package}")
     
@@ -1056,17 +1056,17 @@ def pull(session_id: str, package: str, output: str):
         keys_file = pull_keys_from_device(session_id, package)
         
         if keys_file:
-            click.echo(f"\n✅ Keys pulled successfully!")
+            click.echo(f"\n Keys pulled successfully!")
             click.echo(f"   File: {keys_file}")
-            click.echo(f"\n📊 Next steps:")
+            click.echo(f"\n Next steps:")
             click.echo(f"   1. Inspect keys: observe crypto show --keys-file {keys_file}")
             click.echo(f"   2. Export for Wireshark: observe crypto export --keys-file {keys_file}")
         else:
-            click.echo(f"\n❌ Failed to pull keys from device", err=True)
+            click.echo(f"\n Failed to pull keys from device", err=True)
             raise click.Abort()
             
     except Exception as e:
-        click.echo(f"\n❌ Error: {e}", err=True)
+        click.echo(f"\n Error: {e}", err=True)
         import traceback
         traceback.print_exc()
         raise click.Abort()
@@ -1082,7 +1082,7 @@ def show(keys_file: str):
     Example:
         observe crypto show --keys-file crypto_keys_session123.json
     """
-    click.echo(f"🔐 Loading crypto keys...")
+    click.echo(f" Loading crypto keys...")
     
     try:
         from framework.security.traffic_decryptor import TrafficDecryptor
@@ -1092,25 +1092,25 @@ def show(keys_file: str):
             stats = decryptor.get_stats()
             sessions = decryptor.list_sessions()
             
-            click.echo(f"\n✅ Crypto Keys Loaded!")
-            click.echo(f"\n📊 Statistics:")
+            click.echo(f"\n Crypto Keys Loaded!")
+            click.echo(f"\n Statistics:")
             click.echo(f"   TLS Keys: {stats['tls_keys_loaded']}")
             click.echo(f"   Device Keys: {'Yes' if stats['device_keys_loaded'] else 'No'}")
             click.echo(f"   Source: {stats['keys_file']}")
             
             if sessions:
-                click.echo(f"\n🔑 TLS Sessions:")
+                click.echo(f"\n TLS Sessions:")
                 for session in sessions[:10]:  # Show first 10
                     click.echo(f"   • {session}")
                 
                 if len(sessions) > 10:
                     click.echo(f"   ... and {len(sessions) - 10} more")
         else:
-            click.echo(f"\n❌ Failed to load keys", err=True)
+            click.echo(f"\n Failed to load keys", err=True)
             raise click.Abort()
             
     except Exception as e:
-        click.echo(f"\n❌ Error: {e}", err=True)
+        click.echo(f"\n Error: {e}", err=True)
         raise click.Abort()
 
 
@@ -1126,31 +1126,31 @@ def export(keys_file: str, output: str):
     Example:
         observe crypto export --keys-file crypto_keys.json --output tls_keys.txt
     """
-    click.echo(f"🔐 Exporting TLS keys for Wireshark...")
+    click.echo(f" Exporting TLS keys for Wireshark...")
     
     try:
         from framework.security.traffic_decryptor import TrafficDecryptor
         
         decryptor = TrafficDecryptor()
         if not decryptor.load_keys_from_file(Path(keys_file)):
-            click.echo(f"\n❌ Failed to load keys", err=True)
+            click.echo(f"\n Failed to load keys", err=True)
             raise click.Abort()
         
         output_path = Path(output)
         if decryptor.export_wireshark_keys(output_path):
-            click.echo(f"\n✅ TLS keys exported!")
+            click.echo(f"\n TLS keys exported!")
             click.echo(f"   File: {output_path}")
-            click.echo(f"\n📖 How to use in Wireshark:")
+            click.echo(f"\n How to use in Wireshark:")
             click.echo(f"   1. Open Wireshark")
             click.echo(f"   2. Edit → Preferences → Protocols → TLS")
             click.echo(f"   3. Set '(Pre)-Master-Secret log filename' to: {output_path.absolute()}")
             click.echo(f"   4. Restart capture - HTTPS traffic will be decrypted!")
         else:
-            click.echo(f"\n❌ Failed to export keys", err=True)
+            click.echo(f"\n Failed to export keys", err=True)
             raise click.Abort()
             
     except Exception as e:
-        click.echo(f"\n❌ Error: {e}", err=True)
+        click.echo(f"\n Error: {e}", err=True)
         raise click.Abort()
 
 
@@ -1158,21 +1158,21 @@ def export(keys_file: str, output: str):
 def info():
     """Show framework information"""
     click.echo(f"""
-🎯 Mobile Observe & Test Framework v{__version__}
+ Mobile Observe & Test Framework v{__version__}
 
-📦 Installation:
+ Installation:
    pip install -e .
 
-📚 Documentation:
+ Documentation:
    https://github.com/vadimtoptunov/mobile-test-recorder
 
-🚀 Quick Start:
+ Quick Start:
    1. observe init --platform android
    2. observe analyze android --source ./app
    3. observe record start
    4. observe generate pages --model models/app_model.yaml
 
-📋 Available Commands:
+ Available Commands:
    init       - Initialize new project
    analyze    - Static code analysis
    record     - Record observe sessions
@@ -1181,7 +1181,7 @@ def info():
    crypto     - Crypto key management (TLS/SSL decryption)
    info       - This information
 
-💡 Examples:
+ Examples:
    observe init --platform android --output ./my-project
    observe record start --device emulator-5554
    observe generate pages --model app_model.yaml
@@ -1197,7 +1197,7 @@ def info():
 
 @cli.group()
 def ml():
-    """🤖 ML/AI commands for intelligent testing (Phase 4)"""
+    """ ML/AI commands for intelligent testing (Phase 4)"""
     pass
 
 
@@ -1219,7 +1219,7 @@ def train(session_id: str, output: str, test_size: float, auto_label: bool):
         observe ml generate-training-data --output training_data/synthetic.json
         observe ml train --session-id session_123
     """
-    click.echo(f"🤖 Training ML element classifier...")
+    click.echo(f" Training ML element classifier...")
     click.echo(f"   Session: {session_id}")
     
     try:
@@ -1236,42 +1236,42 @@ def train(session_id: str, output: str, test_size: float, auto_label: bool):
         )
         
         if not hierarchy_events:
-            click.echo(f"\n❌ No hierarchy events found for session {session_id}", err=True)
-            click.echo(f"\n💡 Tips:", err=True)
+            click.echo(f"\n No hierarchy events found for session {session_id}", err=True)
+            click.echo(f"\n Tips:", err=True)
             click.echo(f"   1. Make sure you recorded a session with HierarchyCollector enabled", err=True)
             click.echo(f"   2. Or generate synthetic training data:", err=True)
             click.echo(f"      observe ml generate-training-data", err=True)
             raise click.Abort()
         
-        click.echo(f"\n📊 Loaded {len(hierarchy_events)} hierarchy events")
+        click.echo(f"\n Loaded {len(hierarchy_events)} hierarchy events")
         
         # Auto-label if requested
         if auto_label:
-            click.echo(f"\n🏷️  Auto-labeling data using rule-based heuristics...")
+            click.echo(f"\n  Auto-labeling data using rule-based heuristics...")
             generator = TrainingDataGenerator()
             hierarchy_events = generator.auto_label_hierarchy_events(hierarchy_events)
-            click.echo(f"   ✅ All elements labeled")
+            click.echo(f"    All elements labeled")
         
         # Initialize classifier
         classifier = ElementClassifier()
         
         # Prepare training data
-        click.echo(f"\n🔄 Preparing training data...")
+        click.echo(f"\n Preparing training data...")
         try:
             features, labels = classifier.prepare_training_data(hierarchy_events)
         except ValueError as e:
-            click.echo(f"\n❌ Error: {e}", err=True)
-            click.echo(f"\n💡 Solution: Use --auto-label flag to automatically label elements", err=True)
+            click.echo(f"\n Error: {e}", err=True)
+            click.echo(f"\n Solution: Use --auto-label flag to automatically label elements", err=True)
             click.echo(f"   observe ml train --session-id {session_id} --auto-label", err=True)
             raise click.Abort()
         
         # Train model
-        click.echo(f"\n🎓 Training Random Forest classifier...")
+        click.echo(f"\n Training Random Forest classifier...")
         metrics = classifier.train(features, labels, test_size=test_size)
         
         # Display results
-        click.echo(f"\n✅ Training complete!")
-        click.echo(f"\n📈 Performance Metrics:")
+        click.echo(f"\n Training complete!")
+        click.echo(f"\n Performance Metrics:")
         click.echo(f"   Train Accuracy: {metrics['train_accuracy']:.3f}")
         click.echo(f"   Test Accuracy:  {metrics['test_accuracy']:.3f}")
         click.echo(f"   CV Mean:        {metrics['cv_mean']:.3f} (±{metrics['cv_std']:.3f})")
@@ -1280,22 +1280,22 @@ def train(session_id: str, output: str, test_size: float, auto_label: bool):
         
         # Check if meets target
         if metrics['test_accuracy'] >= 0.85:
-            click.echo(f"\n🎯 Target accuracy (>85%) achieved! ✅")
+            click.echo(f"\n Target accuracy (>85%) achieved! ")
         else:
-            click.echo(f"\n⚠️  Target accuracy (>85%) not reached, but model saved")
+            click.echo(f"\n  Target accuracy (>85%) not reached, but model saved")
             click.echo(f"   Consider collecting more training data")
         
         # Save model
         output_path = Path(output)
         classifier.save_model(output_path)
         
-        click.echo(f"\n💾 Model saved to {output_path}")
-        click.echo(f"\n🎯 Next steps:")
+        click.echo(f"\n Model saved to {output_path}")
+        click.echo(f"\n Next steps:")
         click.echo(f"   1. Use ML classifier in model building:")
         click.echo(f"      observe model build --session-id {session_id} --use-ml --ml-model {output_path}")
         
     except Exception as e:
-        click.echo(f"\n❌ Error: {e}", err=True)
+        click.echo(f"\n Error: {e}", err=True)
         import traceback
         traceback.print_exc()
         raise click.Abort()
@@ -1319,7 +1319,7 @@ def generate_training_data(data_type: str, session_id: Optional[str], num_sample
         # Auto-label data from recorded session
         observe ml generate-training-data --type from-session --session-id session_123
     """
-    click.echo(f"🏷️  Generating training data...")
+    click.echo(f"  Generating training data...")
     
     try:
         from framework.ml.training_data_generator import TrainingDataGenerator
@@ -1335,11 +1335,11 @@ def generate_training_data(data_type: str, session_id: Optional[str], num_sample
             # Generate synthetic data
             generator.generate_synthetic_dataset(num_samples=num_samples, output_path=output_path)
             
-            click.echo(f"\n✅ Generated {num_samples} synthetic training samples")
+            click.echo(f"\n Generated {num_samples} synthetic training samples")
             
         elif data_type == 'from-session':
             if not session_id:
-                click.echo(f"❌ --session-id required for from-session type", err=True)
+                click.echo(f" --session-id required for from-session type", err=True)
                 raise click.Abort()
             
             click.echo(f"   Type: From session")
@@ -1354,27 +1354,27 @@ def generate_training_data(data_type: str, session_id: Optional[str], num_sample
             )
             
             if not hierarchy_events:
-                click.echo(f"\n❌ No hierarchy events found", err=True)
+                click.echo(f"\n No hierarchy events found", err=True)
                 raise click.Abort()
             
             click.echo(f"   Events: {len(hierarchy_events)}")
             
             # Auto-label
-            click.echo(f"\n🏷️  Auto-labeling elements...")
+            click.echo(f"\n  Auto-labeling elements...")
             labeled_events = generator.auto_label_hierarchy_events(hierarchy_events)
             
             # Save
             generator.save_labeled_data(labeled_events, output_path)
             
-            click.echo(f"\n✅ Labeled {len(labeled_events)} events")
+            click.echo(f"\n Labeled {len(labeled_events)} events")
         
-        click.echo(f"\n📄 Training data saved to: {output_path}")
-        click.echo(f"\n🎯 Next step:")
+        click.echo(f"\n Training data saved to: {output_path}")
+        click.echo(f"\n Next step:")
         click.echo(f"   Train ML classifier:")
         click.echo(f"   observe ml train --session-id <session_id>")
         
     except Exception as e:
-        click.echo(f"\n❌ Error: {e}", err=True)
+        click.echo(f"\n Error: {e}", err=True)
         import traceback
         traceback.print_exc()
         raise click.Abort()
@@ -1391,7 +1391,7 @@ def create_universal_model():
     Example:
         observe ml create-universal-model
     """
-    click.echo("🌍 Creating universal pre-trained model...")
+    click.echo(" Creating universal pre-trained model...")
     click.echo("   This will generate 2000+ training samples and train a model")
     click.echo("   that works for ANY Android/iOS application!\n")
     
@@ -1400,10 +1400,10 @@ def create_universal_model():
         
         model_path = create_universal_pretrained_model()
         
-        click.echo(f"\n✅ Universal model created!")
+        click.echo(f"\n Universal model created!")
         click.echo(f"   Location: {model_path}")
-        click.echo(f"\n💡 This model is now the default for all applications!")
-        click.echo(f"\n🎯 Usage:")
+        click.echo(f"\n This model is now the default for all applications!")
+        click.echo(f"\n Usage:")
         click.echo(f"   # Model is used automatically when --use-ml is set")
         click.echo(f"   observe model build --session-id <session_id> --use-ml")
         click.echo(f"\n   # Or specify it explicitly")
@@ -1413,7 +1413,7 @@ def create_universal_model():
         click.echo(f"     --ml-model {model_path}")
         
     except Exception as e:
-        click.echo(f"\n❌ Error: {e}", err=True)
+        click.echo(f"\n Error: {e}", err=True)
         import traceback
         traceback.print_exc()
         raise click.Abort()
@@ -1431,7 +1431,7 @@ def analyze_patterns(session_id: str, min_support: int, min_confidence: float, d
     Example:
         observe ml analyze-patterns --session-id session_123 --detect-anomalies
     """
-    click.echo(f"🔍 Analyzing navigation patterns...")
+    click.echo(f" Analyzing navigation patterns...")
     click.echo(f"   Session: {session_id}")
     
     try:
@@ -1447,10 +1447,10 @@ def analyze_patterns(session_id: str, min_support: int, min_confidence: float, d
         )
         
         if not nav_events:
-            click.echo(f"\n❌ No navigation events found for session {session_id}", err=True)
+            click.echo(f"\n No navigation events found for session {session_id}", err=True)
             raise click.Abort()
         
-        click.echo(f"\n📊 Loaded {len(nav_events)} navigation events")
+        click.echo(f"\n Loaded {len(nav_events)} navigation events")
         
         # Initialize recognizer
         recognizer = PatternRecognizer(
@@ -1459,48 +1459,48 @@ def analyze_patterns(session_id: str, min_support: int, min_confidence: float, d
         )
         
         # Analyze flows
-        click.echo(f"\n🔄 Mining flow patterns...")
+        click.echo(f"\n Mining flow patterns...")
         patterns = recognizer.analyze_flows(nav_events)
         
         # Display patterns
-        click.echo(f"\n✅ Detected {len(patterns)} flow patterns:")
+        click.echo(f"\n Detected {len(patterns)} flow patterns:")
         
         critical_patterns = [p for p in patterns if p.is_critical]
         if critical_patterns:
-            click.echo(f"\n🚨 Critical Paths ({len(critical_patterns)}):")
+            click.echo(f"\n Critical Paths ({len(critical_patterns)}):")
             for pattern in critical_patterns:
                 click.echo(f"   • {pattern.description}")
                 click.echo(f"     Frequency: {pattern.frequency}, Confidence: {pattern.confidence:.2f}")
         
         normal_patterns = [p for p in patterns if not p.is_critical][:5]
         if normal_patterns:
-            click.echo(f"\n📋 Common Flows (top 5):")
+            click.echo(f"\n Common Flows (top 5):")
             for pattern in normal_patterns:
                 click.echo(f"   • {pattern.description}")
                 click.echo(f"     Frequency: {pattern.frequency}, Confidence: {pattern.confidence:.2f}")
         
         # Detect anomalies if requested
         if detect_anomalies:
-            click.echo(f"\n🔍 Detecting anomalies...")
+            click.echo(f"\n Detecting anomalies...")
             anomalies = recognizer.detect_anomalies(nav_events, patterns)
             
             if anomalies:
-                click.echo(f"\n⚠️  Detected {len(anomalies)} anomalies:")
+                click.echo(f"\n  Detected {len(anomalies)} anomalies:")
                 for anomaly in anomalies[:10]:  # Show first 10
-                    severity_emoji = {'low': '🟡', 'medium': '🟠', 'high': '🔴'}
-                    emoji = severity_emoji.get(anomaly.severity, '⚪')
+                    severity_emoji = {'low': '🟡', 'medium': '🟠', 'high': ''}
+                    emoji = severity_emoji.get(anomaly.severity, '')
                     click.echo(f"   {emoji} [{anomaly.anomaly_type}] {anomaly.description}")
             else:
-                click.echo(f"\n✅ No anomalies detected")
+                click.echo(f"\n No anomalies detected")
         
         # Suggest test scenarios
-        click.echo(f"\n💡 Generating test scenario suggestions...")
+        click.echo(f"\n Generating test scenario suggestions...")
         scenarios = recognizer.suggest_test_scenarios(patterns)
         
         if scenarios:
             click.echo(f"\n🧪 Suggested Test Scenarios ({len(scenarios)}):")
             for i, scenario in enumerate(scenarios[:5], 1):  # Show first 5
-                priority_emoji = '🔴' if scenario['priority'] == 'critical' else '🟢'
+                priority_emoji = '' if scenario['priority'] == 'critical' else '🟢'
                 click.echo(f"\n   {priority_emoji} Scenario {i}: {scenario['description']}")
                 click.echo(f"      Priority: {scenario['priority']}, Frequency: {scenario['frequency']}")
                 click.echo(f"\n      Gherkin:\n")
@@ -1509,14 +1509,14 @@ def analyze_patterns(session_id: str, min_support: int, min_confidence: float, d
         
         # Get statistics
         stats = recognizer.get_pattern_stats()
-        click.echo(f"\n📊 Pattern Statistics:")
+        click.echo(f"\n Pattern Statistics:")
         click.echo(f"   Total Patterns: {stats['total_patterns']}")
         click.echo(f"   Critical Paths: {stats['critical_patterns']}")
         click.echo(f"   Avg Frequency:  {stats['avg_frequency']:.1f}")
         click.echo(f"   Avg Confidence: {stats['avg_confidence']:.2f}")
         
     except Exception as e:
-        click.echo(f"\n❌ Error: {e}", err=True)
+        click.echo(f"\n Error: {e}", err=True)
         import traceback
         traceback.print_exc()
         raise click.Abort()
@@ -1536,7 +1536,7 @@ def heal_selectors(model: str, test_results: str, output: str):
     Example:
         observe ml heal-selectors --model app_model.yaml --test-results failures.json
     """
-    click.echo(f"🔧 Healing broken selectors...")
+    click.echo(f" Healing broken selectors...")
     
     try:
         from framework.ml.selector_healer import SelectorHealer
@@ -1559,7 +1559,7 @@ def heal_selectors(model: str, test_results: str, output: str):
         
         # Process failures
         failures = results.get('failures', [])
-        click.echo(f"\n📊 Processing {len(failures)} failed tests...")
+        click.echo(f"\n Processing {len(failures)} failed tests...")
         
         healed_count = 0
         for failure in failures:
@@ -1584,7 +1584,7 @@ def heal_selectors(model: str, test_results: str, output: str):
             
             if result.success:
                 healed_count += 1
-                click.echo(f"\n   ✅ Healed {element_id}:")
+                click.echo(f"\n    Healed {element_id}:")
                 click.echo(f"      Strategy: {result.strategy.value}")
                 click.echo(f"      Confidence: {result.confidence:.2f}")
                 click.echo(f"      Old: {result.original_selector}")
@@ -1595,25 +1595,25 @@ def heal_selectors(model: str, test_results: str, output: str):
         
         # Display statistics
         stats = healer.get_healing_stats()
-        click.echo(f"\n📊 Healing Statistics:")
+        click.echo(f"\n Healing Statistics:")
         click.echo(f"   Total Attempts: {stats['total_attempts']}")
         click.echo(f"   Successful:     {stats['successful']}")
         click.echo(f"   Failed:         {stats['failed']}")
         click.echo(f"   Success Rate:   {stats['success_rate']:.1%}")
         
         if stats['strategies']:
-            click.echo(f"\n🔧 Strategies Used:")
+            click.echo(f"\n Strategies Used:")
             for strategy, counts in stats['strategies'].items():
                 success_rate = counts['successes'] / counts['attempts'] if counts['attempts'] > 0 else 0
                 click.echo(f"   • {strategy}: {counts['successes']}/{counts['attempts']} ({success_rate:.1%})")
         
         # Save healed model
         output_path = Path(output)
-        click.echo(f"\n💾 Saving healed model to {output_path}...")
+        click.echo(f"\n Saving healed model to {output_path}...")
         # Would save updated model here
         
     except Exception as e:
-        click.echo(f"\n❌ Error: {e}", err=True)
+        click.echo(f"\n Error: {e}", err=True)
         import traceback
         traceback.print_exc()
         raise click.Abort()
@@ -1634,7 +1634,7 @@ def visual_diff(baseline: str, current: str, output: str, threshold: float):
     Example:
         observe ml visual-diff --baseline baseline.png --current current.png
     """
-    click.echo(f"👁️  Detecting visual differences...")
+    click.echo(f"  Detecting visual differences...")
     
     try:
         from framework.ml.visual_detector import VisualDetector
@@ -1648,19 +1648,19 @@ def visual_diff(baseline: str, current: str, output: str, threshold: float):
             threshold=threshold
         )
         
-        click.echo(f"\n📊 Similarity Score: {similarity:.3f}")
+        click.echo(f"\n Similarity Score: {similarity:.3f}")
         
         if has_changes:
-            click.echo(f"⚠️  Visual changes detected!")
+            click.echo(f"  Visual changes detected!")
             
             if diff_image is not None:
                 detector.save_visual_diff(diff_image, Path(output))
-                click.echo(f"💾 Diff image saved to {output}")
+                click.echo(f" Diff image saved to {output}")
         else:
-            click.echo(f"✅ No significant visual changes")
+            click.echo(f" No significant visual changes")
         
     except Exception as e:
-        click.echo(f"\n❌ Error: {e}", err=True)
+        click.echo(f"\n Error: {e}", err=True)
         import traceback
         traceback.print_exc()
         raise click.Abort()
@@ -1688,7 +1688,7 @@ def report(report_type: str, test_results: Optional[str], model: Optional[str],
         observe ml report --type coverage --model app_model.yaml --executed-flows flows.json
         observe ml report --type selector-stability --model app_model.yaml
     """
-    click.echo(f"📊 Generating {report_type} report...")
+    click.echo(f" Generating {report_type} report...")
     
     try:
         from framework.ml.analytics_dashboard import AnalyticsDashboard
@@ -1701,18 +1701,18 @@ def report(report_type: str, test_results: Optional[str], model: Optional[str],
         
         if report_type == 'execution':
             if not test_results:
-                click.echo("❌ --test-results required for execution report", err=True)
+                click.echo(" --test-results required for execution report", err=True)
                 raise click.Abort()
             
             with open(test_results, 'r') as f:
                 results = json.load(f)
             
-            click.echo(f"📄 Loaded {len(results)} test results")
+            click.echo(f" Loaded {len(results)} test results")
             dashboard.generate_execution_report(results, output_path)
             
         elif report_type == 'coverage':
             if not model or not executed_flows:
-                click.echo("❌ --model and --executed-flows required for coverage report", err=True)
+                click.echo(" --model and --executed-flows required for coverage report", err=True)
                 raise click.Abort()
             
             # Load model
@@ -1724,13 +1724,13 @@ def report(report_type: str, test_results: Optional[str], model: Optional[str],
             with open(executed_flows, 'r') as f:
                 flows = json.load(f)
             
-            click.echo(f"📄 Loaded model with {len(app_model.screens)} screens, {len(app_model.flows)} flows")
-            click.echo(f"📄 {len(flows)} flows executed")
+            click.echo(f" Loaded model with {len(app_model.screens)} screens, {len(app_model.flows)} flows")
+            click.echo(f" {len(flows)} flows executed")
             dashboard.generate_coverage_report(app_model, flows, output_path)
             
         elif report_type == 'selector-stability':
             if not model:
-                click.echo("❌ --model required for selector stability report", err=True)
+                click.echo(" --model required for selector stability report", err=True)
                 raise click.Abort()
             
             # Load model
@@ -1738,14 +1738,14 @@ def report(report_type: str, test_results: Optional[str], model: Optional[str],
                 model_data = yaml.safe_load(f)
             app_model = AppModel.model_validate(model_data)
             
-            click.echo(f"📄 Analyzing selectors in {len(app_model.screens)} screens")
+            click.echo(f" Analyzing selectors in {len(app_model.screens)} screens")
             dashboard.generate_selector_stability_report(app_model, output_path)
         
-        click.echo(f"\n✅ Report generated successfully!")
-        click.echo(f"📄 Open in browser: file://{output_path.absolute()}")
+        click.echo(f"\n Report generated successfully!")
+        click.echo(f" Open in browser: file://{output_path.absolute()}")
         
     except Exception as e:
-        click.echo(f"\n❌ Error: {e}", err=True)
+        click.echo(f"\n Error: {e}", err=True)
         import traceback
         traceback.print_exc()
         raise click.Abort()

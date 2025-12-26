@@ -1,35 +1,35 @@
-# 🚀 Getting Started
+#  Getting Started
 
 Quick guide to start working with Mobile Observe & Test Framework
 
 ---
 
-## ✅ What's Already Built
+##  What's Already Built
 
 ### 1. **Python Framework (40% complete)**
-- ✅ Full CLI with all commands
-- ✅ Complete data models (Pydantic)
-- ✅ Project structure
+-  Full CLI with all commands
+-  Complete data models (Pydantic)
+-  Project structure
 - ⏳ Implementations (stubs, need full implementation)
 
 ### 2. **Android Demo App (30% complete)**
-- ✅ Gradle project with 3 build variants
-- ✅ Onboarding screens (swipeable)
-- ✅ Login screen
-- ✅ Home screen with transactions
+-  Gradle project with 3 build variants
+-  Onboarding screens (swipeable)
+-  Login screen
+-  Home screen with transactions
 - ⏳ Top-up flow with WebView (TODO)
 - ⏳ Send money flow (TODO)
 
 ### 3. **Observe SDK (10% complete)**
-- ✅ Project structure
-- ✅ Core classes (SDK, Config, Session)
-- ✅ Event system (EventBus, Event models)
-- ✅ Observer stubs
+-  Project structure
+-  Core classes (SDK, Config, Session)
+-  Event system (EventBus, Event models)
+-  Observer stubs
 - ⏳ Full implementation (TODO)
 
 ---
 
-## 🏃 Quick Start
+##  Quick Start
 
 ### Step 1: Install Python Framework
 
@@ -45,7 +45,7 @@ observe --help
 
 **Expected output:**
 ```
-🎯 Mobile Observe & Test Framework
+ Mobile Observe & Test Framework
 
 Usage: observe [OPTIONS] COMMAND [ARGS]...
 
@@ -104,39 +104,39 @@ implementation(platform("androidx.compose:compose-bom:2024.01.00"))
 
 ---
 
-## 📂 Project Structure
+##  Project Structure
 
 ```
 mobile_test_recorder/
-├── framework/              # Python framework
-│   ├── cli/               # CLI commands (working)
-│   ├── model/             # Data models (complete)
-│   ├── analyzer/          # Static analyzers (TODO)
-│   ├── generators/        # Code generators (TODO)
-│   └── storage/           # Event store (TODO)
-│
-├── demo-app/
-│   └── android/
-│       ├── app/           # Main app
-│       │   ├── src/
-│       │   │   ├── main/       # Shared code
-│       │   │   └── observe/    # Observe build specific
-│       │   └── build.gradle.kts
-│       │
-│       └── observe-sdk/   # Observe SDK library
-│           └── src/main/
-│
-├── docs/                  # Documentation
-├── tests/                 # Generated tests (will be here)
-├── README.md
-├── PROGRESS.md           # Detailed progress
-├── GETTING_STARTED.md    # This file
-└── pyproject.toml
+ framework/              # Python framework
+    cli/               # CLI commands (working)
+    model/             # Data models (complete)
+    analyzer/          # Static analyzers (TODO)
+    generators/        # Code generators (TODO)
+    storage/           # Event store (TODO)
+
+ demo-app/
+    android/
+        app/           # Main app
+           src/
+              main/       # Shared code
+              observe/    # Observe build specific
+           build.gradle.kts
+       
+        observe-sdk/   # Observe SDK library
+            src/main/
+
+ docs/                  # Documentation
+ tests/                 # Generated tests (will be here)
+ README.md
+ PROGRESS.md           # Detailed progress
+ GETTING_STARTED.md    # This file
+ pyproject.toml
 ```
 
 ---
 
-## 🎯 Next Steps (Development)
+##  Next Steps (Development)
 
 ### Immediate (This week):
 1. **Test what's built**
@@ -198,7 +198,7 @@ adb logcat | grep ObserveSDK
 
 ---
 
-## 📝 Notes
+##  Notes
 
 - **All code is in English** (except our conversation)
 - **Build variants are working** (observe/test/prod)
@@ -208,7 +208,7 @@ adb logcat | grep ObserveSDK
 
 ---
 
-## 🐛 Known Issues & Solutions
+##  Known Issues & Solutions
 
 ### Issue 1: Gradle Sync Fails
 **Solution:**
@@ -229,7 +229,7 @@ adb logcat | grep ObserveSDK
 
 ---
 
-## 💡 Tips
+##  Tips
 
 1. **Use observe build variant** for development
 2. **Check logs** with `adb logcat | grep FinDemo`
@@ -238,7 +238,7 @@ adb logcat | grep ObserveSDK
 
 ---
 
-## 📚 Resources
+##  Resources
 
 - [Jetpack Compose Docs](https://developer.android.com/jetpack/compose)
 - [Click Framework](https://click.palletsprojects.com/)

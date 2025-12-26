@@ -201,13 +201,13 @@ class NetworkObserver(
             
             // Add SSL key capture if enabled
             if (config?.exportCryptoKeys == true) {
-                Log.w(TAG, "🔓 SSL key capture ENABLED - traffic can be decrypted!")
+                Log.w(TAG, " SSL key capture ENABLED - traffic can be decrypted!")
                 builder.addInterceptor(SSLKeyCapture())
             }
             
             // Bypass certificate pinning if enabled
             if (config?.bypassCertPinning == true) {
-                Log.w(TAG, "🔓 Certificate pinning BYPASSED - MITM proxy allowed!")
+                Log.w(TAG, " Certificate pinning BYPASSED - MITM proxy allowed!")
                 builder.bypassCertificatePinning()
             }
             

@@ -16,7 +16,7 @@ object ObserveInitializer {
     private const val TAG = "ObserveInit"
     
     fun initialize(app: Application) {
-        Log.i(TAG, "🎯 Initializing Observe SDK for observe build")
+        Log.i(TAG, " Initializing Observe SDK for observe build")
         
         try {
             ObserveSDK.initialize(
@@ -29,9 +29,9 @@ object ObserveInitializer {
                 )
             )
             
-            Log.i(TAG, "✅ Observe SDK initialized successfully")
+            Log.i(TAG, " Observe SDK initialized successfully")
         } catch (e: Exception) {
-            Log.e(TAG, "❌ Failed to initialize Observe SDK", e)
+            Log.e(TAG, " Failed to initialize Observe SDK", e)
         }
     }
 }

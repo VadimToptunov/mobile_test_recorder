@@ -1,4 +1,4 @@
-# 🎯 Complete Guide to Mobile Element Selectors
+#  Complete Guide to Mobile Element Selectors
 
 ## Overview
 
@@ -874,20 +874,20 @@ element.get_attribute('rect')             # Element rectangle
 
 | Selector Type | Android | iOS | Stability | Appium 2 | Appium 3 |
 |---------------|---------|-----|-----------|----------|----------|
-| ID | ✅ | ⚠️ | ⭐⭐⭐⭐⭐ | ✅ | ✅ |
-| Accessibility ID | ✅ | ✅ | ⭐⭐⭐⭐⭐ | ✅ | ✅ |
-| Class Name | ✅ | ✅ | ⭐⭐⭐ | ✅ | ✅ |
-| XPath | ✅ | ✅ | ⭐⭐ | ✅ | ✅ |
-| UIAutomator | ✅ | ❌ | ⭐⭐⭐⭐ | ✅ | ✅ |
-| iOS Predicate | ❌ | ✅ | ⭐⭐⭐⭐ | ✅ | ✅ |
-| iOS Class Chain | ❌ | ✅ | ⭐⭐⭐⭐ | ✅ | ✅ |
-| Image | ✅ | ✅ | ⭐⭐ | ⚠️ | ✅ |
+| ID |  |  |  |  |  |
+| Accessibility ID |  |  |  |  |  |
+| Class Name |  |  |  |  |  |
+| XPath |  |  |  |  |  |
+| UIAutomator |  |  |  |  |  |
+| iOS Predicate |  |  |  |  |  |
+| iOS Class Chain |  |  |  |  |  |
+| Image |  |  |  |  |  |
 
 Legend:
-- ✅ Fully supported
-- ⚠️ Limited support
-- ❌ Not supported
-- ⭐ Stability rating (1-5 stars)
+-  Fully supported
+-  Limited support
+-  Not supported
+-  Stability rating (1-5 stars)
 
 ---
 
@@ -948,7 +948,7 @@ class LoginScreen(BasePage):
 
 ---
 
-**This document covers ALL selector strategies across all tools and frameworks!** 🎯
+**This document covers ALL selector strategies across all tools and frameworks!** 
 
 For framework-specific implementation, see the generated Page Objects in `generated/pages/`.
 

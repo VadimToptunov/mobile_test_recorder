@@ -86,7 +86,7 @@ object ObserveSDK {
         
         // Initialize crypto key exporter if enabled
         if (cfg.exportCryptoKeys) {
-            Log.w(TAG, "🔐 Crypto key export ENABLED - this build can decrypt traffic!")
+            Log.w(TAG, " Crypto key export ENABLED - this build can decrypt traffic!")
             CryptoKeyExporter.initialize(cfg)
         }
         

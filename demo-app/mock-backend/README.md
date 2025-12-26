@@ -1,55 +1,55 @@
-# 💰 FinDemo API - Fintech Platform
+#  FinDemo API - Fintech Platform
 
 Complete **Revolut/Wise clone** mock backend with multi-currency, exchange, cards, and P2P payments.
 
 ---
 
-## 🚀 Features
+##  Features
 
-### ✅ Multi-Currency Accounts
+###  Multi-Currency Accounts
 - Support for **5 major currencies**: USD, EUR, GBP, JPY, CHF
 - Real-time balance tracking per currency
 - Automatic account creation
 - Primary currency setting
 
-### ✅ Currency Exchange
+###  Currency Exchange
 - Real-time exchange rates
 - Instant currency conversion
 - Low fees (0% for demo)
 - Exchange history tracking
 
-### ✅ Cards
+###  Cards
 - **Virtual cards** - Instant creation
 - **Physical cards** - For ATM/POS
 - Per-card spending limits
 - Block/unblock functionality
 - Multiple currencies per card
 
-### ✅ P2P Payments
+###  P2P Payments
 - Send money to contacts
 - Request money from users
 - Split bills
 - Add notes to transactions
 
-### ✅ Transaction History
+###  Transaction History
 - Detailed transaction log
 - Filter by category (P2P, shopping, food, etc.)
 - Real-time updates
 - Export functionality
 
-### ✅ Contacts Management
+###  Contacts Management
 - Add/remove contacts
 - Favorite contacts
 - Quick send to favorites
 
-### ✅ KYC Verification
+###  KYC Verification
 - Document upload simulation
 - Identity verification
 - Status tracking
 
 ---
 
-## 📊 API Endpoints
+##  API Endpoints
 
 ### Authentication
 ```http
@@ -107,7 +107,7 @@ GET  /api/kyc/status            # Check status
 
 ---
 
-## 🔧 Setup & Run
+##  Setup & Run
 
 ### Requirements
 ```bash
@@ -128,7 +128,7 @@ Server will start on `http://localhost:8000`
 
 ---
 
-## 📝 Example Requests
+##  Example Requests
 
 ### Login
 ```bash
@@ -221,7 +221,7 @@ curl -X POST http://localhost:8000/api/send \
 
 ---
 
-## 💾 Mock Data
+##  Mock Data
 
 ### Default User
 ```json
@@ -256,7 +256,7 @@ curl -X POST http://localhost:8000/api/send \
 
 ---
 
-## 🎨 Transaction Categories
+##  Transaction Categories
 
 - `p2p` - Person to person
 - `topup` - Account funding
@@ -270,7 +270,7 @@ curl -X POST http://localhost:8000/api/send \
 
 ---
 
-## 🔐 Authentication
+##  Authentication
 
 **For demo purposes**, authentication is **optional**. 
 
@@ -282,7 +282,7 @@ To use auth:
 
 ---
 
-## 📱 Mobile App Integration
+##  Mobile App Integration
 
 ### Android (Retrofit)
 ```kotlin
@@ -344,7 +344,7 @@ curl -X POST http://localhost:8000/api/send \
 
 ---
 
-## 🚀 Next Steps
+##  Next Steps
 
 1. **Connect Mobile Apps**: Update Android/iOS apps to use new endpoints
 2. **Add Real Data**: Replace mock data with database
@@ -355,7 +355,7 @@ curl -X POST http://localhost:8000/api/send \
 
 ---
 
-## 📚 API Documentation
+##  API Documentation
 
 Full interactive documentation available at:
 - **Swagger UI**: http://localhost:8000/docs
@@ -363,5 +363,5 @@ Full interactive documentation available at:
 
 ---
 
-**Built for Mobile Observe & Test Framework** 🚀  
-**Simulating Revolut/Wise experience** 💰
+**Built for Mobile Observe & Test Framework**   
+**Simulating Revolut/Wise experience** 

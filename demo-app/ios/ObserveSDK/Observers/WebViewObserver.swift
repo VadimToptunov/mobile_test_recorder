@@ -286,10 +286,14 @@ public class WebViewObserver: NSObject {
         )
         webView.configuration.userContentController.addUserScript(script)
         
-        // Set navigation delegate for page load tracking
+        // Store original navigation delegate
+        let originalDelegate = webView.navigationDelegate
+        
+        // Create delegating navigation delegate
         let navigationDelegate = WebViewNavigationDelegate(
             screenName: screenName,
-            eventBus: eventBus
+            eventBus: eventBus,
+            originalDelegate: originalDelegate
         )
         webView.navigationDelegate = navigationDelegate
         
@@ -306,6 +310,12 @@ public class WebViewObserver: NSObject {
             navigationDelegate,
             .OBJC_ASSOCIATION_RETAIN_NONATOMIC
         )
+        objc_setAssociatedObject(
+            webView,
+            &AssociatedKeys.originalNavigationDelegate,
+            originalDelegate,
+            .OBJC_ASSOCIATION_RETAIN_NONATOMIC
+        )
         
         print("[WebViewObserver] WebView observation enabled for screen: \(screenName)")
     }
@@ -313,9 +323,26 @@ public class WebViewObserver: NSObject {
     /// Unregister a WKWebView from observation
     public func stopObserving(webView: WKWebView) {
         observedWebViews.remove(webView)
+        
+        // Remove message handler
         webView.configuration.userContentController.removeScriptMessageHandler(forName: "observeSDK")
         
-        print("[WebViewObserver] WebView observation disabled")
+        // Remove all user scripts to prevent duplicate injection
+        webView.configuration.userContentController.removeAllUserScripts()
+        
+        // Restore original navigation delegate
+        let originalDelegate = objc_getAssociatedObject(
+            webView,
+            &AssociatedKeys.originalNavigationDelegate
+        ) as? WKNavigationDelegate
+        webView.navigationDelegate = originalDelegate
+        
+        // Clear associated objects
+        objc_setAssociatedObject(webView, &AssociatedKeys.messageHandler, nil, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        objc_setAssociatedObject(webView, &AssociatedKeys.navigationDelegate, nil, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        objc_setAssociatedObject(webView, &AssociatedKeys.originalNavigationDelegate, nil, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        
+        print("[WebViewObserver] WebView observation disabled - all resources cleaned up")
     }
 }
 
@@ -324,6 +351,7 @@ public class WebViewObserver: NSObject {
 private struct AssociatedKeys {
     static var messageHandler = "messageHandler"
     static var navigationDelegate = "navigationDelegate"
+    static var originalNavigationDelegate = "originalNavigationDelegate"
 }
 
 // MARK: - Message Handler
@@ -438,13 +466,19 @@ private class WebViewNavigationDelegate: NSObject, WKNavigationDelegate {
     
     private let screenName: String
     private let eventBus: EventBus
+    private weak var originalDelegate: WKNavigationDelegate?
     
-    init(screenName: String, eventBus: EventBus) {
+    init(screenName: String, eventBus: EventBus, originalDelegate: WKNavigationDelegate?) {
         self.screenName = screenName
         self.eventBus = eventBus
+        self.originalDelegate = originalDelegate
     }
     
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        // Call original delegate first
+        originalDelegate?.webView?(webView, didFinish: navigation)
+        
+        // Then add SDK logic
         guard let url = webView.url?.absoluteString else { return }
         
         print("[WebViewObserver] Page finished loading: \(url)")
@@ -458,6 +492,28 @@ private class WebViewNavigationDelegate: NSObject, WKNavigationDelegate {
         )
         
         eventBus.publish(event: event)
+    }
+    
+    // Delegate decidePolicyFor to original delegate
+    func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
+        if let originalDelegate = originalDelegate {
+            originalDelegate.webView?(webView, decidePolicyFor: navigationAction, decisionHandler: decisionHandler)
+        } else {
+            decisionHandler(.allow)
+        }
+    }
+    
+    // Delegate all other navigation methods
+    func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+        originalDelegate?.webView?(webView, didStartProvisionalNavigation: navigation)
+    }
+    
+    func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+        originalDelegate?.webView?(webView, didFail: navigation, withError: error)
+    }
+    
+    func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+        originalDelegate?.webView?(webView, didFailProvisionalNavigation: navigation, withError: error)
     }
 }
 

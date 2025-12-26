@@ -715,13 +715,13 @@ def get_kyc_status(authorization: Optional[str] = Header(None)):
 # ==================== Main ====================
 
 if __name__ == "__main__":
-    print("🚀 Starting FinDemo API - Fintech Platform")
+    print(" Starting FinDemo API - Fintech Platform")
     print("=" * 60)
-    print("📍 Server: http://localhost:8000")
-    print("📖 Docs: http://localhost:8000/docs")
-    print("🔧 ReDoc: http://localhost:8000/redoc")
+    print(" Server: http://localhost:8000")
+    print(" Docs: http://localhost:8000/docs")
+    print(" ReDoc: http://localhost:8000/redoc")
     print("=" * 60)
-    print("✨ Features:")
+    print(" Features:")
     print("   • Multi-currency accounts (USD, EUR, GBP, JPY, CHF)")
     print("   • Real-time currency exchange")
     print("   • Virtual & Physical cards")

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Tag ID for storing original WebViewClient -->
+    <item name="webview_original_client_tag" type="id"/>
+</resources>
+

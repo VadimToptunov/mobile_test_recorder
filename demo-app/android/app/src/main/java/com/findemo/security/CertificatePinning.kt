@@ -56,7 +56,7 @@ object CertificatePinning {
         val builder = OkHttpClient.Builder()
         
         if (!enablePinning) {
-            Log.w(TAG, "⚠️ Certificate pinning DISABLED (test/observe build)")
+            Log.w(TAG, " Certificate pinning DISABLED (test/observe build)")
             return builder
         }
         
@@ -77,7 +77,7 @@ object CertificatePinning {
                 chain.proceed(chain.request())
             } catch (e: SSLPeerUnverifiedException) {
                 // Certificate pinning failed - possible MITM attack!
-                Log.e(TAG, "🚨 CERTIFICATE PINNING FAILED - MITM ATTACK DETECTED!", e)
+                Log.e(TAG, " CERTIFICATE PINNING FAILED - MITM ATTACK DETECTED!", e)
                 
                 // Report to security monitoring
                 SecurityMonitor.reportSecurityEvent(
@@ -90,7 +90,7 @@ object CertificatePinning {
             }
         }
         
-        Log.i(TAG, "✅ Certificate pinning ENABLED for $API_DOMAIN (${PRODUCTION_PINS.size} pins)")
+        Log.i(TAG, " Certificate pinning ENABLED for $API_DOMAIN (${PRODUCTION_PINS.size} pins)")
         
         return builder
     }

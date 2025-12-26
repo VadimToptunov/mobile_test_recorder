@@ -59,7 +59,7 @@ object RootDetection {
         
         if (rootDetected) {
             val failedChecks = checks.filter { it.second }.map { it.first }
-            Log.w(TAG, "🚨 ROOT DETECTED! Failed checks: $failedChecks")
+            Log.w(TAG, " ROOT DETECTED! Failed checks: $failedChecks")
             
             SecurityMonitor.reportSecurityEvent(
                 SecurityEvent.ROOT_DETECTED,
@@ -67,7 +67,7 @@ object RootDetection {
                 "strict_mode" to strictMode.toString()
             )
         } else {
-            Log.i(TAG, "✅ No root detected")
+            Log.i(TAG, " No root detected")
         }
         
         return rootDetected
@@ -278,7 +278,7 @@ object TamperDetection {
         
         if (tampered) {
             val failedChecks = checks.filter { it.second }.map { it.first }
-            Log.w(TAG, "🚨 TAMPER DETECTED! Failed checks: $failedChecks")
+            Log.w(TAG, " TAMPER DETECTED! Failed checks: $failedChecks")
             
             SecurityMonitor.reportSecurityEvent(
                 SecurityEvent.TAMPER_DETECTED,

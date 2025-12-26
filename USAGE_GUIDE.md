@@ -46,10 +46,10 @@ cd my-project
 This creates:
 ```
 my-project/
-├── models/         # App models
-├── tests/          # Generated tests
-├── sessions/       # Recorded sessions
-└── config/         # Configuration files
+ models/         # App models
+ tests/          # Generated tests
+ sessions/       # Recorded sessions
+ config/         # Configuration files
 ```
 
 ### Step 2: Static Analysis (Optional)
@@ -363,7 +363,7 @@ In your Compose UI:
 ```kotlin
 Button(
     onClick = { },
-    modifier = Modifier.testTag("login_button")  // ✅ Good
+    modifier = Modifier.testTag("login_button")  //  Good
 ) {
     Text("Login")
 }
