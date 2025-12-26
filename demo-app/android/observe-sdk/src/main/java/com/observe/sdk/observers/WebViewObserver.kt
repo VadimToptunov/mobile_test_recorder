@@ -420,17 +420,116 @@ class WebViewObserver(
                 }
             }
             
-            // Delegate all other methods to original client
             override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
                 return originalClient?.shouldOverrideUrlLoading(view, url) ?: super.shouldOverrideUrlLoading(view, url)
             }
             
             override fun onPageStarted(view: WebView?, url: String?, favicon: android.graphics.Bitmap?) {
-                if (originalClient != null) {
-                    originalClient.onPageStarted(view, url, favicon)
-                } else {
-                    super.onPageStarted(view, url, favicon)
-                }
+                originalClient?.onPageStarted(view, url, favicon) ?: super.onPageStarted(view, url, favicon)
+            }
+            
+            // Delegate error handling methods
+            override fun onReceivedError(
+                view: WebView?,
+                errorCode: Int,
+                description: String?,
+                failingUrl: String?
+            ) {
+                originalClient?.onReceivedError(view, errorCode, description, failingUrl) 
+                    ?: super.onReceivedError(view, errorCode, description, failingUrl)
+            }
+            
+            @android.annotation.TargetApi(android.os.Build.VERSION_CODES.M)
+            override fun onReceivedError(
+                view: WebView?,
+                request: android.webkit.WebResourceRequest?,
+                error: android.webkit.WebResourceError?
+            ) {
+                originalClient?.onReceivedError(view, request, error) 
+                    ?: super.onReceivedError(view, request, error)
+            }
+            
+            override fun onReceivedHttpError(
+                view: WebView?,
+                request: android.webkit.WebResourceRequest?,
+                errorResponse: android.webkit.WebResourceResponse?
+            ) {
+                originalClient?.onReceivedHttpError(view, request, errorResponse) 
+                    ?: super.onReceivedHttpError(view, request, errorResponse)
+            }
+            
+            override fun onReceivedSslError(
+                view: WebView?,
+                handler: android.webkit.SslErrorHandler?,
+                error: android.net.http.SslError?
+            ) {
+                originalClient?.onReceivedSslError(view, handler, error) 
+                    ?: super.onReceivedSslError(view, handler, error)
+            }
+            
+            // Delegate resource loading methods
+            override fun onLoadResource(view: WebView?, url: String?) {
+                originalClient?.onLoadResource(view, url) ?: super.onLoadResource(view, url)
+            }
+            
+            override fun shouldInterceptRequest(view: WebView?, url: String?): android.webkit.WebResourceResponse? {
+                return originalClient?.shouldInterceptRequest(view, url) 
+                    ?: super.shouldInterceptRequest(view, url)
+            }
+            
+            override fun shouldInterceptRequest(
+                view: WebView?,
+                request: android.webkit.WebResourceRequest?
+            ): android.webkit.WebResourceResponse? {
+                return originalClient?.shouldInterceptRequest(view, request) 
+                    ?: super.shouldInterceptRequest(view, request)
+            }
+            
+            // Delegate form resubmission
+            override fun onFormResubmission(view: WebView?, dontResend: android.os.Message?, resend: android.os.Message?) {
+                originalClient?.onFormResubmission(view, dontResend, resend) 
+                    ?: super.onFormResubmission(view, dontResend, resend)
+            }
+            
+            // Delegate authentication
+            override fun onReceivedHttpAuthRequest(
+                view: WebView?,
+                handler: android.webkit.HttpAuthHandler?,
+                host: String?,
+                realm: String?
+            ) {
+                originalClient?.onReceivedHttpAuthRequest(view, handler, host, realm) 
+                    ?: super.onReceivedHttpAuthRequest(view, handler, host, realm)
+            }
+            
+            // Delegate client certificate request
+            override fun onReceivedClientCertRequest(view: WebView?, request: android.webkit.ClientCertRequest?) {
+                originalClient?.onReceivedClientCertRequest(view, request) 
+                    ?: super.onReceivedClientCertRequest(view, request)
+            }
+            
+            // Delegate scale changes
+            override fun onScaleChanged(view: WebView?, oldScale: Float, newScale: Float) {
+                originalClient?.onScaleChanged(view, oldScale, newScale) 
+                    ?: super.onScaleChanged(view, oldScale, newScale)
+            }
+            
+            // Delegate render process handling
+            override fun onRenderProcessGone(view: WebView?, detail: android.webkit.RenderProcessGoneDetail?): Boolean {
+                return originalClient?.onRenderProcessGone(view, detail) 
+                    ?: super.onRenderProcessGone(view, detail)
+            }
+            
+            // Delegate safe browsing
+            @android.annotation.TargetApi(android.os.Build.VERSION_CODES.O_MR1)
+            override fun onSafeBrowsingHit(
+                view: WebView?,
+                request: android.webkit.WebResourceRequest?,
+                threatType: Int,
+                callback: android.webkit.SafeBrowsingResponse?
+            ) {
+                originalClient?.onSafeBrowsingHit(view, request, threatType, callback) 
+                    ?: super.onSafeBrowsingHit(view, request, threatType, callback)
             }
         }
         
@@ -449,9 +548,12 @@ class WebViewObserver(
         // Remove JavaScript interface
         webView.removeJavascriptInterface(JS_INTERFACE_NAME)
         
-        // Restore original WebViewClient if it was stored
+        // Restore original WebViewClient only if it was stored
         val originalClient = webView.getTag(R.id.webview_original_client_tag) as? android.webkit.WebViewClient
-        webView.webViewClient = originalClient ?: android.webkit.WebViewClient()
+        if (originalClient != null) {
+            webView.webViewClient = originalClient
+        }
+        // If no original was stored, leave the current client as-is (don't replace with empty client)
         webView.setTag(R.id.webview_original_client_tag, null)
         
         Log.d(TAG, "WebView observation disabled - all resources cleaned up")

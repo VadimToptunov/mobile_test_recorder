@@ -27,9 +27,10 @@ class FinDemoApplication : Application() {
     }
     
     private fun initializeObserveMode() {
-        Log.i(TAG, " Observe mode enabled - SDK will record events")
-        // ObserveSDK will be initialized here
-        // This is done in observe source set
+        Log.i(TAG, " Observe mode enabled - Initializing SDK")
+        // Call observe source set extension function to initialize SDK
+        // This extension function is ONLY available in observe build variant
+        this.initializeObserveSDK()
     }
     
     private fun initializeTestMode() {

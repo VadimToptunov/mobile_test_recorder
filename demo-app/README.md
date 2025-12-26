@@ -39,20 +39,33 @@ Simplified fintech application to demonstrate Mobile Observe & Test Framework ca
 ##  Architecture
 
 ### Tech Stack:
+
+**Android:**
 - **Kotlin** - Primary language
 - **Jetpack Compose** - Modern UI
 - **Navigation Component** - Navigation
-- **ViewModel + StateFlow** - State management
-- **Retrofit** - API client
-- **Room** - Local database
-- **OkHttp** - Network layer
-- **Hilt** - Dependency injection (optional)
+- **OkHttp** - Network layer (with Observe SDK interceptor)
+
+**iOS:**
+- **Swift** - Primary language
+- **SwiftUI** - Modern UI
+- **NavigationStack** - iOS 16+ navigation
+- **Combine** - Reactive programming
 
 ### Build Variants:
+
+**Android:**
 ```
 observe  - Instrumented build with Observe SDK
 test     - Clean build for automated testing
-prod     - Production build (future)
+prod     - Production build (with security features)
+```
+
+**iOS:**
+```
+Observe  - Scheme with Observe SDK
+Test     - Clean scheme for automated testing
+Release  - Production scheme (future)
 ```
 
 ---
@@ -60,13 +73,21 @@ prod     - Production build (future)
 ##  Getting Started
 
 ### Prerequisites:
+
+**Android:**
 - Android Studio Hedgehog+ (2023.1.1+)
 - JDK 17
 - Android SDK 34
 - Gradle 8.2+
 
+**iOS:**
+- macOS with Xcode 15+
+- iOS 16+ SDK
+- CocoaPods or SPM (optional)
+
 ### Build & Run:
 
+**Android:**
 ```bash
 # Clone and navigate
 cd demo-app/android
@@ -82,10 +103,24 @@ adb install app/build/outputs/apk/observe/debug/app-observe-debug.apk
 # Click Run
 ```
 
+**iOS:**
+```bash
+# Navigate to iOS project
+cd demo-app/ios/FinDemo
+
+# Open in Xcode
+open FinDemo.xcodeproj
+
+# Select scheme: Observe
+# Select target device/simulator
+# Click Run (⌘R)
+```
+
 ---
 
 ##  Project Structure
 
+**Android:**
 ```
 android/
  app/
@@ -99,8 +134,7 @@ android/
                     home/
                     topup/
                     send/
-                 data/
-                 domain/
+                 security/
           res/
       
        observe/           # Observe build specific
@@ -120,7 +154,47 @@ android/
                     core/
                     observers/
                     export/
+                    security/
+                    selectors/
      build.gradle.kts
+```
+
+**iOS:**
+```
+ios/
+ FinDemo/
+    FinDemo/
+       FinDemoApp.swift    # App entry point
+       ContentView.swift   # Root view
+       Views/
+          OnboardingView.swift
+          LoginView.swift
+          KYCView.swift
+          HomeView.swift
+          TopUpView.swift
+          SendMoneyView.swift
+       Assets.xcassets/
+    
+    FinDemo.xcodeproj/
+
+ ObserveSDK/
+    ObserveSDK.swift       # SDK entry point
+    Core/
+       ObserveConfig.swift
+       ObserveSession.swift
+    Observers/
+       UIObserver.swift
+       NavigationObserver.swift
+       NetworkObserver.swift
+       HierarchyCollector.swift
+       WebViewObserver.swift
+    Selectors/
+       SelectorBuilder.swift
+    Export/
+       EventExporter.swift
+    Events/
+       Event.swift
+       EventBus.swift
 ```
 
 ---
@@ -244,34 +318,60 @@ pytest tests/
 
 ##  Notes
 
+**General:**
+- Both Android and iOS apps have feature parity
+- WebView payment gateway is a mock HTML page
+- All API calls go to mock backend (FastAPI)
+
+**Android:**
 - **Observe build** includes SDK and records events
 - **Test build** is clean, without SDK, for automated tests
-- WebView payment gateway is a mock HTML page
-- All API calls go to mock backend
+- **Prod build** has security features enabled
+
+**iOS:**
+- **Observe scheme** includes SDK and records events
+- **Test scheme** is clean for automated tests
+- Event exports to app's Documents directory
 
 ---
 
 ##  Troubleshooting
 
-### Build fails:
+### Android Build fails:
 ```bash
 # Clean and rebuild
 ./gradlew clean
 ./gradlew assembleObserveDebug
 ```
 
-### SDK not recording:
+### Android SDK not recording:
 - Check that observe build is installed (not test)
 - Check logcat: `adb logcat | grep ObserveSDK`
+- Verify events: `adb shell "ls /sdcard/Android/data/com.findemo.observe/files/observe/"`
+
+### iOS Build fails:
+- Clean build folder in Xcode (⌘⇧K)
+- Delete derived data
+- Rebuild
+
+### iOS SDK not recording:
+- Check that Observe scheme is selected
+- Check console logs for ObserveSDK messages
+- Verify events in app's Documents directory
 
 ---
 
 ##  Resources
 
+**Android:**
 - [Jetpack Compose Docs](https://developer.android.com/jetpack/compose)
 - [Navigation Component](https://developer.android.com/guide/navigation)
-- [ViewPager2](https://developer.android.com/jetpack/androidx/releases/viewpager2)
 - [WebView](https://developer.android.com/guide/webapps/webview)
+
+**iOS:**
+- [SwiftUI Documentation](https://developer.apple.com/documentation/swiftui)
+- [WKWebView](https://developer.apple.com/documentation/webkit/wkwebview)
+- [URLProtocol](https://developer.apple.com/documentation/foundation/urlprotocol)
 
 ---
 

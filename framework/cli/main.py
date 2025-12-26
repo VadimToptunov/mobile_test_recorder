@@ -1619,6 +1619,103 @@ def heal_selectors(model: str, test_results: str, output: str):
         raise click.Abort()
 
 
+@ml.command('fallback-stats')
+@click.option('--session', type=click.Path(),
+              help='Test session directory (if available)')
+def fallback_stats(session: Optional[str]):
+    """
+    Show statistics about fallback selector usage and auto-updates
+    
+    This command displays how often fallback selectors were used,
+    which elements are most problematic, and which Page Objects
+    were auto-updated by the SelectorHealer.
+    
+    Example:
+        observe ml fallback-stats
+        observe ml fallback-stats --session tests/sessions/2024-12-26
+    """
+    click.echo(" Fallback Selector Statistics\n")
+    
+    try:
+        from framework.ml.selector_healer import SelectorHealer
+        import json
+        
+        # Initialize healer (would normally be singleton from test runs)
+        healer = SelectorHealer()
+        
+        # Get statistics
+        stats = healer.get_fallback_stats()
+        healing_stats = healer.get_healing_stats()
+        
+        if stats['total_fallbacks'] == 0:
+            click.echo(" No fallback usage recorded yet.")
+            click.echo("\nFallback selectors are used automatically during test execution")
+            click.echo("when primary selectors fail. Run tests to see statistics.")
+            return
+        
+        # Display fallback statistics
+        click.echo(f" Fallback Usage Summary:")
+        click.echo(f"   Total Fallbacks Used:   {stats['total_fallbacks']}")
+        click.echo(f"   Unique Elements:        {stats['unique_elements']}")
+        click.echo(f"   Unique Page Objects:    {stats['unique_page_objects']}")
+        click.echo(f"   Auto-Updates Applied:   {stats['auto_updates']}")
+        
+        if stats['by_platform']:
+            click.echo(f"\n By Platform:")
+            for platform, count in stats['by_platform'].items():
+                click.echo(f"   • {platform.capitalize()}: {count}")
+        
+        # Display recent fallback reports
+        if healer.fallback_reports:
+            click.echo(f"\n Recent Fallback Reports (last 10):")
+            for report in healer.fallback_reports[-10:]:
+                click.echo(f"\n   Element: {report['element_name']}")
+                click.echo(f"   File:    {report['page_object_file']}")
+                click.echo(f"   Failed:  {report['primary_selector']}")
+                click.echo(f"   Worked:  {report['successful_fallback']} (fallback #{report['fallback_index'] + 1})")
+                click.echo(f"   Time:    {report['timestamp']}")
+        
+        # Display auto-updates
+        if healer.page_object_updates:
+            click.echo(f"\n Auto-Updated Page Objects ({len(healer.page_object_updates)}):")
+            for update in healer.page_object_updates:
+                click.echo(f"\n   File:     {update['page_object_file']}")
+                click.echo(f"   Element:  {update['element_name']}")
+                click.echo(f"   Platform: {update['platform']}")
+                click.echo(f"   New Selector: {update['new_primary_selector']}")
+                click.echo(f"   Backup:   {update['backup_file']}")
+                click.echo(f"   Time:     {update['timestamp']}")
+        
+        # Display healing statistics
+        if healing_stats['total_attempts'] > 0:
+            click.echo(f"\n Selector Healing Statistics:")
+            click.echo(f"   Total Attempts:  {healing_stats['total_attempts']}")
+            click.echo(f"   Successful:      {healing_stats['successful']}")
+            click.echo(f"   Failed:          {healing_stats['failed']}")
+            click.echo(f"   Success Rate:    {healing_stats['success_rate']:.1%}")
+            
+            if healing_stats['strategies']:
+                click.echo(f"\n Strategies Used:")
+                for strategy, counts in healing_stats['strategies'].items():
+                    success_rate = counts['successes'] / counts['attempts'] if counts['attempts'] > 0 else 0
+                    click.echo(f"   • {strategy}: {counts['successes']}/{counts['attempts']} ({success_rate:.1%})")
+        
+        # Recommendations
+        click.echo(f"\n Recommendations:")
+        if stats['auto_updates'] > 0:
+            click.echo(f"   Review auto-updated Page Objects and commit changes")
+        if stats['total_fallbacks'] > 10:
+            click.echo(f"   High fallback usage detected - consider improving selectors")
+        if stats['unique_elements'] > 5:
+            click.echo(f"   Multiple elements using fallbacks - review selector strategy")
+        
+    except Exception as e:
+        click.echo(f"\n Error: {e}", err=True)
+        import traceback
+        traceback.print_exc()
+        raise click.Abort()
+
+
 @ml.command('visual-diff')
 @click.option('--baseline', type=click.Path(exists=True), required=True,
               help='Baseline screenshot')

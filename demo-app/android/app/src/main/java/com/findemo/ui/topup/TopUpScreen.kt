@@ -194,18 +194,11 @@ private fun PaymentWebViewStep(
     var isLoading by remember { mutableStateOf(true) }
     var webView by remember { mutableStateOf<WebView?>(null) }
 
-    // Register WebView with ObserveSDK when created and cleanup on disposal
-    // Using single DisposableEffect to avoid multiple triggers
+    // Cleanup on disposal - use remembered webView reference
     DisposableEffect(Unit) {
-        val currentWebView = webView
-        if (currentWebView != null) {
-            ObserveSDK.observeWebView(currentWebView, "TopUpPaymentScreen")
-        }
-        
         onDispose {
-            val disposeWebView = webView
-            if (disposeWebView != null) {
-                ObserveSDK.stopObservingWebView(disposeWebView)
+            webView?.let { wv ->
+                ObserveSDK.stopObservingWebView(wv)
             }
         }
     }
@@ -231,8 +224,12 @@ private fun PaymentWebViewStep(
                         }
                     }
                     
-                    // Store reference AFTER WebViewClient is set
+                    // Store reference
                     webView = this
+                    
+                    // Register for observation immediately after creation
+                    // This matches iOS pattern: register during view creation
+                    ObserveSDK.observeWebView(this, "TopUpPaymentScreen")
                     
                     settings.javaScriptEnabled = true
                     settings.domStorageEnabled = true

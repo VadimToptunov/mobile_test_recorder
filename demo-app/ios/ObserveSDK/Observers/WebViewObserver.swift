@@ -284,6 +284,16 @@ public class WebViewObserver: NSObject {
             injectionTime: .atDocumentEnd,
             forMainFrameOnly: false
         )
+        
+        // Store existing user scripts before adding ours
+        let existingScripts = webView.configuration.userContentController.userScripts
+        objc_setAssociatedObject(
+            webView,
+            &AssociatedKeys.existingScripts,
+            existingScripts,
+            .OBJC_ASSOCIATION_RETAIN_NONATOMIC
+        )
+        
         webView.configuration.userContentController.addUserScript(script)
         
         // Store original navigation delegate
@@ -327,8 +337,16 @@ public class WebViewObserver: NSObject {
         // Remove message handler
         webView.configuration.userContentController.removeScriptMessageHandler(forName: "observeSDK")
         
-        // Remove all user scripts to prevent duplicate injection
+        // Restore original user scripts (remove all, then restore pre-existing ones)
         webView.configuration.userContentController.removeAllUserScripts()
+        if let existingScripts = objc_getAssociatedObject(
+            webView,
+            &AssociatedKeys.existingScripts
+        ) as? [WKUserScript] {
+            for script in existingScripts {
+                webView.configuration.userContentController.addUserScript(script)
+            }
+        }
         
         // Restore original navigation delegate
         let originalDelegate = objc_getAssociatedObject(
@@ -341,6 +359,7 @@ public class WebViewObserver: NSObject {
         objc_setAssociatedObject(webView, &AssociatedKeys.messageHandler, nil, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
         objc_setAssociatedObject(webView, &AssociatedKeys.navigationDelegate, nil, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
         objc_setAssociatedObject(webView, &AssociatedKeys.originalNavigationDelegate, nil, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        objc_setAssociatedObject(webView, &AssociatedKeys.existingScripts, nil, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
         
         print("[WebViewObserver] WebView observation disabled - all resources cleaned up")
     }
@@ -352,6 +371,7 @@ private struct AssociatedKeys {
     static var messageHandler = "messageHandler"
     static var navigationDelegate = "navigationDelegate"
     static var originalNavigationDelegate = "originalNavigationDelegate"
+    static var existingScripts = "existingScripts"
 }
 
 // MARK: - Message Handler
@@ -519,6 +539,16 @@ private class WebViewNavigationDelegate: NSObject, WKNavigationDelegate {
         }
     }
     
+    // Delegate decidePolicyFor navigationResponse
+    func webView(_ webView: WKWebView, decidePolicyFor navigationResponse: WKNavigationResponse, decisionHandler: @escaping (WKNavigationResponsePolicy) -> Void) {
+        if let originalDelegate = originalDelegate,
+           originalDelegate.responds(to: #selector(WKNavigationDelegate.webView(_:decidePolicyFor:decisionHandler:) as ((WKWebView, WKNavigationResponse, @escaping (WKNavigationResponsePolicy) -> Void) -> Void)?)) {
+            originalDelegate.webView?(webView, decidePolicyFor: navigationResponse, decisionHandler: decisionHandler)
+        } else {
+            decisionHandler(.allow)
+        }
+    }
+    
     // Delegate all other navigation methods
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
         originalDelegate?.webView?(webView, didStartProvisionalNavigation: navigation)
@@ -530,6 +560,54 @@ private class WebViewNavigationDelegate: NSObject, WKNavigationDelegate {
     
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
         originalDelegate?.webView?(webView, didFailProvisionalNavigation: navigation, withError: error)
+    }
+    
+    // Delegate commit navigation
+    func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+        originalDelegate?.webView?(webView, didCommit: navigation)
+    }
+    
+    // Delegate authentication challenges
+    func webView(_ webView: WKWebView, didReceive challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
+        if let originalDelegate = originalDelegate,
+           originalDelegate.responds(to: #selector(WKNavigationDelegate.webView(_:didReceive:completionHandler:))) {
+            originalDelegate.webView?(webView, didReceive: challenge, completionHandler: completionHandler)
+        } else {
+            completionHandler(.performDefaultHandling, nil)
+        }
+    }
+    
+    // Delegate process termination
+    func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+        originalDelegate?.webViewWebContentProcessDidTerminate?(webView)
+    }
+    
+    // Delegate navigation action preferences (iOS 13+)
+    @available(iOS 13.0, *)
+    func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, preferences: WKWebpagePreferences, decisionHandler: @escaping (WKNavigationActionPolicy, WKWebpagePreferences) -> Void) {
+        if let originalDelegate = originalDelegate,
+           originalDelegate.responds(to: #selector(WKNavigationDelegate.webView(_:decidePolicyFor:preferences:decisionHandler:))) {
+            originalDelegate.webView?(webView, decidePolicyFor: navigationAction, preferences: preferences, decisionHandler: decisionHandler)
+        } else {
+            decisionHandler(.allow, preferences)
+        }
+    }
+    
+    // Delegate download handling (iOS 14.5+)
+    @available(iOS 14.5, *)
+    func webView(_ webView: WKWebView, navigationAction: WKNavigationAction, didBecome download: WKDownload) {
+        if let originalDelegate = originalDelegate,
+           originalDelegate.responds(to: #selector(WKNavigationDelegate.webView(_:navigationAction:didBecome:))) {
+            originalDelegate.webView?(webView, navigationAction: navigationAction, didBecome: download)
+        }
+    }
+    
+    @available(iOS 14.5, *)
+    func webView(_ webView: WKWebView, navigationResponse: WKNavigationResponse, didBecome download: WKDownload) {
+        if let originalDelegate = originalDelegate,
+           originalDelegate.responds(to: #selector(WKNavigationDelegate.webView(_:navigationResponse:didBecome:))) {
+            originalDelegate.webView?(webView, navigationResponse: navigationResponse, didBecome: download)
+        }
     }
 }
 

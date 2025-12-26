@@ -224,11 +224,24 @@ observe generate tests --output tests/
 
 ##  Documentation
 
+### Core Documentation
 - [RFC Specification](mobile_observe_test_framework_RFC.md) - Full technical specification
+- [Usage Guide](USAGE_GUIDE.md) - Complete workflow and CLI reference
+
+### Demo Application
 - [Demo App Overview](demo-app/README.md) - Demo app features and setup
 - [KYC Integration Guide](demo-app/android/KYC_INTEGRATION.md) - Regula SDK integration
 - [Mock Backend API](demo-app/mock-backend/README.md) - Backend API documentation
-- [Getting Started](GETTING_STARTED.md) - Quick start guide
+- [XPath Test Elements](demo-app/XPATH_TEST_ELEMENTS.md) - Elements without IDs for testing
+
+### SDK Documentation
+- [Android SDK Security](demo-app/android/observe-sdk/SECURITY.md) - Crypto keys & traffic decryption
+- [iOS SDK Guide](demo-app/ios/ObserveSDK/README.md) - iOS SDK integration
+
+### Technical References
+- [Element Selectors Guide](docs/ELEMENT_SELECTORS_COMPREHENSIVE.md) - All selector types (Android/iOS/Flutter/RN)
+- [Enhanced Selectors](docs/ENHANCED_SELECTORS.md) - Multi-strategy selector generation
+- [Universal ML Model](docs/UNIVERSAL_ML_MODEL.md) - Pre-trained element classifier
 
 ---
 

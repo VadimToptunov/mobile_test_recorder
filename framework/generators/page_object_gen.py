@@ -15,6 +15,9 @@ PAGE_OBJECT_TEMPLATE = """
 from appium.webdriver.common.appiumby import AppiumBy
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException, NoSuchElementException
+from typing import Optional, List, Tuple
+import os
 
 
 class {{ class_name }}:
@@ -22,32 +25,58 @@ class {{ class_name }}:
     Page Object for {{ screen.name }} screen
     
     Generated from App Model
+    Supports fallback selector strategies for robust element identification
     \"\"\"
     
     def __init__(self, driver):
         self.driver = driver
         self.wait = WebDriverWait(driver, 10)
+        self.short_wait = WebDriverWait(driver, 2)  # For fallback attempts
+        self._page_object_file = __file__  # Store file path for healing reports
     
-    # Selectors
+    # Selectors with fallback strategies
 {% for element in screen.elements %}
     {{ element.id | upper }}_SELECTOR = {
         "android": {{ element.selector.android | tojson }},
-        "ios": {{ element.selector.ios | tojson }}
+        "ios": {{ element.selector.ios | tojson }},
+        "android_fallback": {{ element.selector.android_fallback | tojson }},
+        "ios_fallback": {{ element.selector.ios_fallback | tojson }},
+        "stability": "{{ element.selector.stability }}"
     }
 {% endfor %}
     
-    def _get_selector(self, selector_dict: dict) -> tuple:
-        \"\"\"Get platform-specific selector\"\"\"
-        platform = self.driver.capabilities.get('platformName', '').lower()
+    def _parse_selector(self, selector: str) -> Tuple[str, str]:
+        \"\"\"
+        Parse selector string into (strategy, value) tuple
         
-        if platform == 'android':
-            selector = selector_dict['android']
-        elif platform == 'ios':
-            selector = selector_dict['ios']
-        else:
-            raise ValueError(f"Unsupported platform: {platform}")
+        Formats:
+        - id:resource_id -> (AppiumBy.ID, resource_id)
+        - xpath://path -> (AppiumBy.XPATH, //path)
+        - accessibility:id -> (AppiumBy.ACCESSIBILITY_ID, id)
+        - text:Button -> (AppiumBy.ANDROID_UIAUTOMATOR, 'new UiSelector().text("Button")')
+        - class:android.widget.Button -> (AppiumBy.CLASS_NAME, android.widget.Button)
+        \"\"\"
+        if ':' in selector:
+            strategy, value = selector.split(':', 1)
+            
+            if strategy == 'id':
+                return (AppiumBy.ID, value)
+            elif strategy == 'xpath':
+                return (AppiumBy.XPATH, value)
+            elif strategy == 'accessibility':
+                return (AppiumBy.ACCESSIBILITY_ID, value)
+            elif strategy == 'text':
+                platform = self.driver.capabilities.get('platformName', '').lower()
+                if platform == 'android':
+                    return (AppiumBy.ANDROID_UIAUTOMATOR, f'new UiSelector().text("{value}")')
+                else:
+                    return (AppiumBy.IOS_PREDICATE, f'label == "{value}"')
+            elif strategy == 'class':
+                return (AppiumBy.CLASS_NAME, value)
+            elif strategy == 'name':
+                return (AppiumBy.NAME, value)
         
-        # Determine locator strategy
+        # Default: treat as XPath if starts with //, otherwise ID
         if selector.startswith('//'):
             return (AppiumBy.XPATH, selector)
         elif selector.startswith('~'):
@@ -55,11 +84,114 @@ class {{ class_name }}:
         else:
             return (AppiumBy.ID, selector)
     
+    def _report_fallback_usage(
+        self,
+        element_name: str,
+        primary_selector: str,
+        successful_fallback: str,
+        fallback_index: int
+    ):
+        \"\"\"
+        Report fallback usage to SelectorHealer for auto-updating Page Objects.
+        
+        This method is called when a fallback selector succeeds after primary fails.
+        \"\"\"
+        try:
+            from framework.ml.selector_healer import SelectorHealer
+            
+            platform = self.driver.capabilities.get('platformName', '').lower()
+            
+            # Get or create singleton healer instance
+            if not hasattr(self, '_selector_healer'):
+                self._selector_healer = SelectorHealer()
+            
+            self._selector_healer.report_fallback_usage(
+                element_name=element_name,
+                page_object_file=self._page_object_file,
+                primary_selector=primary_selector,
+                successful_fallback=successful_fallback,
+                fallback_index=fallback_index,
+                platform=platform
+            )
+        except Exception as e:
+            # Don't fail test if reporting fails
+            print(f"[SelectorHealer] Failed to report fallback: {e}")
+    
+    def _find_element_with_fallback(self, selector_dict: dict, element_name: str = "element"):
+        \"\"\"
+        Find element using primary selector with fallback strategies
+        
+        Tries selectors in order:
+        1. Primary platform-specific selector
+        2. Fallback selectors (in order of stability)
+        3. Raises NoSuchElementException if all fail
+        \"\"\"
+        platform = self.driver.capabilities.get('platformName', '').lower()
+        
+        # Get primary and fallback selectors for platform
+        if platform == 'android':
+            primary = selector_dict.get('android')
+            fallbacks = selector_dict.get('android_fallback', [])
+        elif platform == 'ios':
+            primary = selector_dict.get('ios')
+            fallbacks = selector_dict.get('ios_fallback', [])
+        else:
+            raise ValueError(f"Unsupported platform: {platform}")
+        
+        stability = selector_dict.get('stability', 'unknown')
+        
+        # Try primary selector first
+        if primary:
+            try:
+                by, value = self._parse_selector(primary)
+                element = self.short_wait.until(
+                    EC.presence_of_element_located((by, value))
+                )
+                return element
+            except (TimeoutException, NoSuchElementException) as e:
+                print(f"[SelectorFallback] Primary selector failed for {element_name}: {primary}")
+                print(f"[SelectorFallback] Trying {len(fallbacks)} fallback(s)...")
+        
+        # Try fallback selectors
+        for idx, fallback_selector in enumerate(fallbacks, 1):
+            try:
+                by, value = self._parse_selector(fallback_selector)
+                element = self.short_wait.until(
+                    EC.presence_of_element_located((by, value))
+                )
+                print(f"[SelectorFallback] Success with fallback #{idx}: {fallback_selector}")
+                
+                # Report fallback usage to SelectorHealer
+                self._report_fallback_usage(
+                    element_name=element_name,
+                    primary_selector=primary,
+                    successful_fallback=fallback_selector,
+                    fallback_index=idx - 1
+                )
+                
+                return element
+            except (TimeoutException, NoSuchElementException):
+                print(f"[SelectorFallback] Fallback #{idx} failed: {fallback_selector}")
+                continue
+        
+        # All strategies failed
+        raise NoSuchElementException(
+            f"Element '{element_name}' not found using primary or {len(fallbacks)} fallback selectors. "
+            f"Stability: {stability}. Consider updating selectors."
+        )
+    
 {% for element in screen.elements %}
     def get_{{ element.id }}(self):
-        \"\"\"Get {{ element.id }} element\"\"\"
-        by, value = self._get_selector(self.{{ element.id | upper }}_SELECTOR)
-        return self.wait.until(EC.presence_of_element_located((by, value)))
+        \"\"\"
+        Get {{ element.id }} element
+        
+        Stability: {{ element.selector.stability }}
+        Uses fallback strategies if primary selector fails
+        \"\"\"
+        return self._find_element_with_fallback(
+            self.{{ element.id | upper }}_SELECTOR,
+            element_name="{{ element.id }}"
+        )
     
 {% endfor %}
 

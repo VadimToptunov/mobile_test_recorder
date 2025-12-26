@@ -226,7 +226,7 @@ class LoginScreen(BasePage):
 - [ ] Record session with demo apps (Android + iOS)
 - [ ] Verify `allSelectors` JSON in event files
 - [ ] Build App Model with new selectors
-- [ ] Generate Page Objects with fallbacks
+- [x] Generate Page Objects with fallbacks
 - [ ] Run tests and verify fallback mechanism
 - [ ] Intentionally break primary selector
 - [ ] Verify fallback works automatically
@@ -241,9 +241,136 @@ class LoginScreen(BasePage):
 - [x] iOS Event models - allSelectors fields added
 - [x] iOS WebView - Enhanced JavaScript
 - [x] iOS WebViewObserver - Message handler updated
-- [ ] Python framework integration
-- [ ] Page Object generator updates
+- [x] Python framework integration - Page Object Generator updated
+- [x] Page Object generator updates - Fallback strategies implemented
+- [x] ModelBuilder integration - Parse allSelectors from events
+- [x] SelectorHealer integration - Auto-update Page Objects
+- [x] CLI commands - fallback-stats command added
 - [ ] End-to-end testing
+
+## Implementation Complete!
+
+### What's Implemented:
+
+**SDK Level (Android + iOS):**
+- ✅ Multi-strategy selector generation (6-7 strategies per element)
+- ✅ Uniqueness validation for each selector
+- ✅ Priority-based selector ranking
+- ✅ `allSelectors` JSON export in events
+- ✅ Native elements (View/Compose + UIKit/SwiftUI)
+- ✅ WebView elements (enhanced JavaScript injection)
+
+**Framework Level (Python):**
+- ✅ `ModelBuilder._build_selector_from_enhanced()` - Parses allSelectors JSON
+- ✅ Intelligent fallback chain construction
+- ✅ Stability assessment (HIGH/MEDIUM/LOW)
+- ✅ Page Object Generator with fallback support
+- ✅ `_find_element_with_fallback()` - Runtime fallback execution
+- ✅ Automatic fallback logging for debugging
+- ✅ `_report_fallback_usage()` - Reports to SelectorHealer
+- ✅ SelectorHealer - Auto-updates Page Objects after 3 failures
+- ✅ CLI command `observe ml fallback-stats` - View statistics
+
+### How It Works:
+
+1. **Recording Phase:**
+   - SDK captures element interaction
+   - `SelectorBuilder` generates 6-7 selector strategies
+   - Validates uniqueness for each strategy
+   - Exports `allSelectors` JSON in UIEvent
+
+2. **Model Building Phase:**
+   - `ModelBuilder` reads UIEvents from event store
+   - Detects `allSelectors` JSON in events
+   - Calls `_build_selector_from_enhanced()`
+   - Constructs `Selector` with primary + fallback strategies
+   - Assigns stability score (HIGH/MEDIUM/LOW)
+
+3. **Page Object Generation:**
+   - Jinja2 template includes fallback arrays
+   - `_find_element_with_fallback()` method generated
+   - `_parse_selector()` handles multiple formats
+   - `_report_fallback_usage()` method generated
+   - Primary selector tried first (10s timeout)
+   - Fallback selectors tried in order (2s each)
+   - Logs which selector succeeded
+   - Reports to SelectorHealer
+
+4. **Test Execution:**
+   - Test calls `page.get_login_button()`
+   - Primary selector tried: `id:com.app:id/login`
+   - If fails, fallback #1: `accessibility:login_button`
+   - If fails, fallback #2: `xpath://button[text()='Login']`
+   - Element found with fallback #2 ✓
+   - Log message: `[SelectorFallback] Success with fallback #2`
+   - Report sent to SelectorHealer
+
+5. **Auto-Healing Phase:**
+   - SelectorHealer receives fallback report
+   - Tracks failures per element
+   - After 3 failures with same fallback:
+     - Backs up original Page Object (.py.bak)
+     - Updates primary selector to working fallback
+     - Logs auto-update
+   - QA reviews and commits changes
+
+### Auto-Healing Example:
+
+```python
+# Initial Page Object (generated)
+LOGIN_BUTTON_SELECTOR = {
+    "android": "id:com.app:id/login",  # Primary (broken)
+    "android_fallback": [
+        "accessibility:login_button",    # Fallback #1 (works!)
+        "xpath://button[text()='Login']"
+    ]
+}
+
+# After 3 test runs using fallback #1:
+# SelectorHealer auto-updates Page Object
+
+LOGIN_BUTTON_SELECTOR = {
+    "android": "accessibility:login_button",  # ← Promoted to primary!
+    "android_fallback": [
+        "id:com.app:id/login",              # ← Demoted to fallback
+        "xpath://button[text()='Login']"
+    ]
+}
+
+# Backup saved to: LoginScreen.py.bak
+# QA reviews change and commits
+```
+
+### CLI Commands:
+
+```bash
+# View fallback statistics
+observe ml fallback-stats
+
+# Output:
+#  Fallback Usage Summary:
+#    Total Fallbacks Used:   15
+#    Unique Elements:        5
+#    Unique Page Objects:    3
+#    Auto-Updates Applied:   2
+#
+#  By Platform:
+#    • Android: 12
+#    • iOS: 3
+#
+#  Recent Fallback Reports:
+#    Element: login_button
+#    File:    tests/pages/LoginScreen.py
+#    Failed:  id:com.app:id/login
+#    Worked:  accessibility:login_button (fallback #1)
+#
+#  Auto-Updated Page Objects:
+#    File:     tests/pages/LoginScreen.py
+#    Element:  login_button
+#    Platform: android
+#    New Selector: accessibility:login_button
+#    Backup:   tests/pages/LoginScreen.py.bak
+```
 
 ## Performance Considerations
 

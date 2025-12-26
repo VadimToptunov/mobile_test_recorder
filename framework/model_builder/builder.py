@@ -346,9 +346,178 @@ class ModelBuilder:
         else:
             return ElementType.GENERIC
     
-    def _build_selector(self, event: Dict[str, Any]) -> Selector:
-        """Build selector from event data"""
+    def _build_selector_from_enhanced(
+        self,
+        event: Dict[str, Any],
+        all_selectors: Dict[str, Any]
+    ) -> Selector:
+        """
+        Build Selector from enhanced allSelectors JSON
         
+        allSelectors format (from SelectorBuilder):
+        {
+            "xpath_id": "//*[@id='login']",
+            "xpath_name": "//input[@name='username']",
+            "xpath_text": "//button[text()='Login']",
+            "xpath_indexed": "//LinearLayout[1]/Button[2]",
+            "css_id": "#login",
+            "css_class": "button.primary",
+            "resourceId": "com.app:id/login",
+            "testTag": "login_button",
+            "contentDescription": "Login Button",
+            ...
+        }
+        """
+        from framework.model.app_model import SelectorStability
+        
+        # Extract primary selectors
+        android_primary = None
+        ios_primary = None
+        test_id = None
+        xpath = None
+        android_fallbacks = []
+        ios_fallbacks = []
+        stability = SelectorStability.UNKNOWN
+        
+        # Priority for Android:
+        # 1. resourceId (highest stability)
+        # 2. testTag
+        # 3. contentDescription
+        # 4. xpath_id
+        # 5. xpath_text/xpath_name (medium stability)
+        # 6. xpath_indexed (low stability)
+        
+        resource_id = all_selectors.get('resourceId')
+        test_tag = all_selectors.get('testTag')
+        content_desc = all_selectors.get('contentDescription')
+        xpath_id = all_selectors.get('xpath_id')
+        xpath_name = all_selectors.get('xpath_name')
+        xpath_text = all_selectors.get('xpath_text')
+        xpath_class = all_selectors.get('xpath_class')
+        xpath_indexed = all_selectors.get('xpath_indexed')
+        
+        if resource_id:
+            android_primary = f"id:{resource_id}"
+            stability = SelectorStability.HIGH
+            # Add fallbacks
+            if test_tag:
+                android_fallbacks.append(f"accessibility:{test_tag}")
+            if content_desc:
+                android_fallbacks.append(f"accessibility:{content_desc}")
+            if xpath_id:
+                android_fallbacks.append(f"xpath:{xpath_id}")
+            if xpath_text:
+                android_fallbacks.append(f"xpath:{xpath_text}")
+        elif test_tag:
+            android_primary = f"accessibility:{test_tag}"
+            test_id = test_tag
+            stability = SelectorStability.HIGH
+            if content_desc and content_desc != test_tag:
+                android_fallbacks.append(f"accessibility:{content_desc}")
+            if xpath_text:
+                android_fallbacks.append(f"xpath:{xpath_text}")
+            if xpath_name:
+                android_fallbacks.append(f"xpath:{xpath_name}")
+        elif content_desc:
+            android_primary = f"accessibility:{content_desc}"
+            stability = SelectorStability.MEDIUM
+            if xpath_text:
+                android_fallbacks.append(f"xpath:{xpath_text}")
+            if xpath_id:
+                android_fallbacks.append(f"xpath:{xpath_id}")
+        elif xpath_id:
+            android_primary = f"xpath:{xpath_id}"
+            stability = SelectorStability.MEDIUM
+            if xpath_text:
+                android_fallbacks.append(f"xpath:{xpath_text}")
+            if xpath_name:
+                android_fallbacks.append(f"xpath:{xpath_name}")
+        elif xpath_text:
+            android_primary = f"xpath:{xpath_text}"
+            stability = SelectorStability.MEDIUM
+            if xpath_name:
+                android_fallbacks.append(f"xpath:{xpath_name}")
+            if xpath_class:
+                android_fallbacks.append(f"xpath:{xpath_class}")
+        elif xpath_indexed:
+            android_primary = f"xpath:{xpath_indexed}"
+            stability = SelectorStability.LOW
+        
+        # For iOS, similar priority
+        accessibility_id = all_selectors.get('accessibilityIdentifier')
+        accessibility_label = all_selectors.get('accessibilityLabel')
+        text_content = all_selectors.get('text')
+        
+        if accessibility_id:
+            ios_primary = f"accessibility:{accessibility_id}"
+            if not test_id:
+                test_id = accessibility_id
+            if stability == SelectorStability.UNKNOWN:
+                stability = SelectorStability.HIGH
+            # Add fallbacks
+            if accessibility_label:
+                ios_fallbacks.append(f"accessibility:{accessibility_label}")
+            if text_content:
+                ios_fallbacks.append(f"text:{text_content}")
+            if xpath_text:
+                ios_fallbacks.append(f"xpath:{xpath_text}")
+        elif accessibility_label:
+            ios_primary = f"accessibility:{accessibility_label}"
+            if stability == SelectorStability.UNKNOWN:
+                stability = SelectorStability.MEDIUM
+            if text_content and text_content != accessibility_label:
+                ios_fallbacks.append(f"text:{text_content}")
+            if xpath_text:
+                ios_fallbacks.append(f"xpath:{xpath_text}")
+        elif text_content:
+            ios_primary = f"text:{text_content}"
+            if stability == SelectorStability.UNKNOWN:
+                stability = SelectorStability.MEDIUM
+            if xpath_text:
+                ios_fallbacks.append(f"xpath:{xpath_text}")
+        elif xpath_indexed:
+            ios_primary = f"xpath:{xpath_indexed}"
+            if stability == SelectorStability.UNKNOWN:
+                stability = SelectorStability.LOW
+        
+        # If we have XPath in original event, use it as ultimate fallback
+        if event.get('xpath'):
+            xpath = event.get('xpath')
+            if not android_primary:
+                android_primary = f"xpath:{xpath}"
+            if not ios_primary:
+                ios_primary = f"xpath:{xpath}"
+        
+        return Selector(
+            android=android_primary,
+            ios=ios_primary,
+            test_id=test_id,
+            xpath=xpath,
+            android_fallback=android_fallbacks,
+            ios_fallback=ios_fallbacks,
+            stability=stability
+        )
+    
+    def _build_selector(self, event: Dict[str, Any]) -> Selector:
+        """
+        Build selector from event data
+        
+        If event contains 'allSelectors' JSON (from enhanced selector generation),
+        parse and use those strategies. Otherwise, fall back to legacy logic.
+        """
+        import json
+        
+        # Check if event has enhanced selectors
+        all_selectors_json = event.get('allSelectors')
+        if all_selectors_json:
+            try:
+                all_selectors = json.loads(all_selectors_json) if isinstance(all_selectors_json, str) else all_selectors_json
+                return self._build_selector_from_enhanced(event, all_selectors)
+            except (json.JSONDecodeError, Exception) as e:
+                print(f"[ModelBuilder] Failed to parse allSelectors JSON: {e}")
+                # Fall through to legacy logic
+        
+        # Legacy selector building
         element_id = event.get('elementId')
         text = event.get('text')
         content_desc = event.get('contentDescription')
