@@ -9,6 +9,7 @@ import com.observe.sdk.events.EventBus
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
 /**
@@ -24,7 +25,8 @@ class NavigationObserver(
     private val app: Application,
     private val eventBus: EventBus
 ) {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    // Coroutine scope recreated on each start() to allow stop/start cycles
+    private var scope: CoroutineScope? = null
     private val screenStack = mutableListOf<ScreenInfo>()
     private var currentScreen: ScreenInfo? = null
     
@@ -41,7 +43,7 @@ class NavigationObserver(
             )
             
             // Emit screen create event
-            scope.launch {
+            scope?.launch {
                 val navEvent = Event.NavigationEvent(
                     timestamp = System.currentTimeMillis(),
                     sessionId = "",
@@ -74,7 +76,7 @@ class NavigationObserver(
             }
             
             // Emit navigation event
-            scope.launch {
+            scope?.launch {
                 val navEvent = Event.NavigationEvent(
                     timestamp = resumeTime,
                     sessionId = "",
@@ -93,7 +95,7 @@ class NavigationObserver(
             val screenName = activity.javaClass.simpleName
             Log.d(TAG, "Screen paused: $screenName")
             
-            scope.launch {
+            scope?.launch {
                 val navEvent = Event.NavigationEvent(
                     timestamp = System.currentTimeMillis(),
                     sessionId = "",
@@ -121,7 +123,7 @@ class NavigationObserver(
             screenStack.removeAll { it.name == screenName }
             
             // Emit destroy event
-            scope.launch {
+            scope?.launch {
                 val navEvent = Event.NavigationEvent(
                     timestamp = System.currentTimeMillis(),
                     sessionId = "",
@@ -141,6 +143,8 @@ class NavigationObserver(
     
     fun start() {
         Log.d(TAG, "NavigationObserver started")
+        // Create new coroutine scope for this start/stop cycle
+        scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
         app.registerActivityLifecycleCallbacks(activityLifecycleCallbacks)
     }
     
@@ -149,6 +153,10 @@ class NavigationObserver(
         app.unregisterActivityLifecycleCallbacks(activityLifecycleCallbacks)
         screenStack.clear()
         currentScreen = null
+        
+        // Cancel the coroutine scope to prevent memory leaks
+        scope?.cancel()
+        scope = null
     }
     
     /**

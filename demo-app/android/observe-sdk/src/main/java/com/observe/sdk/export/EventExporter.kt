@@ -8,6 +8,7 @@ import com.observe.sdk.events.Event
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -30,7 +31,8 @@ class EventExporter(
     private val context: Context,
     private val config: ExportConfig = ExportConfig()
 ) {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    // Coroutine scope recreated on each start() to allow stop/start cycles
+    private var scope: CoroutineScope? = null
     private val eventChannel = Channel<Event>(Channel.UNLIMITED)
     private val eventBuffer = mutableListOf<Event>()
     private val gson: Gson = GsonBuilder()
@@ -45,16 +47,19 @@ class EventExporter(
         if (isRunning) return
         
         Log.d(TAG, "EventExporter started")
+        
+        // Create new coroutine scope for this start/stop cycle
+        scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
         isRunning = true
         lastExportTime = System.currentTimeMillis()
         
         // Start event processing worker
-        scope.launch {
+        scope?.launch {
             processEvents()
         }
         
         // Start periodic export worker
-        scope.launch {
+        scope?.launch {
             periodicExport()
         }
     }
@@ -88,13 +93,17 @@ class EventExporter(
                     break
                 }
             }
-            
-            // Export all buffered events
-            flushEvents()
-        }
         
-        Log.d(TAG, "EventExporter stopped, exported ${eventBuffer.size} remaining events")
+        // Export all buffered events
+        flushEvents()
     }
+    
+    // Cancel the coroutine scope to prevent memory leaks
+    scope?.cancel()
+    scope = null
+    
+    Log.d(TAG, "EventExporter stopped, exported ${eventBuffer.size} remaining events")
+}
     
     /**
      * Queue event for export
@@ -105,7 +114,7 @@ class EventExporter(
             return
         }
         
-        scope.launch {
+        scope?.launch {
             try {
                 eventChannel.send(event)
             } catch (e: Exception) {

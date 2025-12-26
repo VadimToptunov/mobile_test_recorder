@@ -125,6 +125,11 @@ object ObserveSDK {
         
         Log.i(TAG, "Starting observation...")
         
+        // Set flag BEFORE starting observers to prevent race conditions
+        // If observers start publishing events before isStarted=true,
+        // other SDK methods might reject those events
+        isStarted = true
+        
         // Start exporter
         eventExporter.start()
         
@@ -146,7 +151,6 @@ object ObserveSDK {
             )
         ))
         
-        isStarted = true
         Log.i(TAG, "Observation started")
     }
     
@@ -160,6 +164,10 @@ object ObserveSDK {
         }
         
         Log.i(TAG, "Stopping observation...")
+        
+        // Set flag BEFORE stopping observers to prevent race conditions
+        // This ensures no new events are accepted while shutdown is in progress
+        isStarted = false
         
         // Emit session end event
         eventBus.publish(Event.SessionEvent(
@@ -181,7 +189,6 @@ object ObserveSDK {
         // Stop exporter (will flush events)
         eventExporter.stop()
         
-        isStarted = false
         Log.i(TAG, "Observation stopped")
     }
     

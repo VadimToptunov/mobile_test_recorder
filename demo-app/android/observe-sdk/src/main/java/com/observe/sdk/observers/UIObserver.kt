@@ -16,6 +16,7 @@ import com.observe.sdk.events.EventBus
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 
@@ -33,7 +34,8 @@ class UIObserver(
     private val eventBus: EventBus,
     private val enableHierarchyCapture: Boolean = true
 ) {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    // Coroutine scope recreated on each start() to allow stop/start cycles
+    private var scope: CoroutineScope? = null
     private var currentActivity: Activity? = null
     private var currentScreen: String = "Unknown"
     private val hierarchyCollector = HierarchyCollector()
@@ -79,6 +81,8 @@ class UIObserver(
     
     fun start() {
         Log.d(TAG, "UIObserver started")
+        // Create new coroutine scope for this start/stop cycle
+        scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
         app.registerActivityLifecycleCallbacks(activityLifecycleCallbacks)
     }
     
@@ -86,6 +90,10 @@ class UIObserver(
         Log.d(TAG, "UIObserver stopped")
         app.unregisterActivityLifecycleCallbacks(activityLifecycleCallbacks)
         currentActivity = null
+        
+        // Cancel the coroutine scope to prevent memory leaks
+        scope?.cancel()
+        scope = null
     }
     
     /**
@@ -139,7 +147,7 @@ class UIObserver(
      * Handle tap event
      */
     private fun handleTap(event: MotionEvent, view: View) {
-        scope.launch {
+        scope?.launch {
             val element = findElementAtPosition(event.rawX, event.rawY, view)
             
             val uiEvent = Event.UIEvent(
@@ -173,7 +181,7 @@ class UIObserver(
             }
         }
         
-        scope.launch {
+        scope?.launch {
             val element = findElementAtPosition(touchDownX, touchDownY, view)
             
             val uiEvent = Event.UIEvent(
@@ -198,7 +206,7 @@ class UIObserver(
      * Handle long press
      */
     private fun handleLongPress(event: MotionEvent, view: View) {
-        scope.launch {
+        scope?.launch {
             val element = findElementAtPosition(event.rawX, event.rawY, view)
             
             val uiEvent = Event.UIEvent(

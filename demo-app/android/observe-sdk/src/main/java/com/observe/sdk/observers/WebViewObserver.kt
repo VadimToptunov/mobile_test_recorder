@@ -326,7 +326,9 @@ class WebViewObserver(
         """.trimIndent()
     }
     
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    // Coroutine scope for async event publishing
+    // Recreated on each start() to allow stop/start cycles
+    private var scope: CoroutineScope? = null
     private var isStarted = false
     private val observedWebViews = mutableSetOf<WebView>()
     
@@ -336,8 +338,12 @@ class WebViewObserver(
             return
         }
         
+        // Create new coroutine scope for this start/stop cycle
+        // This allows stop() → start() sequences to work correctly
+        scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+        
         isStarted = true
-        Log.d(TAG, "WebViewObserver started")
+        Log.d(TAG, "WebViewObserver started with new coroutine scope")
         
         // Enable WebView debugging (for Chrome DevTools)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
@@ -353,7 +359,8 @@ class WebViewObserver(
         
         // Cancel the coroutine scope to prevent memory leaks
         // All launched coroutines will be cancelled and won't access deallocated WebViews
-        scope.cancel()
+        scope?.cancel()
+        scope = null  // Set to null so it can be recreated on next start()
         
         Log.d(TAG, "WebViewObserver stopped and coroutine scope cancelled")
     }
@@ -402,24 +409,27 @@ class WebViewObserver(
                     }
                     
                     // Emit page load event
-                    scope.launch {
-                        eventBus.publish(
-                            Event.WebViewEvent(
-                                timestamp = System.currentTimeMillis(),
-                                sessionId = ObserveSDK.getSession()?.sessionId ?: "",
-                                screen = screenName,
-                                url = it,
-                                eventType = "page_load",
-                                elementSelector = null,
-                                elementTag = null,
-                                elementText = null,
-                                elementValue = null,
-                                elementAttributes = null,
-                                x = null,
-                                y = null,
-                                innerHTML = null
+                    // Check if observer is still started before publishing
+                    if (isStarted) {
+                        scope?.launch {
+                            eventBus.publish(
+                                Event.WebViewEvent(
+                                    timestamp = System.currentTimeMillis(),
+                                    sessionId = ObserveSDK.getSession()?.sessionId ?: "",
+                                    screen = screenName,
+                                    url = it,
+                                    eventType = "page_load",
+                                    elementSelector = null,
+                                    elementTag = null,
+                                    elementText = null,
+                                    elementValue = null,
+                                    elementAttributes = null,
+                                    x = null,
+                                    y = null,
+                                    innerHTML = null
+                                )
                             )
-                        )
+                        }
                     }
                 }
             }
@@ -583,24 +593,27 @@ class WebViewObserver(
                 json.optString("type")?.takeIf { it.isNotEmpty() }?.let { attributes["type"] = it }
                 json.optString("href")?.takeIf { it.isNotEmpty() }?.let { attributes["href"] = it }
                 
-                scope.launch {
-                    eventBus.publish(
-                        Event.WebViewEvent(
-                            timestamp = System.currentTimeMillis(),
-                            sessionId = ObserveSDK.getSession()?.sessionId ?: "",
-                            screen = screenName,
-                            url = "", // Will be set by WebViewClient
-                            eventType = eventType,
-                            elementSelector = json.optString("cssSelector"),
-                            elementTag = json.optString("tag"),
-                            elementText = json.optString("text"),
-                            elementValue = json.optString("value"),
-                            elementAttributes = attributes,
-                            x = if (json.has("x")) json.getInt("x") else null,
-                            y = if (json.has("y")) json.getInt("y") else null,
-                            innerHTML = json.optString("innerHTML")
+                // Check if observer is still started before publishing
+                if (isStarted) {
+                    scope?.launch {
+                        eventBus.publish(
+                            Event.WebViewEvent(
+                                timestamp = System.currentTimeMillis(),
+                                sessionId = ObserveSDK.getSession()?.sessionId ?: "",
+                                screen = screenName,
+                                url = "", // Will be set by WebViewClient
+                                eventType = eventType,
+                                elementSelector = json.optString("cssSelector"),
+                                elementTag = json.optString("tag"),
+                                elementText = json.optString("text"),
+                                elementValue = json.optString("value"),
+                                elementAttributes = attributes,
+                                x = if (json.has("x")) json.getInt("x") else null,
+                                y = if (json.has("y")) json.getInt("y") else null,
+                                innerHTML = json.optString("innerHTML")
+                            )
                         )
-                    )
+                    }
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error parsing web interaction: ${e.message}", e)
@@ -613,15 +626,18 @@ class WebViewObserver(
             
             try {
                 // Emit hierarchy event (similar to HierarchyCollector)
-                scope.launch {
-                    eventBus.publish(
-                        Event.HierarchyEvent(
-                            timestamp = System.currentTimeMillis(),
-                            sessionId = ObserveSDK.getSession()?.sessionId ?: "",
-                            screen = "$screenName (WebView)",
-                            hierarchy = hierarchyJson
+                // Check if observer is still started before publishing
+                if (isStarted) {
+                    scope?.launch {
+                        eventBus.publish(
+                            Event.HierarchyEvent(
+                                timestamp = System.currentTimeMillis(),
+                                sessionId = ObserveSDK.getSession()?.sessionId ?: "",
+                                screen = "$screenName (WebView)",
+                                hierarchy = hierarchyJson
+                            )
                         )
-                    )
+                    }
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error processing page load: ${e.message}", e)

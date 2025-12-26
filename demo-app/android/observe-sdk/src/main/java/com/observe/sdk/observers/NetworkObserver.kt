@@ -9,6 +9,7 @@ import com.observe.sdk.security.bypassCertificatePinning
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import okhttp3.Interceptor
 import okhttp3.Response
@@ -29,17 +30,24 @@ class NetworkObserver(
     private val eventBus: EventBus
 ) : Interceptor {
     
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    // Coroutine scope recreated on each start() to allow stop/start cycles
+    private var scope: CoroutineScope? = null
     private var isEnabled = true
     
     fun start() {
         Log.d(TAG, "NetworkObserver started")
+        // Create new coroutine scope for this start/stop cycle
+        scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
         isEnabled = true
     }
     
     fun stop() {
         Log.d(TAG, "NetworkObserver stopped")
         isEnabled = false
+        
+        // Cancel the coroutine scope to prevent memory leaks
+        scope?.cancel()
+        scope = null
     }
     
     override fun intercept(chain: Interceptor.Chain): Response {
@@ -51,24 +59,26 @@ class NetworkObserver(
         val correlationId = UUID.randomUUID().toString()
         val startTime = System.currentTimeMillis()
         
-        // Log request
-        scope.launch {
-            val requestEvent = Event.NetworkEvent(
-                timestamp = startTime,
-                sessionId = "",
-                correlationId = correlationId,
-                method = request.method,
-                url = request.url.toString(),
-                endpoint = extractEndpoint(request.url.toString()),
-                statusCode = null,
-                requestBody = extractRequestBody(request),
-                responseBody = null,
-                duration = 0,
-                error = null
-            )
-            eventBus.publish(requestEvent)
-            
-            Log.d(TAG, "Request: ${request.method} ${request.url}")
+        // Log request - check if observer is still enabled
+        if (isEnabled) {
+            scope?.launch {
+                val requestEvent = Event.NetworkEvent(
+                    timestamp = startTime,
+                    sessionId = "",
+                    correlationId = correlationId,
+                    method = request.method,
+                    url = request.url.toString(),
+                    endpoint = extractEndpoint(request.url.toString()),
+                    statusCode = null,
+                    requestBody = extractRequestBody(request),
+                    responseBody = null,
+                    duration = 0,
+                    error = null
+                )
+                eventBus.publish(requestEvent)
+                
+                Log.d(TAG, "Request: ${request.method} ${request.url}")
+            }
         }
         
         // Execute request
@@ -81,22 +91,24 @@ class NetworkObserver(
             error = e.message ?: "Network error"
             Log.e(TAG, "Network error: $error", e)
             
-            // Emit error event
-            scope.launch {
-                val errorEvent = Event.NetworkEvent(
-                    timestamp = System.currentTimeMillis(),
-                    sessionId = "",
-                    correlationId = correlationId,
-                    method = request.method,
-                    url = request.url.toString(),
-                    endpoint = extractEndpoint(request.url.toString()),
-                    statusCode = null,
-                    requestBody = null,
-                    responseBody = null,
-                    duration = System.currentTimeMillis() - startTime,
-                    error = error
-                )
-                eventBus.publish(errorEvent)
+            // Emit error event - check if observer is still enabled
+            if (isEnabled) {
+                scope?.launch {
+                    val errorEvent = Event.NetworkEvent(
+                        timestamp = System.currentTimeMillis(),
+                        sessionId = "",
+                        correlationId = correlationId,
+                        method = request.method,
+                        url = request.url.toString(),
+                        endpoint = extractEndpoint(request.url.toString()),
+                        statusCode = null,
+                        requestBody = null,
+                        responseBody = null,
+                        duration = System.currentTimeMillis() - startTime,
+                        error = error
+                    )
+                    eventBus.publish(errorEvent)
+                }
             }
             
             throw e
@@ -106,7 +118,9 @@ class NetworkObserver(
         val endTime = System.currentTimeMillis()
         val duration = endTime - startTime
         
-        scope.launch {
+        // Check if observer is still enabled before logging response
+        if (isEnabled) {
+            scope?.launch {
             val responseEvent = Event.NetworkEvent(
                 timestamp = endTime,
                 sessionId = "",
@@ -118,11 +132,12 @@ class NetworkObserver(
                 requestBody = extractRequestBody(request),
                 responseBody = extractResponseBody(response),
                 duration = duration,
-                error = if (response.isSuccessful) null else "HTTP ${response.code}"
-            )
-            eventBus.publish(responseEvent)
-            
-            Log.d(TAG, "Response: ${response.code} ${request.url} (${duration}ms)")
+                    error = if (response.isSuccessful) null else "HTTP ${response.code}"
+                )
+                eventBus.publish(responseEvent)
+                
+                Log.d(TAG, "Response: ${response.code} ${request.url} (${duration}ms)")
+            }
         }
         
         return response
