@@ -57,6 +57,7 @@ struct SendMoneyView: View {
                             .font(.headline)
                             .accessibilityIdentifier("send_amount_label")
                         
+                        // NO ID - test XPath with placeholder and HStack structure
                         HStack {
                             Text("$")
                                 .font(.system(size: 48, weight: .bold))
@@ -66,7 +67,6 @@ struct SendMoneyView: View {
                                 .font(.system(size: 48, weight: .bold))
                                 .keyboardType(.decimalPad)
                                 .multilineTextAlignment(.center)
-                                .accessibilityIdentifier("send_amount_field")
                         }
                         .padding()
                         .background(Color.secondary.opacity(0.1))

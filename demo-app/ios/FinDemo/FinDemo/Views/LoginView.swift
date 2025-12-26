@@ -35,18 +35,16 @@ struct LoginView: View {
                 
                 Spacer()
                 
-                // Input fields
+                // Input fields - NO ACCESSIBILITY IDs (test XPath generation)
                 VStack(spacing: 15) {
                     TextField("Username", text: $username)
                         .textFieldStyle(.roundedBorder)
                         .textContentType(.username)
                         .autocapitalization(.none)
-                        .accessibilityIdentifier("login_username_field")
                     
                     SecureField("Password", text: $password)
                         .textFieldStyle(.roundedBorder)
                         .textContentType(.password)
-                        .accessibilityIdentifier("login_password_field")
                 }
                 .padding(.horizontal, 40)
                 
@@ -71,17 +69,16 @@ struct LoginView: View {
                 .padding(.top, 20)
                 .accessibilityIdentifier("login_button")
                 
-                // Forgot password link
+                // Forgot password link - NO ID (test XPath by text)
                 Button("Forgot Password?") {
                     showForgotPassword = true
                 }
                 .font(.caption)
                 .foregroundColor(.blue)
-                .accessibilityIdentifier("login_forgot_password")
                 
                 Spacer()
                 
-                // Sign up link
+                // Sign up link - NO ID (test XPath in HStack)
                 HStack {
                     Text("Don't have an account?")
                         .foregroundColor(.secondary)
@@ -89,7 +86,6 @@ struct LoginView: View {
                         showSignUp = true
                     }
                     .fontWeight(.semibold)
-                    .accessibilityIdentifier("login_signup_button")
                 }
                 .font(.caption)
                 .padding(.bottom, 20)

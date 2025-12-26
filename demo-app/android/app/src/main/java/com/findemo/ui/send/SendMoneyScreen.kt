@@ -134,6 +134,7 @@ private fun RecipientSelectStep(
 
         Spacer(modifier = Modifier.height(32.dp))
 
+        // NO TEST TAG - test XPath with label and placeholder
         OutlinedTextField(
             value = recipientName,
             onValueChange = onRecipientNameChange,
@@ -143,13 +144,13 @@ private fun RecipientSelectStep(
                 Icon(Icons.Default.Person, contentDescription = null)
             },
             modifier = Modifier
-                .fillMaxWidth()
-                .testTag("recipient_name_input"),
+                .fillMaxWidth(),
             singleLine = true
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        // NO TEST TAG - test XPath with label and long placeholder
         OutlinedTextField(
             value = recipientId,
             onValueChange = onRecipientIdChange,
@@ -159,8 +160,7 @@ private fun RecipientSelectStep(
                 Icon(Icons.Default.Email, contentDescription = null)
             },
             modifier = Modifier
-                .fillMaxWidth()
-                .testTag("recipient_id_input"),
+                .fillMaxWidth(),
             singleLine = true
         )
 
