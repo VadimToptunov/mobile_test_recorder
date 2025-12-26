@@ -401,7 +401,7 @@ class WebViewObserver(
                         eventBus.publish(
                             Event.WebViewEvent(
                                 timestamp = System.currentTimeMillis(),
-                                sessionId = ObserveSDK.getSession().sessionId,
+                                sessionId = ObserveSDK.getSession()?.sessionId ?: "",
                                 screen = screenName,
                                 url = it,
                                 eventType = "page_load",
@@ -582,7 +582,7 @@ class WebViewObserver(
                     eventBus.publish(
                         Event.WebViewEvent(
                             timestamp = System.currentTimeMillis(),
-                            sessionId = ObserveSDK.getSession().sessionId,
+                            sessionId = ObserveSDK.getSession()?.sessionId ?: "",
                             screen = screenName,
                             url = "", // Will be set by WebViewClient
                             eventType = eventType,
@@ -612,7 +612,7 @@ class WebViewObserver(
                     eventBus.publish(
                         Event.HierarchyEvent(
                             timestamp = System.currentTimeMillis(),
-                            sessionId = ObserveSDK.getSession().sessionId,
+                            sessionId = ObserveSDK.getSession()?.sessionId ?: "",
                             screen = "$screenName (WebView)",
                             hierarchy = hierarchyJson
                         )
