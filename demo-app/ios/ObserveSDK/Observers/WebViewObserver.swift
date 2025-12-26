@@ -296,7 +296,9 @@ public class WebViewObserver: NSObject {
         
         webView.configuration.userContentController.addUserScript(script)
         
-        // Store original navigation delegate
+        // Store original navigation delegate WITH STRONG REFERENCE
+        // This prevents the original delegate from being deallocated
+        // while the WebView is still active
         let originalDelegate = webView.navigationDelegate
         
         // Create delegating navigation delegate
@@ -320,6 +322,11 @@ public class WebViewObserver: NSObject {
             navigationDelegate,
             .OBJC_ASSOCIATION_RETAIN_NONATOMIC
         )
+        // CRITICAL: Store original delegate with STRONG reference via associated object
+        // This breaks the retain cycle: Coordinator → WebView → Coordinator
+        // The WebViewNavigationDelegate uses WEAK reference to originalDelegate
+        // But WebView retains originalDelegate via associated object
+        // Result: originalDelegate stays alive, but no cycle
         objc_setAssociatedObject(
             webView,
             &AssociatedKeys.originalNavigationDelegate,
@@ -498,10 +505,14 @@ private class WebViewNavigationDelegate: NSObject, WKNavigationDelegate {
     
     private let screenName: String
     private let eventBus: EventBus
-    // Strong reference to original delegate to prevent use-after-free
-    // The original delegate (Coordinator) is only retained by UIViewRepresentable context
-    // Using weak reference here causes delegate calls on deallocated Coordinator
-    private var originalDelegate: WKNavigationDelegate?
+    // WEAK reference to original delegate to prevent retain cycle
+    // Coordinator → WebView (via observedWebView)
+    // WebView → WebViewNavigationDelegate (via associated object)
+    // WebViewNavigationDelegate → Coordinator (THIS MUST BE WEAK)
+    //
+    // The originalDelegate (Coordinator) is retained by WebView via associated object
+    // so it won't be deallocated while WebView is alive
+    private weak var originalDelegate: WKNavigationDelegate?
     
     init(screenName: String, eventBus: EventBus, originalDelegate: WKNavigationDelegate?) {
         self.screenName = screenName
