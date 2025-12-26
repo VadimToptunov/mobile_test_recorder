@@ -429,4 +429,3 @@ private fun getMockPaymentHTML(amount: String): String {
         </html>
     """.trimIndent()
 }
-
