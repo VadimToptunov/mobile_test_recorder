@@ -1848,3 +1848,152 @@ def report(report_type: str, test_results: Optional[str], model: Optional[str],
         raise click.Abort()
 
 
+
+# ============================================================================
+# PHASE 5: PROJECT INTEGRATION COMMANDS
+# ============================================================================
+
+@cli.group()
+def framework():
+    """
+    Analyze and integrate with existing test projects
+    
+    Commands for discovering existing test automation projects,
+    learning their patterns, and generating compatible tests.
+    """
+    pass
+
+
+@framework.command('analyze')
+@click.option('--project-dir', type=click.Path(exists=True), default='.',
+              help='Path to existing test project')
+@click.option('--output', type=click.Path(), default='output/project_analysis.json',
+              help='Output file for analysis results')
+def framework_analyze(project_dir: str, output: str):
+    """
+    Analyze existing test automation project
+    
+    Discovers project structure, conventions, and coverage.
+    
+    Example:
+        observe framework analyze --project-dir ./tests
+        observe framework analyze --project-dir /path/to/project --output analysis.json
+    """
+    from framework.integration.project_detector import ProjectDetector
+    
+    click.echo(f"\n🔍 Analyzing existing test project...")
+    click.echo(f"  Project directory: {project_dir}")
+    
+    try:
+        detector = ProjectDetector(Path(project_dir))
+        structure = detector.scan()
+        
+        # Display summary
+        click.echo(f"\n📊 Project Analysis Summary")
+        click.echo(f"  {'='*50}")
+        click.echo(f"  Test Framework: {click.style(structure.test_framework, fg='cyan')}")
+        click.echo(f"  Total Tests: {click.style(str(structure.total_tests), fg='green')}")
+        click.echo(f"  Page Objects: {click.style(str(structure.total_page_objects), fg='green')}")
+        click.echo(f"  Screens Covered: {click.style(str(len(structure.screens_covered)), fg='green')}")
+        
+        if structure.page_objects_dir:
+            click.echo(f"\n  📁 Structure:")
+            click.echo(f"    Page Objects: {structure.page_objects_dir.relative_to(structure.root_dir)}")
+            click.echo(f"    Tests: {structure.tests_dir.relative_to(structure.root_dir) if structure.tests_dir else 'N/A'}")
+            click.echo(f"    Fixtures: {structure.fixtures_dir.relative_to(structure.root_dir) if structure.fixtures_dir else 'N/A'}")
+        
+        if structure.screens_covered:
+            click.echo(f"\n  📱 Covered Screens:")
+            for screen in sorted(structure.screens_covered)[:10]:  # Show first 10
+                click.echo(f"    - {screen}")
+            if len(structure.screens_covered) > 10:
+                click.echo(f"    ... and {len(structure.screens_covered) - 10} more")
+        
+        # Save full analysis
+        detector.save_analysis(Path(output))
+        
+        click.echo(f"\n✅ Next Steps:")
+        click.echo(f"  1. Review analysis: {output}")
+        click.echo(f"  2. Generate matching tests: observe generate tests --match-style")
+        click.echo(f"  3. Validate integration: observe test run --dry-run")
+        
+    except Exception as e:
+        click.echo(f"\n❌ Error analyzing project: {e}", err=True)
+        import traceback
+        traceback.print_exc()
+        raise click.Abort()
+
+
+@framework.command('recommendations')
+@click.option('--project-dir', type=click.Path(exists=True), default='.',
+              help='Path to existing test project')
+def framework_recommendations(project_dir: str):
+    """
+    Get recommendations for test generation and integration
+    
+    Analyzes project and suggests best practices for integration.
+    
+    Example:
+        observe framework recommendations
+    """
+    from framework.integration.project_detector import ProjectDetector
+    
+    click.echo(f"\n🔍 Analyzing project for recommendations...")
+    
+    try:
+        detector = ProjectDetector(Path(project_dir))
+        structure = detector.scan()
+        
+        click.echo(f"\n💡 Integration Recommendations")
+        click.echo(f"  {'='*50}")
+        
+        # Check for Page Objects
+        if not structure.page_objects_dir:
+            click.echo(f"\n  ⚠️  No Page Objects directory found")
+            click.echo(f"    ✨ We recommend creating: tests/page_objects/")
+            click.echo(f"    📈 This will improve test maintainability")
+        else:
+            click.echo(f"\n  ✅ Page Objects structure: Good")
+            click.echo(f"    📁 Location: {structure.page_objects_dir.relative_to(structure.root_dir)}")
+        
+        # Check for fixtures
+        if not structure.fixture_files:
+            click.echo(f"\n  ⚠️  No fixtures found")
+            click.echo(f"    ✨ Consider adding conftest.py for shared fixtures")
+        else:
+            click.echo(f"\n  ✅ Fixtures: {len(structure.fixture_files)} found")
+        
+        # Check test coverage
+        if structure.total_tests < 10:
+            click.echo(f"\n  📊 Low test coverage ({structure.total_tests} tests)")
+            click.echo(f"    ✨ We can generate comprehensive tests based on observation")
+        elif structure.total_tests < 50:
+            click.echo(f"\n  📊 Moderate test coverage ({structure.total_tests} tests)")
+            click.echo(f"    ✨ We can fill gaps and enhance existing tests")
+        else:
+            click.echo(f"\n  ✅ Good test coverage ({structure.total_tests} tests)")
+            click.echo(f"    ✨ We can add tests for new features and edge cases")
+        
+        # Recommendations based on framework
+        if structure.test_framework == "pytest":
+            click.echo(f"\n  ✅ pytest detected: Excellent choice!")
+            click.echo(f"    🎯 We'll generate pytest-compatible tests with fixtures")
+        elif structure.test_framework == "unittest":
+            click.echo(f"\n  ℹ️  unittest detected")
+            click.echo(f"    💡 Consider migrating to pytest for better fixtures and plugins")
+        
+        # Integration strategy
+        click.echo(f"\n  🎯 Suggested Integration Strategy:")
+        click.echo(f"    1. Use existing Page Object base class: {structure.base_page_class or 'BasePage'}")
+        click.echo(f"    2. Follow naming convention: {structure.page_object_suffix}")
+        click.echo(f"    3. Reuse existing fixtures from conftest.py")
+        click.echo(f"    4. Generate tests matching detected style")
+        click.echo(f"    5. Run side-by-side with existing tests")
+        
+    except Exception as e:
+        click.echo(f"\n❌ Error: {e}", err=True)
+        raise click.Abort()
+
+
+if __name__ == '__main__':
+    cli()
