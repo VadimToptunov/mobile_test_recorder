@@ -498,7 +498,10 @@ private class WebViewNavigationDelegate: NSObject, WKNavigationDelegate {
     
     private let screenName: String
     private let eventBus: EventBus
-    private weak var originalDelegate: WKNavigationDelegate?
+    // Strong reference to original delegate to prevent use-after-free
+    // The original delegate (Coordinator) is only retained by UIViewRepresentable context
+    // Using weak reference here causes delegate calls on deallocated Coordinator
+    private var originalDelegate: WKNavigationDelegate?
     
     init(screenName: String, eventBus: EventBus, originalDelegate: WKNavigationDelegate?) {
         self.screenName = screenName

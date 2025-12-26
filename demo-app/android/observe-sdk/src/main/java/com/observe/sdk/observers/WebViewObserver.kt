@@ -12,6 +12,7 @@ import com.observe.sdk.events.EventBus
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 
@@ -350,7 +351,11 @@ class WebViewObserver(
         isStarted = false
         observedWebViews.clear()
         
-        Log.d(TAG, "WebViewObserver stopped")
+        // Cancel the coroutine scope to prevent memory leaks
+        // All launched coroutines will be cancelled and won't access deallocated WebViews
+        scope.cancel()
+        
+        Log.d(TAG, "WebViewObserver stopped and coroutine scope cancelled")
     }
     
     /**
