@@ -45,3 +45,13 @@ flake8>=6.0.0
 mypy>=1.5.0
 pytest-cov>=4.1.0
 
+# Phase 5: Enterprise Integration
+pytest-xdist>=3.5.0          # Parallel test execution
+pytest-rerunfailures>=12.0   # Retry failed tests
+allure-pytest>=2.13.0        # Allure reporting
+pytest-html>=4.1.0           # HTML reports
+pytest-json-report>=1.5.0    # JSON reports
+slack-sdk>=3.23.0            # Slack notifications
+gitpython>=3.1.0             # Git integration
+junitparser>=3.1.0           # JUnit XML manipulation
+
