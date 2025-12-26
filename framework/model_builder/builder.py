@@ -6,6 +6,9 @@ Automatically builds AppModel from observed events and correlations.
 
 from typing import Dict, List, Optional, Set, Any
 from datetime import datetime
+import logging
+from pathlib import Path
+
 from framework.model.app_model import (
     AppModel,
     AppModelMeta,
@@ -24,6 +27,8 @@ from framework.model.app_model import (
 from framework.correlation import CorrelationResult, EventCorrelator
 from framework.storage.event_store import EventStore
 
+logger = logging.getLogger(__name__)
+
 
 class ModelBuilder:
     """
@@ -33,14 +38,35 @@ class ModelBuilder:
     that can be used for test generation.
     """
     
-    def __init__(self, event_store: Optional[EventStore] = None):
+    def __init__(
+        self, 
+        event_store: Optional[EventStore] = None,
+        use_ml_classifier: bool = False,
+        ml_model_path: Optional[Path] = None
+    ):
         """
         Initialize model builder
         
         Args:
             event_store: Optional EventStore for loading events
+            use_ml_classifier: Enable ML-based element classification
+            ml_model_path: Path to trained ML model (optional)
         """
         self.event_store = event_store
+        self.use_ml_classifier = use_ml_classifier
+        self.ml_classifier = None
+        
+        if use_ml_classifier:
+            try:
+                from framework.ml.element_classifier import ElementClassifier
+                self.ml_classifier = ElementClassifier(model_path=ml_model_path)
+                logger.info("ML element classifier enabled")
+            except ImportError:
+                logger.warning("ML dependencies not available, falling back to rule-based classification")
+                self.use_ml_classifier = False
+            except Exception as e:
+                logger.warning(f"Failed to load ML classifier: {e}, falling back to rule-based")
+                self.use_ml_classifier = False
     
     def build_from_session(
         self,
@@ -222,6 +248,7 @@ class ModelBuilder:
         Extract UI elements from UI events
         
         Each unique element that was interacted with becomes an Element.
+        Uses ML classifier if enabled, falls back to rule-based inference.
         """
         elements: Dict[str, Element] = {}
         
@@ -233,9 +260,22 @@ class ModelBuilder:
             if element_id in elements:
                 continue  # Already extracted
             
-            # Infer element type from action
-            action = event.get('action', 'tap')
-            element_type = self._infer_element_type(action, event)
+            # Determine element type (ML or rule-based)
+            if self.use_ml_classifier and self.ml_classifier and self.ml_classifier.trained:
+                try:
+                    element_type, confidence = self._classify_element_ml(event)
+                    logger.debug(f"ML classified {element_id} as {element_type} (confidence: {confidence:.2f})")
+                    
+                    # Fall back to rule-based if confidence is too low
+                    if confidence < 0.5:
+                        logger.debug(f"Low ML confidence ({confidence:.2f}), using rule-based fallback")
+                        element_type = self._infer_element_type(event.get('action', 'tap'), event)
+                except Exception as e:
+                    logger.warning(f"ML classification failed: {e}, falling back to rules")
+                    element_type = self._infer_element_type(event.get('action', 'tap'), event)
+            else:
+                # Rule-based inference
+                element_type = self._infer_element_type(event.get('action', 'tap'), event)
             
             # Build selector
             selector = self._build_selector(event)
@@ -251,6 +291,40 @@ class ModelBuilder:
             elements[element_id] = element
         
         return elements
+    
+    def _classify_element_ml(self, event: Dict[str, Any]) -> tuple[ElementType, float]:
+        """
+        Classify element using ML model.
+        
+        Args:
+            event: UI event with element attributes
+        
+        Returns:
+            (element_type, confidence)
+        """
+        if not self.ml_classifier:
+            raise ValueError("ML classifier not initialized")
+        
+        # Prepare element data for ML classifier
+        element_data = {
+            'clickable': event.get('clickable', False),
+            'focusable': event.get('focusable', False),
+            'enabled': event.get('enabled', True),
+            'checkable': event.get('checkable', False),
+            'scrollable': event.get('scrollable', False),
+            'selected': event.get('selected', False),
+            'password': event.get('password', False),
+            'text': event.get('text', ''),
+            'content_desc': event.get('contentDescription', ''),
+            'resource_id': event.get('resourceId', ''),
+            'class': event.get('className', ''),
+            'bounds': {
+                'width': event.get('width', 0),
+                'height': event.get('height', 0)
+            }
+        }
+        
+        return self.ml_classifier.predict(element_data)
     
     def _infer_element_type(
         self,

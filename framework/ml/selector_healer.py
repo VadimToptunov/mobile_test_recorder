@@ -1,0 +1,442 @@
+"""
+Selector healing engine for self-healing test scripts.
+
+Automatically detects broken selectors and generates alternative strategies.
+"""
+
+import logging
+from typing import Dict, List, Optional, Tuple, Any
+from dataclasses import dataclass
+from enum import Enum
+
+from framework.model.app_model import Selector, SelectorStability
+
+logger = logging.getLogger(__name__)
+
+
+class HealingStrategy(str, Enum):
+    """Selector healing strategies."""
+    TEXT_BASED = "text_based"
+    POSITION_BASED = "position_based"
+    HIERARCHY_BASED = "hierarchy_based"
+    VISUAL_BASED = "visual_based"
+    ATTRIBUTE_BASED = "attribute_based"
+
+
+@dataclass
+class HealingResult:
+    """Result of selector healing attempt."""
+    success: bool
+    original_selector: str
+    healed_selector: Optional[str]
+    strategy: Optional[HealingStrategy]
+    confidence: float
+    reason: str
+
+
+class SelectorHealer:
+    """
+    Self-healing selector engine.
+    
+    Features:
+    - Detect broken selectors
+    - Generate alternative selectors
+    - Track selector evolution
+    - Auto-repair test scripts
+    """
+    
+    def __init__(self):
+        """Initialize selector healer."""
+        self.healing_history: List[HealingResult] = []
+    
+    def detect_broken_selector(
+        self,
+        selector: Selector,
+        execution_result: Dict[str, Any]
+    ) -> bool:
+        """
+        Detect if selector is broken based on execution result.
+        
+        Args:
+            selector: Selector to check
+            execution_result: Result from test execution
+        
+        Returns:
+            True if selector is broken
+        """
+        # Check for common failure indicators
+        if execution_result.get('element_not_found'):
+            return True
+        
+        if execution_result.get('timeout'):
+            return True
+        
+        if execution_result.get('stale_element'):
+            return True
+        
+        return False
+    
+    def heal_selector(
+        self,
+        broken_selector: Selector,
+        element_context: Dict[str, Any],
+        available_strategies: Optional[List[HealingStrategy]] = None
+    ) -> HealingResult:
+        """
+        Attempt to heal broken selector.
+        
+        Args:
+            broken_selector: Selector that failed
+            element_context: Context about the element (text, position, etc.)
+            available_strategies: Strategies to try (default: all)
+        
+        Returns:
+            HealingResult with healed selector or failure reason
+        """
+        if available_strategies is None:
+            available_strategies = list(HealingStrategy)
+        
+        # Try each strategy in order of preference
+        for strategy in self._prioritize_strategies(available_strategies, element_context):
+            result = self._try_healing_strategy(broken_selector, element_context, strategy)
+            
+            if result.success:
+                self.healing_history.append(result)
+                logger.info(f"Selector healed using {strategy}: {result.healed_selector}")
+                return result
+        
+        # All strategies failed
+        failed_result = HealingResult(
+            success=False,
+            original_selector=str(broken_selector),
+            healed_selector=None,
+            strategy=None,
+            confidence=0.0,
+            reason="All healing strategies failed"
+        )
+        
+        self.healing_history.append(failed_result)
+        return failed_result
+    
+    def _prioritize_strategies(
+        self,
+        strategies: List[HealingStrategy],
+        context: Dict[str, Any]
+    ) -> List[HealingStrategy]:
+        """
+        Prioritize healing strategies based on available context.
+        
+        Args:
+            strategies: Available strategies
+            context: Element context
+        
+        Returns:
+            Prioritized list of strategies
+        """
+        priorities = []
+        
+        for strategy in strategies:
+            priority = 0
+            
+            if strategy == HealingStrategy.TEXT_BASED:
+                # High priority if element has stable text
+                if context.get('text') and not context.get('text_dynamic'):
+                    priority = 90
+                elif context.get('text'):
+                    priority = 70
+            
+            elif strategy == HealingStrategy.ATTRIBUTE_BASED:
+                # High priority if element has multiple attributes
+                attr_count = sum([
+                    1 for key in ['content_desc', 'class', 'enabled', 'clickable']
+                    if context.get(key)
+                ])
+                priority = 60 + (attr_count * 5)
+            
+            elif strategy == HealingStrategy.HIERARCHY_BASED:
+                # Medium priority if parent/sibling info available
+                if context.get('parent') or context.get('siblings'):
+                    priority = 50
+            
+            elif strategy == HealingStrategy.POSITION_BASED:
+                # Lower priority (fragile)
+                if context.get('position'):
+                    priority = 30
+            
+            elif strategy == HealingStrategy.VISUAL_BASED:
+                # Lowest priority (requires screenshot)
+                if context.get('screenshot'):
+                    priority = 20
+            
+            priorities.append((priority, strategy))
+        
+        # Sort by priority (descending)
+        priorities.sort(key=lambda x: x[0], reverse=True)
+        
+        return [strategy for _, strategy in priorities]
+    
+    def _try_healing_strategy(
+        self,
+        broken_selector: Selector,
+        context: Dict[str, Any],
+        strategy: HealingStrategy
+    ) -> HealingResult:
+        """Try specific healing strategy."""
+        
+        if strategy == HealingStrategy.TEXT_BASED:
+            return self._heal_with_text(broken_selector, context)
+        
+        elif strategy == HealingStrategy.ATTRIBUTE_BASED:
+            return self._heal_with_attributes(broken_selector, context)
+        
+        elif strategy == HealingStrategy.HIERARCHY_BASED:
+            return self._heal_with_hierarchy(broken_selector, context)
+        
+        elif strategy == HealingStrategy.POSITION_BASED:
+            return self._heal_with_position(broken_selector, context)
+        
+        elif strategy == HealingStrategy.VISUAL_BASED:
+            return self._heal_with_visual(broken_selector, context)
+        
+        else:
+            return HealingResult(
+                success=False,
+                original_selector=str(broken_selector),
+                healed_selector=None,
+                strategy=strategy,
+                confidence=0.0,
+                reason=f"Unknown strategy: {strategy}"
+            )
+    
+    def _heal_with_text(
+        self,
+        broken_selector: Selector,
+        context: Dict[str, Any]
+    ) -> HealingResult:
+        """Heal selector using element text."""
+        text = context.get('text')
+        
+        if not text:
+            return HealingResult(
+                success=False,
+                original_selector=str(broken_selector),
+                healed_selector=None,
+                strategy=HealingStrategy.TEXT_BASED,
+                confidence=0.0,
+                reason="No text available"
+            )
+        
+        # Generate text-based selector
+        platform = context.get('platform', 'android')
+        
+        if platform == 'android':
+            healed = f"//android.widget.*[@text='{text}']"
+        else:  # iOS
+            healed = f"//XCUIElementType*[@label='{text}']"
+        
+        confidence = 0.8 if not context.get('text_dynamic') else 0.6
+        
+        return HealingResult(
+            success=True,
+            original_selector=str(broken_selector),
+            healed_selector=healed,
+            strategy=HealingStrategy.TEXT_BASED,
+            confidence=confidence,
+            reason=f"Using text-based selector: {text}"
+        )
+    
+    def _heal_with_attributes(
+        self,
+        broken_selector: Selector,
+        context: Dict[str, Any]
+    ) -> HealingResult:
+        """Heal selector using element attributes."""
+        # Collect available attributes
+        attributes = []
+        
+        if context.get('content_desc'):
+            attributes.append(f"@content-desc='{context['content_desc']}'")
+        
+        if context.get('class'):
+            attributes.append(f"@class='{context['class']}'")
+        
+        if context.get('clickable'):
+            attributes.append("@clickable='true'")
+        
+        if not attributes:
+            return HealingResult(
+                success=False,
+                original_selector=str(broken_selector),
+                healed_selector=None,
+                strategy=HealingStrategy.ATTRIBUTE_BASED,
+                confidence=0.0,
+                reason="No attributes available"
+            )
+        
+        # Build XPath with multiple attributes
+        platform = context.get('platform', 'android')
+        
+        if platform == 'android':
+            healed = f"//android.widget.*[{' and '.join(attributes)}]"
+        else:
+            healed = f"//XCUIElementType*[{' and '.join(attributes)}]"
+        
+        confidence = 0.75
+        
+        return HealingResult(
+            success=True,
+            original_selector=str(broken_selector),
+            healed_selector=healed,
+            strategy=HealingStrategy.ATTRIBUTE_BASED,
+            confidence=confidence,
+            reason=f"Using attribute-based selector with {len(attributes)} attributes"
+        )
+    
+    def _heal_with_hierarchy(
+        self,
+        broken_selector: Selector,
+        context: Dict[str, Any]
+    ) -> HealingResult:
+        """Heal selector using parent/sibling hierarchy."""
+        parent = context.get('parent')
+        
+        if not parent:
+            return HealingResult(
+                success=False,
+                original_selector=str(broken_selector),
+                healed_selector=None,
+                strategy=HealingStrategy.HIERARCHY_BASED,
+                confidence=0.0,
+                reason="No parent information available"
+            )
+        
+        # Build hierarchy-based selector
+        child_text = context.get('text', '')
+        parent_class = parent.get('class', '*')
+        
+        platform = context.get('platform', 'android')
+        
+        if platform == 'android':
+            if child_text:
+                healed = f"//{parent_class}/*[@text='{child_text}']"
+            else:
+                healed = f"//{parent_class}/*[@clickable='true']"
+        else:
+            if child_text:
+                healed = f"//{parent_class}/*[@label='{child_text}']"
+            else:
+                healed = f"//{parent_class}/*[@enabled='true']"
+        
+        confidence = 0.65
+        
+        return HealingResult(
+            success=True,
+            original_selector=str(broken_selector),
+            healed_selector=healed,
+            strategy=HealingStrategy.HIERARCHY_BASED,
+            confidence=confidence,
+            reason="Using parent-child hierarchy"
+        )
+    
+    def _heal_with_position(
+        self,
+        broken_selector: Selector,
+        context: Dict[str, Any]
+    ) -> HealingResult:
+        """Heal selector using position (fragile)."""
+        position = context.get('position')
+        
+        if position is None:
+            return HealingResult(
+                success=False,
+                original_selector=str(broken_selector),
+                healed_selector=None,
+                strategy=HealingStrategy.POSITION_BASED,
+                confidence=0.0,
+                reason="No position information available"
+            )
+        
+        # Build position-based selector
+        element_class = context.get('class', '*')
+        platform = context.get('platform', 'android')
+        
+        if platform == 'android':
+            healed = f"(//{element_class})[{position + 1}]"
+        else:
+            healed = f"(//{element_class})[{position + 1}]"
+        
+        # Low confidence (position is fragile)
+        confidence = 0.4
+        
+        return HealingResult(
+            success=True,
+            original_selector=str(broken_selector),
+            healed_selector=healed,
+            strategy=HealingStrategy.POSITION_BASED,
+            confidence=confidence,
+            reason=f"Using position-based selector (index: {position}) - WARNING: fragile"
+        )
+    
+    def _heal_with_visual(
+        self,
+        broken_selector: Selector,
+        context: Dict[str, Any]
+    ) -> HealingResult:
+        """Heal selector using visual recognition (requires screenshot)."""
+        screenshot = context.get('screenshot')
+        
+        if not screenshot:
+            return HealingResult(
+                success=False,
+                original_selector=str(broken_selector),
+                healed_selector=None,
+                strategy=HealingStrategy.VISUAL_BASED,
+                confidence=0.0,
+                reason="No screenshot available"
+            )
+        
+        # Visual-based healing would require VisualDetector integration
+        # For now, return not implemented
+        return HealingResult(
+            success=False,
+            original_selector=str(broken_selector),
+            healed_selector=None,
+            strategy=HealingStrategy.VISUAL_BASED,
+            confidence=0.0,
+            reason="Visual-based healing not yet implemented"
+        )
+    
+    def get_healing_stats(self) -> Dict[str, Any]:
+        """Get statistics about healing attempts."""
+        if not self.healing_history:
+            return {
+                'total_attempts': 0,
+                'successful': 0,
+                'failed': 0,
+                'success_rate': 0.0,
+                'strategies': {}
+            }
+        
+        total = len(self.healing_history)
+        successful = sum(1 for r in self.healing_history if r.success)
+        
+        # Count by strategy
+        strategy_counts = {}
+        for result in self.healing_history:
+            if result.strategy:
+                strategy = result.strategy.value
+                if strategy not in strategy_counts:
+                    strategy_counts[strategy] = {'attempts': 0, 'successes': 0}
+                
+                strategy_counts[strategy]['attempts'] += 1
+                if result.success:
+                    strategy_counts[strategy]['successes'] += 1
+        
+        return {
+            'total_attempts': total,
+            'successful': successful,
+            'failed': total - successful,
+            'success_rate': successful / total if total > 0 else 0.0,
+            'strategies': strategy_counts
+        }
+

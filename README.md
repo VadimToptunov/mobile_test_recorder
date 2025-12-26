@@ -338,12 +338,44 @@ observe generate tests --output tests/
   - [x] BDD generator (unified Gherkin)
   - [x] Platform detection in generated code
 
-### 🔮 Phase 4: Advanced Features
-- [ ] ML-based element classification
-- [ ] Visual regression testing
-- [ ] CI/CD integration
+### 🚧 Phase 4: AI/ML & Advanced Features (8-10 weeks) - IN PROGRESS! 🤖
+- [ ] **ML-Based Element Classification** 🧠
+  - [ ] Training dataset from recorded sessions
+  - [ ] Element type classifier (>85% accuracy)
+  - [ ] Confidence-based fallback to rules
+  - [ ] Integration into ModelBuilder
+- [ ] **Visual Element Detection** 👁️
+  - [ ] Screenshot capture & processing
+  - [ ] Image similarity matching
+  - [ ] OCR integration (Tesseract)
+  - [ ] Visual regression testing
+- [ ] **Smart Selector Healing** 🔧
+  - [ ] Broken selector detection
+  - [ ] Alternative selector generation
+  - [ ] Self-healing test scripts
+  - [ ] Selector evolution tracking
+- [ ] **Flow Pattern Recognition** 🔍
+  - [ ] Common flow detection
+  - [ ] Critical path identification
+  - [ ] Test scenario suggestions
+  - [ ] Anomaly detection
+- [ ] **Predictive Analytics** 📊
+  - [ ] Test failure prediction
+  - [ ] Flaky test identification
+  - [ ] Coverage gap analysis
+  - [ ] Optimization recommendations
+- [ ] **Auto-Documentation** 📝
+  - [ ] Test documentation generation
+  - [ ] API docs from traffic
+  - [ ] Visual flow diagrams
+  - [ ] User guides
+
+### 🌟 Future Phases
+- [ ] CI/CD integration (Jenkins, GitHub Actions)
 - [ ] TestRail integration
-- [ ] Web support (optional)
+- [ ] Web support (Selenium/Playwright)
+- [ ] Performance testing
+- [ ] Test data management
 
 ---
 

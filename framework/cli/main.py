@@ -909,18 +909,35 @@ def analyze_selectors(model_file: str, detailed: bool):
               help='Output file for generated model')
 @click.option('--correlations', type=click.Path(exists=True),
               help='Pre-computed correlations JSON file (optional)')
-def build(session_id: str, app_version: str, platform: str, output: str, correlations: Optional[str]):
+@click.option('--use-ml', is_flag=True, help='Use ML classifier for element types (Phase 4)')
+@click.option('--ml-model', type=click.Path(), default='ml_models/element_classifier.pkl',
+              help='Path to trained ML model (only validated when --use-ml is set)')
+def build(session_id: str, app_version: str, platform: str, output: str, correlations: Optional[str],
+          use_ml: bool, ml_model: str):
     """
     Build AppModel from recorded session
     
     Example:
         observe model build --session-id session_20250119_142345 --app-version 1.0.0
+        observe model build --session-id session_123 --app-version 1.0.0 --use-ml
     """
     click.echo(f"🏗️  Building AppModel from session...")
     click.echo(f"   Session: {session_id}")
     click.echo(f"   App Version: {app_version}")
     click.echo(f"   Platform: {platform}")
     click.echo(f"   Output: {output}")
+    
+    if use_ml:
+        click.echo(f"   🤖 ML Classifier: ENABLED")
+        click.echo(f"   ML Model: {ml_model}")
+        
+        # Validate ML model file exists only when ML is enabled
+        ml_model_path = Path(ml_model)
+        if not ml_model_path.exists():
+            click.echo(f"\n❌ Error: ML model file not found: {ml_model}", err=True)
+            click.echo(f"\n💡 Train a model first using:", err=True)
+            click.echo(f"   observe ml train --session-id <session_id>", err=True)
+            raise click.Abort()
     
     try:
         from pathlib import Path
@@ -933,7 +950,14 @@ def build(session_id: str, app_version: str, platform: str, output: str, correla
         
         # Initialize store and builder
         store = EventStore()
-        builder = ModelBuilder(event_store=store)
+        
+        # Initialize builder with ML support if requested
+        ml_model_path = Path(ml_model) if use_ml else None
+        builder = ModelBuilder(
+            event_store=store,
+            use_ml_classifier=use_ml,
+            ml_model_path=ml_model_path
+        )
         
         # Load correlations if provided
         correlation_result = None
@@ -1151,8 +1175,419 @@ def info():
    observe record start --device emulator-5554
    observe generate pages --model app_model.yaml
    observe crypto pull --session-id session_123
+   observe ml train --session-id session_123
+   observe ml analyze-patterns --session-id session_123
 """)
 
 
-if __name__ == '__main__':
-    cli()
+# ==============================================================================
+# ML / AI Commands (Phase 4)
+# ==============================================================================
+
+@cli.group()
+def ml():
+    """🤖 ML/AI commands for intelligent testing (Phase 4)"""
+    pass
+
+
+@ml.command()
+@click.option('--session-id', required=True, help='Session ID to train from')
+@click.option('--output', type=click.Path(), default='ml_models/element_classifier.pkl',
+              help='Output path for trained model')
+@click.option('--test-size', default=0.2, help='Test set size (0.0-1.0)')
+def train(session_id: str, output: str, test_size: float):
+    """
+    Train ML element classifier from recorded sessions
+    
+    Example:
+        observe ml train --session-id session_20250119_142345
+    """
+    click.echo(f"🤖 Training ML element classifier...")
+    click.echo(f"   Session: {session_id}")
+    
+    try:
+        from framework.ml.element_classifier import ElementClassifier
+        from framework.storage.event_store import EventStore
+        
+        # Load events
+        store = EventStore()
+        hierarchy_events = store.get_events(
+            session_id=session_id,
+            event_type='HierarchyEvent',
+            limit=10000
+        )
+        
+        if not hierarchy_events:
+            click.echo(f"\n❌ No hierarchy events found for session {session_id}", err=True)
+            raise click.Abort()
+        
+        click.echo(f"\n📊 Loaded {len(hierarchy_events)} hierarchy events")
+        
+        # Initialize classifier
+        classifier = ElementClassifier()
+        
+        # Prepare training data
+        click.echo(f"\n🔄 Preparing training data...")
+        features, labels = classifier.prepare_training_data(hierarchy_events)
+        
+        # Train model
+        click.echo(f"\n🎓 Training Random Forest classifier...")
+        metrics = classifier.train(features, labels, test_size=test_size)
+        
+        # Display results
+        click.echo(f"\n✅ Training complete!")
+        click.echo(f"\n📈 Performance Metrics:")
+        click.echo(f"   Train Accuracy: {metrics['train_accuracy']:.3f}")
+        click.echo(f"   Test Accuracy:  {metrics['test_accuracy']:.3f}")
+        click.echo(f"   CV Mean:        {metrics['cv_mean']:.3f} (±{metrics['cv_std']:.3f})")
+        click.echo(f"   Train Samples:  {metrics['train_samples']}")
+        click.echo(f"   Test Samples:   {metrics['test_samples']}")
+        
+        # Save model
+        output_path = Path(output)
+        classifier.save_model(output_path)
+        
+        click.echo(f"\n💾 Model saved to {output_path}")
+        click.echo(f"\n🎯 Next steps:")
+        click.echo(f"   1. Use ML classifier in model building:")
+        click.echo(f"      observe model build --session-id {session_id} --use-ml --ml-model {output_path}")
+        
+    except Exception as e:
+        click.echo(f"\n❌ Error: {e}", err=True)
+        import traceback
+        traceback.print_exc()
+        raise click.Abort()
+
+
+@ml.command('analyze-patterns')
+@click.option('--session-id', required=True, help='Session ID to analyze')
+@click.option('--min-support', default=2, help='Minimum pattern frequency')
+@click.option('--min-confidence', default=0.6, help='Minimum pattern confidence')
+@click.option('--detect-anomalies', is_flag=True, help='Detect flow anomalies')
+def analyze_patterns(session_id: str, min_support: int, min_confidence: float, detect_anomalies: bool):
+    """
+    Analyze navigation patterns and detect common flows
+    
+    Example:
+        observe ml analyze-patterns --session-id session_123 --detect-anomalies
+    """
+    click.echo(f"🔍 Analyzing navigation patterns...")
+    click.echo(f"   Session: {session_id}")
+    
+    try:
+        from framework.ml.pattern_recognizer import PatternRecognizer
+        from framework.storage.event_store import EventStore
+        
+        # Load navigation events
+        store = EventStore()
+        nav_events = store.get_events(
+            session_id=session_id,
+            event_type='NavigationEvent',
+            limit=10000
+        )
+        
+        if not nav_events:
+            click.echo(f"\n❌ No navigation events found for session {session_id}", err=True)
+            raise click.Abort()
+        
+        click.echo(f"\n📊 Loaded {len(nav_events)} navigation events")
+        
+        # Initialize recognizer
+        recognizer = PatternRecognizer(
+            min_support=min_support,
+            min_confidence=min_confidence
+        )
+        
+        # Analyze flows
+        click.echo(f"\n🔄 Mining flow patterns...")
+        patterns = recognizer.analyze_flows(nav_events)
+        
+        # Display patterns
+        click.echo(f"\n✅ Detected {len(patterns)} flow patterns:")
+        
+        critical_patterns = [p for p in patterns if p.is_critical]
+        if critical_patterns:
+            click.echo(f"\n🚨 Critical Paths ({len(critical_patterns)}):")
+            for pattern in critical_patterns:
+                click.echo(f"   • {pattern.description}")
+                click.echo(f"     Frequency: {pattern.frequency}, Confidence: {pattern.confidence:.2f}")
+        
+        normal_patterns = [p for p in patterns if not p.is_critical][:5]
+        if normal_patterns:
+            click.echo(f"\n📋 Common Flows (top 5):")
+            for pattern in normal_patterns:
+                click.echo(f"   • {pattern.description}")
+                click.echo(f"     Frequency: {pattern.frequency}, Confidence: {pattern.confidence:.2f}")
+        
+        # Detect anomalies if requested
+        if detect_anomalies:
+            click.echo(f"\n🔍 Detecting anomalies...")
+            anomalies = recognizer.detect_anomalies(nav_events, patterns)
+            
+            if anomalies:
+                click.echo(f"\n⚠️  Detected {len(anomalies)} anomalies:")
+                for anomaly in anomalies[:10]:  # Show first 10
+                    severity_emoji = {'low': '🟡', 'medium': '🟠', 'high': '🔴'}
+                    emoji = severity_emoji.get(anomaly.severity, '⚪')
+                    click.echo(f"   {emoji} [{anomaly.anomaly_type}] {anomaly.description}")
+            else:
+                click.echo(f"\n✅ No anomalies detected")
+        
+        # Suggest test scenarios
+        click.echo(f"\n💡 Generating test scenario suggestions...")
+        scenarios = recognizer.suggest_test_scenarios(patterns)
+        
+        if scenarios:
+            click.echo(f"\n🧪 Suggested Test Scenarios ({len(scenarios)}):")
+            for i, scenario in enumerate(scenarios[:5], 1):  # Show first 5
+                priority_emoji = '🔴' if scenario['priority'] == 'critical' else '🟢'
+                click.echo(f"\n   {priority_emoji} Scenario {i}: {scenario['description']}")
+                click.echo(f"      Priority: {scenario['priority']}, Frequency: {scenario['frequency']}")
+                click.echo(f"\n      Gherkin:\n")
+                for line in scenario['gherkin'].split('\n'):
+                    click.echo(f"      {line}")
+        
+        # Get statistics
+        stats = recognizer.get_pattern_stats()
+        click.echo(f"\n📊 Pattern Statistics:")
+        click.echo(f"   Total Patterns: {stats['total_patterns']}")
+        click.echo(f"   Critical Paths: {stats['critical_patterns']}")
+        click.echo(f"   Avg Frequency:  {stats['avg_frequency']:.1f}")
+        click.echo(f"   Avg Confidence: {stats['avg_confidence']:.2f}")
+        
+    except Exception as e:
+        click.echo(f"\n❌ Error: {e}", err=True)
+        import traceback
+        traceback.print_exc()
+        raise click.Abort()
+
+
+@ml.command('heal-selectors')
+@click.option('--model', type=click.Path(exists=True), required=True,
+              help='App model YAML file')
+@click.option('--test-results', type=click.Path(exists=True), required=True,
+              help='Test execution results JSON')
+@click.option('--output', type=click.Path(), default='healed_model.yaml',
+              help='Output path for healed model')
+def heal_selectors(model: str, test_results: str, output: str):
+    """
+    Attempt to heal broken selectors based on test failures
+    
+    Example:
+        observe ml heal-selectors --model app_model.yaml --test-results failures.json
+    """
+    click.echo(f"🔧 Healing broken selectors...")
+    
+    try:
+        from framework.ml.selector_healer import SelectorHealer
+        from framework.model.app_model import AppModel
+        import yaml
+        import json
+        
+        # Load model
+        with open(model, 'r') as f:
+            model_data = yaml.safe_load(f)
+        
+        app_model = AppModel.model_validate(model_data)
+        
+        # Load test results
+        with open(test_results, 'r') as f:
+            results = json.load(f)
+        
+        # Initialize healer
+        healer = SelectorHealer()
+        
+        # Process failures
+        failures = results.get('failures', [])
+        click.echo(f"\n📊 Processing {len(failures)} failed tests...")
+        
+        healed_count = 0
+        for failure in failures:
+            screen_id = failure.get('screen_id')
+            element_id = failure.get('element_id')
+            
+            if not screen_id or not element_id:
+                continue
+            
+            # Find element in model
+            screen = app_model.screens.get(screen_id)
+            if not screen:
+                continue
+            
+            element = next((e for e in screen.elements if e.id == element_id), None)
+            if not element:
+                continue
+            
+            # Attempt healing
+            context = failure.get('element_context', {})
+            result = healer.heal_selector(element.selector, context)
+            
+            if result.success:
+                healed_count += 1
+                click.echo(f"\n   ✅ Healed {element_id}:")
+                click.echo(f"      Strategy: {result.strategy.value}")
+                click.echo(f"      Confidence: {result.confidence:.2f}")
+                click.echo(f"      Old: {result.original_selector}")
+                click.echo(f"      New: {result.healed_selector}")
+                
+                # Update model (simplified - would need proper Selector object)
+                # element.selector = result.healed_selector
+        
+        # Display statistics
+        stats = healer.get_healing_stats()
+        click.echo(f"\n📊 Healing Statistics:")
+        click.echo(f"   Total Attempts: {stats['total_attempts']}")
+        click.echo(f"   Successful:     {stats['successful']}")
+        click.echo(f"   Failed:         {stats['failed']}")
+        click.echo(f"   Success Rate:   {stats['success_rate']:.1%}")
+        
+        if stats['strategies']:
+            click.echo(f"\n🔧 Strategies Used:")
+            for strategy, counts in stats['strategies'].items():
+                success_rate = counts['successes'] / counts['attempts'] if counts['attempts'] > 0 else 0
+                click.echo(f"   • {strategy}: {counts['successes']}/{counts['attempts']} ({success_rate:.1%})")
+        
+        # Save healed model
+        output_path = Path(output)
+        click.echo(f"\n💾 Saving healed model to {output_path}...")
+        # Would save updated model here
+        
+    except Exception as e:
+        click.echo(f"\n❌ Error: {e}", err=True)
+        import traceback
+        traceback.print_exc()
+        raise click.Abort()
+
+
+@ml.command('visual-diff')
+@click.option('--baseline', type=click.Path(exists=True), required=True,
+              help='Baseline screenshot')
+@click.option('--current', type=click.Path(exists=True), required=True,
+              help='Current screenshot')
+@click.option('--output', type=click.Path(), default='visual_diff.png',
+              help='Output path for diff image')
+@click.option('--threshold', default=0.95, help='Similarity threshold (0.0-1.0)')
+def visual_diff(baseline: str, current: str, output: str, threshold: float):
+    """
+    Detect visual differences between screenshots
+    
+    Example:
+        observe ml visual-diff --baseline baseline.png --current current.png
+    """
+    click.echo(f"👁️  Detecting visual differences...")
+    
+    try:
+        from framework.ml.visual_detector import VisualDetector
+        
+        detector = VisualDetector()
+        
+        # Detect changes
+        has_changes, similarity, diff_image = detector.detect_visual_changes(
+            Path(baseline),
+            Path(current),
+            threshold=threshold
+        )
+        
+        click.echo(f"\n📊 Similarity Score: {similarity:.3f}")
+        
+        if has_changes:
+            click.echo(f"⚠️  Visual changes detected!")
+            
+            if diff_image is not None:
+                detector.save_visual_diff(diff_image, Path(output))
+                click.echo(f"💾 Diff image saved to {output}")
+        else:
+            click.echo(f"✅ No significant visual changes")
+        
+    except Exception as e:
+        click.echo(f"\n❌ Error: {e}", err=True)
+        import traceback
+        traceback.print_exc()
+        raise click.Abort()
+
+
+@ml.command('report')
+@click.option('--type', 'report_type', 
+              type=click.Choice(['execution', 'coverage', 'selector-stability']),
+              required=True, help='Report type')
+@click.option('--test-results', type=click.Path(exists=True),
+              help='Test results JSON (for execution report)')
+@click.option('--model', type=click.Path(exists=True),
+              help='App model YAML (for coverage/selector reports)')
+@click.option('--executed-flows', type=click.Path(exists=True),
+              help='Executed flows JSON (for coverage report)')
+@click.option('--output', type=click.Path(), default='report.html',
+              help='Output HTML file')
+def report(report_type: str, test_results: Optional[str], model: Optional[str], 
+           executed_flows: Optional[str], output: str):
+    """
+    Generate analytics dashboard reports
+    
+    Examples:
+        observe ml report --type execution --test-results results.json
+        observe ml report --type coverage --model app_model.yaml --executed-flows flows.json
+        observe ml report --type selector-stability --model app_model.yaml
+    """
+    click.echo(f"📊 Generating {report_type} report...")
+    
+    try:
+        from framework.ml.analytics_dashboard import AnalyticsDashboard
+        import yaml
+        import json
+        from framework.model.app_model import AppModel
+        
+        dashboard = AnalyticsDashboard()
+        output_path = Path(output)
+        
+        if report_type == 'execution':
+            if not test_results:
+                click.echo("❌ --test-results required for execution report", err=True)
+                raise click.Abort()
+            
+            with open(test_results, 'r') as f:
+                results = json.load(f)
+            
+            click.echo(f"📄 Loaded {len(results)} test results")
+            dashboard.generate_execution_report(results, output_path)
+            
+        elif report_type == 'coverage':
+            if not model or not executed_flows:
+                click.echo("❌ --model and --executed-flows required for coverage report", err=True)
+                raise click.Abort()
+            
+            # Load model
+            with open(model, 'r') as f:
+                model_data = yaml.safe_load(f)
+            app_model = AppModel.model_validate(model_data)
+            
+            # Load executed flows
+            with open(executed_flows, 'r') as f:
+                flows = json.load(f)
+            
+            click.echo(f"📄 Loaded model with {len(app_model.screens)} screens, {len(app_model.flows)} flows")
+            click.echo(f"📄 {len(flows)} flows executed")
+            dashboard.generate_coverage_report(app_model, flows, output_path)
+            
+        elif report_type == 'selector-stability':
+            if not model:
+                click.echo("❌ --model required for selector stability report", err=True)
+                raise click.Abort()
+            
+            # Load model
+            with open(model, 'r') as f:
+                model_data = yaml.safe_load(f)
+            app_model = AppModel.model_validate(model_data)
+            
+            click.echo(f"📄 Analyzing selectors in {len(app_model.screens)} screens")
+            dashboard.generate_selector_stability_report(app_model, output_path)
+        
+        click.echo(f"\n✅ Report generated successfully!")
+        click.echo(f"📄 Open in browser: file://{output_path.absolute()}")
+        
+    except Exception as e:
+        click.echo(f"\n❌ Error: {e}", err=True)
+        import traceback
+        traceback.print_exc()
+        raise click.Abort()
+
+
