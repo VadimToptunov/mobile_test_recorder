@@ -2012,6 +2012,108 @@ def framework():
     pass
 
 
+
+
+@framework.command('init')
+@click.option('--project-name', required=True,
+              help='Project name')
+@click.option('--output-dir', type=click.Path(), default='.',
+              help='Output directory for project')
+@click.option('--platform', type=click.Choice(['android', 'ios', 'both']), default='both',
+              help='Target platform(s)')
+def framework_init(project_name: str, output_dir: str, platform: str):
+    """
+    Initialize new test automation project from scratch
+    
+    Creates a complete project structure with:
+    - Page Objects directory with base class
+    - Tests directory with conftest.py
+    - Utilities directory with API client
+    - pytest configuration
+    - README and .gitignore
+    
+    Example:
+        observe framework init --project-name MyApp
+        observe framework init --project-name MyApp --output-dir ./tests --platform android
+    """
+    from framework.integration.project_templates import PROJECT_TEMPLATES, get_readme_template
+    
+    click.echo(f"\n🚀 Initializing test project: {project_name}")
+    
+    try:
+        project_root = Path(output_dir) / project_name
+        
+        # Check if directory exists
+        if project_root.exists():
+            click.echo(f"\n⚠️  Warning: Directory already exists: {project_root}")
+            if not click.confirm("Do you want to continue?"):
+                return
+        
+        # Create project structure
+        project_root.mkdir(parents=True, exist_ok=True)
+        
+        click.echo(f"\n📁 Creating project structure...")
+        
+        # Create files from templates
+        for file_path, template_func in PROJECT_TEMPLATES.items():
+            full_path = project_root / file_path
+            full_path.parent.mkdir(parents=True, exist_ok=True)
+            
+            content = template_func()
+            full_path.write_text(content + '\n')
+            click.echo(f"  ✓ Created: {file_path}")
+        
+        # Create README with project name
+        readme_path = project_root / 'README.md'
+        readme_content = get_readme_template(project_name)
+        readme_path.write_text(readme_content + '\n')
+        click.echo(f"  ✓ Created: README.md")
+        
+        # Create requirements.txt
+        requirements_path = project_root / 'requirements.txt'
+        requirements_content = """# Core dependencies
+appium-python-client>=3.0.0
+selenium>=4.15.0
+pytest>=7.4.0
+pytest-bdd>=6.1.0
+
+# Reporting
+pytest-html>=4.1.0
+pytest-json-report>=1.5.0
+allure-pytest>=2.13.0
+
+# Parallel execution
+pytest-xdist>=3.5.0
+pytest-rerunfailures>=12.0
+
+# Utilities
+requests>=2.31.0
+"""
+        requirements_path.write_text(requirements_content)
+        click.echo(f"  ✓ Created: requirements.txt")
+        
+        # Success message
+        click.echo(f"\n✅ Project '{project_name}' initialized successfully!")
+        click.echo(f"\n📍 Location: {project_root.absolute()}")
+        
+        click.echo(f"\n🎯 Next Steps:")
+        click.echo(f"  1. cd {project_root}")
+        click.echo(f"  2. python -m venv .venv")
+        click.echo(f"  3. source .venv/bin/activate")
+        click.echo(f"  4. pip install -r requirements.txt")
+        click.echo(f"  5. Update tests/conftest.py with your app path")
+        click.echo(f"  6. pytest tests/")
+        
+        click.echo(f"\n📚 Documentation:")
+        click.echo(f"  - See README.md for detailed instructions")
+        click.echo(f"  - Example Page Object: page_objects/login_page.py")
+        click.echo(f"  - Example test: tests/test_login.py")
+        
+    except Exception as e:
+        click.echo(f"\n❌ Error creating project: {e}", err=True)
+        import traceback
+        traceback.print_exc()
+        raise click.Abort()
 @framework.command('analyze')
 @click.option('--project-dir', type=click.Path(exists=True), default='.',
               help='Path to existing test project')
