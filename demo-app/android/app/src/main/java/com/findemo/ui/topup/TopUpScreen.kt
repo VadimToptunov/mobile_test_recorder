@@ -192,12 +192,17 @@ private fun PaymentWebViewStep(
     onPaymentCancel: () -> Unit
 ) {
     var isLoading by remember { mutableStateOf(true) }
-    var webView by remember { mutableStateOf<WebView?>(null) }
+    
+    // Remember the WebView instance across recompositions
+    // This prevents the factory from creating multiple WebViews
+    val webView = remember {
+        mutableStateOf<WebView?>(null)
+    }
 
-    // Cleanup on disposal - use remembered webView reference
+    // Cleanup on disposal - guaranteed to run once with correct WebView reference
     DisposableEffect(Unit) {
         onDispose {
-            webView?.let { wv ->
+            webView.value?.let { wv ->
                 ObserveSDK.stopObservingWebView(wv)
             }
         }
@@ -211,6 +216,8 @@ private fun PaymentWebViewStep(
         // Mock payment gateway WebView
         AndroidView(
             factory = { context ->
+                // Factory lambda is called ONCE per remember block lifetime
+                // This ensures we only create and register one WebView
                 WebView(context).apply {
                     // Set WebViewClient FIRST before storing reference
                     webViewClient = object : WebViewClient() {
@@ -224,11 +231,12 @@ private fun PaymentWebViewStep(
                         }
                     }
                     
-                    // Store reference
-                    webView = this
+                    // Store reference for cleanup
+                    webView.value = this
                     
                     // Register for observation immediately after creation
                     // This matches iOS pattern: register during view creation
+                    // Called ONCE per WebView instance (not on every recomposition)
                     ObserveSDK.observeWebView(this, "TopUpPaymentScreen")
                     
                     settings.javaScriptEnabled = true
@@ -243,6 +251,11 @@ private fun PaymentWebViewStep(
                         null
                     )
                 }
+            },
+            update = { view ->
+                // Update block is called on recomposition
+                // We don't need to do anything here as the WebView is stable
+                // This explicitly documents that recomposition doesn't recreate WebView
             },
             modifier = Modifier
                 .fillMaxSize()

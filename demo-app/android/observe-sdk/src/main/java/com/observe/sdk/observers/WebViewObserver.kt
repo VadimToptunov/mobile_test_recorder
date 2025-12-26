@@ -36,7 +36,8 @@ class WebViewObserver(
         private const val JS_INTERFACE_NAME = "ObserveSDK"
         
         // JavaScript injection for observing web interactions
-        private const val INJECTION_SCRIPT = """
+        // Note: Using trimIndent() and string interpolation with ${} for proper variable substitution
+        private val INJECTION_SCRIPT = """
             (function() {
                 console.log('[ObserveSDK] Injecting WebView observer...');
                 
@@ -64,7 +65,7 @@ class WebViewObserver(
                     };
                     
                     try {
-                        $JS_INTERFACE_NAME.onWebInteraction(JSON.stringify(data));
+                        ${JS_INTERFACE_NAME}.onWebInteraction(JSON.stringify(data));
                     } catch(e) {
                         console.error('[ObserveSDK] Error sending click event:', e);
                     }
@@ -91,7 +92,7 @@ class WebViewObserver(
                         };
                         
                         try {
-                            $JS_INTERFACE_NAME.onWebInteraction(JSON.stringify(data));
+                            ${JS_INTERFACE_NAME}.onWebInteraction(JSON.stringify(data));
                         } catch(e) {
                             console.error('[ObserveSDK] Error sending input event:', e);
                         }
@@ -113,7 +114,7 @@ class WebViewObserver(
                     };
                     
                     try {
-                        $JS_INTERFACE_NAME.onWebInteraction(JSON.stringify(data));
+                        ${JS_INTERFACE_NAME}.onWebInteraction(JSON.stringify(data));
                     } catch(e) {
                         console.error('[ObserveSDK] Error sending submit event:', e);
                     }
@@ -170,11 +171,9 @@ class WebViewObserver(
                     }
                     
                     // Strategy 4: Tag + text content (for buttons/links)
-                    if (element.innerText && element.innerText.length > 0 && element.innerText.length < 50) {
-                        var text = element.innerText.trim();
-                        var textSelector = element.tagName.toLowerCase() + ':contains("' + text + '")';
-                        // Note: :contains is not standard CSS, will need XPath alternative
-                    }
+                    // SKIPPED: :contains() is not standard CSS selector
+                    // Text-based selection is handled via XPath strategies instead
+                    // Example: button:contains("Submit") -> use XPath //button[text()="Submit"]
                     
                     // Strategy 5: nth-child with parent context
                     var parent = element.parentNode;
@@ -305,7 +304,7 @@ class WebViewObserver(
                 document.addEventListener('DOMContentLoaded', function() {
                     try {
                         var hierarchy = captureHierarchy();
-                        $JS_INTERFACE_NAME.onPageLoad(window.location.href, JSON.stringify(hierarchy));
+                        ${JS_INTERFACE_NAME}.onPageLoad(window.location.href, JSON.stringify(hierarchy));
                     } catch(e) {
                         console.error('[ObserveSDK] Error capturing hierarchy:', e);
                     }
@@ -315,7 +314,7 @@ class WebViewObserver(
                 if (document.readyState === 'complete' || document.readyState === 'interactive') {
                     try {
                         var hierarchy = captureHierarchy();
-                        $JS_INTERFACE_NAME.onPageLoad(window.location.href, JSON.stringify(hierarchy));
+                        ${JS_INTERFACE_NAME}.onPageLoad(window.location.href, JSON.stringify(hierarchy));
                     } catch(e) {
                         console.error('[ObserveSDK] Error capturing hierarchy:', e);
                     }
@@ -323,7 +322,7 @@ class WebViewObserver(
                 
                 console.log('[ObserveSDK] WebView observer injected successfully');
             })();
-        """
+        """.trimIndent()
     }
     
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)

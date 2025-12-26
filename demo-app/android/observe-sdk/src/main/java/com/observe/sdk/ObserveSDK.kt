@@ -345,9 +345,16 @@ object ObserveSDK {
     
     /**
      * Stop observing a WebView
+     * 
+     * IMPORTANT: Cleanup always proceeds regardless of SDK state to prevent resource leaks.
+     * If a WebView is deallocated after stop() is called, cleanup MUST still run to
+     * remove message handlers, user scripts, and delegating WebViewClient.
+     * 
+     * @param webView The WebView to stop observing
      */
     fun stopObservingWebView(webView: WebView) {
-        if (!isInitialized || !isStarted) return
+        // NO guard here - cleanup must always proceed to prevent resource leaks
+        // Even if SDK is stopped, WebViews may still be deallocated and need cleanup
         webViewObserver.stopObservingWebView(webView)
     }
     

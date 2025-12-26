@@ -222,8 +222,15 @@ public class ObserveSDK {
     
     /// Stop observing a WKWebView
     /// Call this when the WebView is removed from screen
+    ///
+    /// IMPORTANT: Cleanup always proceeds regardless of SDK state to prevent resource leaks.
+    /// If a WebView is deallocated after stop() is called, cleanup MUST still run to
+    /// remove message handlers, user scripts, and delegating WKNavigationDelegate.
+    ///
     /// - Parameter webView: The WKWebView instance to stop observing
     public func stopObservingWebView(_ webView: WKWebView) {
+        // NO guard here - cleanup must always proceed to prevent resource leaks
+        // Even if SDK is stopped, WebViews may still be deallocated and need cleanup
         webViewObserver?.stopObserving(webView: webView)
     }
     

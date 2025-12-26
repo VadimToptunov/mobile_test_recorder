@@ -215,7 +215,9 @@ struct WebView: UIViewRepresentable {
     class Coordinator: NSObject, WKNavigationDelegate {
         let onSuccess: () -> Void
         private var webViewObserved = false
-        private weak var observedWebView: WKWebView?
+        // Strong reference to ensure WebView exists during deinit cleanup
+        // Weak reference would become nil before deinit, preventing cleanup
+        private var observedWebView: WKWebView?
         
         init(onSuccess: @escaping () -> Void) {
             self.onSuccess = onSuccess
