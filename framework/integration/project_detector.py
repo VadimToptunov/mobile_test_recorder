@@ -223,14 +223,16 @@ class ProjectDetector:
                 content = test_file.read_text()
                 tree = ast.parse(content)
                 
-                for node in ast.walk(tree):
-                    # Test functions
+                # Only iterate top-level nodes to avoid double-counting
+                # Test methods in classes will be counted in the class iteration
+                for node in tree.body:
+                    # Test functions (module-level)
                     if isinstance(node, ast.FunctionDef):
                         if node.name.startswith("test_"):
                             count += 1
                     
                     # Test methods in classes
-                    if isinstance(node, ast.ClassDef):
+                    elif isinstance(node, ast.ClassDef):
                         for item in node.body:
                             if isinstance(item, ast.FunctionDef) and item.name.startswith("test_"):
                                 count += 1

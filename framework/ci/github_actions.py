@@ -195,7 +195,7 @@ class GitHubActionsGenerator:
                 },
                 {
                     'name': 'Create AVD and start emulator',
-                    'run': '\\n'.join([
+                    'run': '\n'.join([
                         'avdmanager create avd -n test -k "system-images;android-33;google_apis;x86_64"',
                         'emulator -avd test -no-window -no-audio -no-boot-anim &',
                         'adb wait-for-device shell "while [[ -z $(getprop sys.boot_completed) ]]; do sleep 1; done"'
@@ -210,7 +210,7 @@ class GitHubActionsGenerator:
                 },
                 {
                     'name': 'Boot simulator',
-                    'run': '\\n'.join([
+                    'run': '\n'.join([
                         'UDID=$(xcrun simctl create TestDevice "iPhone 15")',
                         'xcrun simctl boot $UDID'
                     ])

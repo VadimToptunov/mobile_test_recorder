@@ -8,7 +8,7 @@ from enum import Enum
 import threading
 from datetime import datetime
 
-from .device_manager import Device, DeviceStatus, DeviceType
+from .device_manager import Device, DeviceStatus, DeviceType, DeviceManager
 
 
 class PoolStrategy(Enum):
@@ -134,9 +134,49 @@ class DevicePool:
             candidates = [d for d in candidates if model in (d.model or '').lower()]
         
         if 'min_version' in filters:
-            candidates = [d for d in candidates if d.platform_version >= filters['min_version']]
+            # Use proper semantic version comparison instead of string comparison
+            min_version = filters['min_version']
+            candidates = [d for d in candidates if self._compare_versions(d.platform_version, min_version) >= 0]
         
         return candidates
+    
+    def _compare_versions(self, version1: str, version2: str) -> int:
+        """
+        Compare two version strings semantically
+        
+        Args:
+            version1: First version string (e.g., "13.0", "10.5.2")
+            version2: Second version string
+        
+        Returns:
+            -1 if version1 < version2
+             0 if version1 == version2
+             1 if version1 > version2
+        """
+        try:
+            # Split versions and convert to integers
+            parts1 = [int(x) for x in version1.split('.')]
+            parts2 = [int(x) for x in version2.split('.')]
+            
+            # Pad shorter version with zeros
+            max_len = max(len(parts1), len(parts2))
+            parts1 += [0] * (max_len - len(parts1))
+            parts2 += [0] * (max_len - len(parts2))
+            
+            # Compare component by component
+            for p1, p2 in zip(parts1, parts2):
+                if p1 < p2:
+                    return -1
+                elif p1 > p2:
+                    return 1
+            return 0
+        except (ValueError, AttributeError):
+            # Fallback to string comparison if parsing fails
+            if version1 < version2:
+                return -1
+            elif version1 > version2:
+                return 1
+            return 0
     
     def _acquire_round_robin(self, candidates: List[Device]) -> Optional[Device]:
         """Round-robin device selection"""
