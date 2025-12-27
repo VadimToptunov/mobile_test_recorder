@@ -2439,5 +2439,119 @@ def devices_pool(action: str, name: Optional[str], device: Optional[str], filter
         raise click.Abort()
 
 
+
+# ============================================================================
+# CI/CD INTEGRATION COMMANDS
+# ============================================================================
+
+@cli.group()
+def ci():
+    """
+    CI/CD integration and workflow generation
+    
+    Commands for generating CI/CD configurations and managing
+    test execution in continuous integration environments.
+    """
+    pass
+
+
+@ci.command('init')
+@click.option('--platform', type=click.Choice(['github', 'gitlab', 'jenkins']), required=True,
+              help='CI/CD platform')
+@click.option('--output-dir', type=click.Path(), default='.',
+              help='Output directory')
+@click.option('--test-platforms', default='android,ios',
+              help='Comma-separated list of test platforms')
+@click.option('--advanced', is_flag=True,
+              help='Generate advanced workflow with parallel execution, cloud devices, etc.')
+def ci_init(platform: str, output_dir: str, test_platforms: str, advanced: bool):
+    """
+    Initialize CI/CD configuration
+    
+    Generates CI/CD configuration files with best practices for mobile testing.
+    
+    Examples:
+        observe ci init --platform github
+        observe ci init --platform gitlab --test-platforms android --advanced
+        observe ci init --platform github --test-platforms android,ios --advanced
+    """
+    from framework.ci.github_actions import GitHubActionsGenerator
+    from framework.ci.gitlab_ci import GitLabCIGenerator
+    
+    click.echo(f"\n🚀 Generating {platform.upper()} CI/CD configuration...")
+    
+    try:
+        platforms_list = [p.strip() for p in test_platforms.split(',')]
+        output_path = Path(output_dir)
+        
+        if platform == 'github':
+            generator = GitHubActionsGenerator()
+            
+            if advanced:
+                content = generator.generate_advanced_workflow(
+                    platforms=platforms_list,
+                    parallel_count=2,
+                    use_browserstack=True,
+                    upload_artifacts=True,
+                    notify_slack=False
+                )
+                filename = 'tests-advanced.yml'
+            else:
+                content = generator.generate_basic_workflow(platforms=platforms_list)
+                filename = 'tests.yml'
+            
+            generator.save_workflow(content, output_path, filename)
+            
+            click.echo(f"\n✅ GitHub Actions workflow created!")
+            click.echo(f"\n📍 Location: {output_path / '.github' / 'workflows' / filename}")
+            
+            click.echo(f"\n🔐 Required Secrets (if using advanced features):")
+            click.echo(f"  - BROWSERSTACK_USERNAME")
+            click.echo(f"  - BROWSERSTACK_ACCESS_KEY")
+            click.echo(f"  - SLACK_WEBHOOK_URL (optional)")
+            
+            click.echo(f"\n📚 Next Steps:")
+            click.echo(f"  1. Review and customize the workflow")
+            click.echo(f"  2. Add required secrets to GitHub repository")
+            click.echo(f"  3. Push to trigger the workflow")
+            click.echo(f"  4. Monitor execution in Actions tab")
+        
+        elif platform == 'gitlab':
+            generator = GitLabCIGenerator()
+            
+            if advanced:
+                content = generator.generate_advanced_pipeline(
+                    platforms=platforms_list,
+                    parallel_count=2
+                )
+            else:
+                content = generator.generate_basic_pipeline(platforms=platforms_list)
+            
+            generator.save_pipeline(content, output_path)
+            
+            click.echo(f"\n✅ GitLab CI pipeline created!")
+            click.echo(f"\n📍 Location: {output_path / '.gitlab-ci.yml'}")
+            
+            click.echo(f"\n🔐 Required CI/CD Variables:")
+            click.echo(f"  - BROWSERSTACK_USERNAME")
+            click.echo(f"  - BROWSERSTACK_ACCESS_KEY")
+            
+            click.echo(f"\n📚 Next Steps:")
+            click.echo(f"  1. Review and customize the pipeline")
+            click.echo(f"  2. Add required variables to GitLab project")
+            click.echo(f"  3. Push to trigger the pipeline")
+            click.echo(f"  4. Monitor execution in CI/CD > Pipelines")
+        
+        elif platform == 'jenkins':
+            click.echo(f"\n⚠️  Jenkins support coming soon!")
+            click.echo(f"  For now, use GitHub Actions or GitLab CI")
+            click.echo(f"  Or create Jenkinsfile manually based on templates")
+    
+    except Exception as e:
+        click.echo(f"\n❌ Error generating CI/CD config: {e}", err=True)
+        import traceback
+        traceback.print_exc()
+        raise click.Abort()
+
 if __name__ == '__main__':
     cli()
