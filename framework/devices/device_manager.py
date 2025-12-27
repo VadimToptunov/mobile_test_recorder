@@ -305,6 +305,45 @@ class DeviceManager:
         """Get all available (not busy/offline) devices"""
         return [d for d in self.devices if d.status == DeviceStatus.AVAILABLE]
     
+    
+    def _compare_versions(self, version1: str, version2: str) -> int:
+        """
+        Compare two version strings
+        
+        Args:
+            version1: First version string (e.g., "13.0", "10.5.2")
+            version2: Second version string
+        
+        Returns:
+            -1 if version1 < version2
+             0 if version1 == version2
+             1 if version1 > version2
+        """
+        try:
+            # Split versions and convert to integers
+            parts1 = [int(x) for x in version1.split('.')]
+            parts2 = [int(x) for x in version2.split('.')]
+            
+            # Pad shorter version with zeros
+            max_len = max(len(parts1), len(parts2))
+            parts1 += [0] * (max_len - len(parts1))
+            parts2 += [0] * (max_len - len(parts2))
+            
+            # Compare component by component
+            for p1, p2 in zip(parts1, parts2):
+                if p1 < p2:
+                    return -1
+                elif p1 > p2:
+                    return 1
+            return 0
+        except (ValueError, AttributeError):
+            # Fallback to string comparison if parsing fails
+            if version1 < version2:
+                return -1
+            elif version1 > version2:
+                return 1
+            return 0
+    
     def filter_devices(
         self,
         platform: Optional[str] = None,
@@ -336,8 +375,12 @@ class DeviceManager:
             filtered = [d for d in filtered if model.lower() in (d.model or '').lower()]
         
         if min_version:
-            # Simple version comparison (works for most cases)
-            filtered = [d for d in filtered if d.platform_version >= min_version]
+            # Proper version comparison using tuple of integers
+            # Handles cases like "10" > "9" correctly
+            filtered = [
+                d for d in filtered 
+                if self._compare_versions(d.platform_version, min_version) >= 0
+            ]
         
         return filtered
     

@@ -140,8 +140,7 @@ class GitLabCIGenerator:
             job['parallel'] = parallel_count
             job['script'] = [
                 f'echo "Running {platform} tests (shard $CI_NODE_INDEX/$CI_NODE_TOTAL)"',
-                'pytest tests/ --verbose --junit-xml=reports/junit-$CI_NODE_INDEX.xml',
-                '--shard-id=$CI_NODE_INDEX --num-shards=$CI_NODE_TOTAL'
+                'pytest tests/ --verbose --junit-xml=reports/junit-$CI_NODE_INDEX.xml --shard-id=$CI_NODE_INDEX --num-shards=$CI_NODE_TOTAL'
             ]
         
         return job
