@@ -2310,5 +2310,86 @@ def ci_init(platform: str, output_dir: str, test_platforms: str, advanced: bool)
         traceback.print_exc()
         raise click.Abort()
 
+
+# ============================================================================
+# REPORTING COMMANDS
+# ============================================================================
+
+@cli.group()
+def report():
+    """
+    Test reporting and result aggregation
+    
+    Commands for generating test reports from various sources
+    and in multiple formats (HTML, Allure, JUnit, JSON).
+    """
+    pass
+
+
+@report.command('generate')
+@click.option('--input', 'input_path', type=click.Path(exists=True), required=True,
+              help='Input directory with test results (JUnit XMLs)')
+@click.option('--output', type=click.Path(), required=True,
+              help='Output file path')
+@click.option('--format', type=click.Choice(['html', 'json', 'allure']), default='html',
+              help='Report format')
+@click.option('--title', default='Test Report',
+              help='Report title (for HTML reports)')
+def report_generate(input_path: str, output: str, format: str, title: str):
+    """
+    Generate test report from results
+    
+    Aggregates test results from JUnit XML files and generates
+    a comprehensive report in the specified format.
+    
+    Examples:
+        observe report generate --input ./test-results --output report.html
+        observe report generate --input ./results --output report.json --format json
+        observe report generate --input ./results --output allure-results/ --format allure
+    """
+    from framework.reporting import UnifiedReporter, ReportFormat
+    
+    click.echo(f"\n📊 Generating {format.upper()} report...")
+    
+    try:
+        reporter = UnifiedReporter()
+        
+        # Load test results
+        input_dir = Path(input_path)
+        click.echo(f"📁 Loading results from: {input_dir}")
+        reporter.load_from_directory(input_dir)
+        
+        if not reporter.suites:
+            click.echo(f"\n⚠️  No test results found in {input_dir}", err=True)
+            click.echo(f"   Looking for junit*.xml files", err=True)
+            raise click.Abort()
+        
+        # Generate report
+        output_path = Path(output)
+        report_format = ReportFormat(format)
+        reporter.generate_report(output_path, report_format, title)
+        
+        # Show summary
+        total_tests = sum(s.total for s in reporter.suites)
+        total_passed = sum(s.passed for s in reporter.suites)
+        total_failed = sum(s.failed for s in reporter.suites)
+        
+        click.echo(f"\n✅ Report generated successfully!")
+        click.echo(f"\n📊 Summary:")
+        click.echo(f"  Total tests: {total_tests}")
+        click.echo(f"  Passed: {total_passed} ({total_passed/total_tests*100:.1f}%)" if total_tests > 0 else "  Passed: 0")
+        click.echo(f"  Failed: {total_failed}")
+        click.echo(f"\n📍 Output: {output_path}")
+        
+        if format == 'html':
+            click.echo(f"\n💡 Open the report:")
+            click.echo(f"   open {output_path}")
+    
+    except Exception as e:
+        click.echo(f"\n❌ Error generating report: {e}", err=True)
+        import traceback
+        traceback.print_exc()
+        raise click.Abort()
+
 if __name__ == '__main__':
     cli()
