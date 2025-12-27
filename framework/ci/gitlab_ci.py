@@ -68,7 +68,7 @@ class GitLabCIGenerator:
             YAML pipeline content
         """
         pipeline = {
-            'stages': ['lint', 'test', 'report', 'notify'],
+            'stages': ['lint', 'test', 'report'],  # Removed 'notify' - not implemented
             'variables': {
                 'PYTHON_VERSION': python_version,
                 'PIP_CACHE_DIR': '$CI_PROJECT_DIR/.cache/pip'
@@ -88,14 +88,17 @@ class GitLabCIGenerator:
         pipeline['lint'] = self._generate_lint_job()
         
         # Test jobs for each platform
+        # Track job names for dependency resolution
+        test_job_names = []
         for platform in platforms:
             job_name = f'test:{platform}'
             pipeline[job_name] = self._generate_test_job_advanced(
                 platform, parallel_count
             )
+            test_job_names.append(job_name)
         
         # Report job
-        pipeline['report'] = self._generate_report_job()
+        pipeline['report'] = self._generate_report_job(test_job_names)
         
         return yaml.dump(pipeline, sort_keys=False, default_flow_style=False)
     
@@ -156,11 +159,11 @@ class GitLabCIGenerator:
             'allow_failure': True
         }
     
-    def _generate_report_job(self) -> Dict:
+    def _generate_report_job(self, test_job_names: List[str]) -> Dict:
         """Generate report aggregation job"""
         return {
             'stage': 'report',
-            'dependencies': ['test:android', 'test:ios'],
+            'dependencies': test_job_names,  # Dynamic dependencies based on actual test jobs
             'script': [
                 'observe report generate --input reports/ --output final-report.html'
             ],

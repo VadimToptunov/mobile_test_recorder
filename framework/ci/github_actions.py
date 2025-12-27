@@ -93,6 +93,8 @@ class GitHubActionsGenerator:
         workflow['jobs']['lint'] = self._generate_lint_job(python_version)
         
         # Test jobs for each platform
+        # Track job names for dependency resolution
+        test_job_names = []
         for platform in platforms:
             if use_browserstack:
                 job_name = f'test-{platform}-cloud'
@@ -104,14 +106,15 @@ class GitHubActionsGenerator:
                 workflow['jobs'][job_name] = self._generate_test_job(
                     platform, python_version, parallel_count
                 )
+            test_job_names.append(job_name)
         
         # Report job
         if upload_artifacts:
-            workflow['jobs']['report'] = self._generate_report_job()
+            workflow['jobs']['report'] = self._generate_report_job(test_job_names)
         
         # Notify job
         if notify_slack:
-            workflow['jobs']['notify'] = self._generate_notify_job()
+            workflow['jobs']['notify'] = self._generate_notify_job(test_job_names)
         
         return yaml.dump(workflow, sort_keys=False, default_flow_style=False)
     
@@ -309,12 +312,12 @@ class GitHubActionsGenerator:
             ]
         }
     
-    def _generate_report_job(self) -> Dict:
+    def _generate_report_job(self, test_job_names: List[str]) -> Dict:
         """Generate report aggregation job"""
         return {
             'name': 'Generate Report',
             'runs-on': 'ubuntu-latest',
-            'needs': ['test-android', 'test-ios'],
+            'needs': test_job_names,  # Dynamic dependencies based on actual test jobs
             'if': 'always()',
             'steps': [
                 {
@@ -342,12 +345,12 @@ class GitHubActionsGenerator:
             ]
         }
     
-    def _generate_notify_job(self) -> Dict:
+    def _generate_notify_job(self, test_job_names: List[str]) -> Dict:
         """Generate notification job"""
         return {
             'name': 'Notify',
             'runs-on': 'ubuntu-latest',
-            'needs': ['test-android', 'test-ios'],
+            'needs': test_job_names,  # Dynamic dependencies based on actual test jobs
             'if': 'always()',
             'steps': [
                 {
