@@ -1775,8 +1775,8 @@ def visual_diff(baseline: str, current: str, output: str, threshold: float):
               help='Executed flows JSON (for coverage report)')
 @click.option('--output', type=click.Path(), default='report.html',
               help='Output HTML file')
-def report(report_type: str, test_results: Optional[str], model: Optional[str], 
-           executed_flows: Optional[str], output: str):
+def ml_report(report_type: str, test_results: Optional[str], model: Optional[str], 
+              executed_flows: Optional[str], output: str):
     """
     Generate analytics dashboard reports
     
