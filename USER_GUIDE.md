@@ -214,6 +214,984 @@ pytest tests/ --html=report.html
 
 ---
 
+## Complete Automation Example
+
+### End-to-End: From App to Tests in One Command
+
+This example shows the **full power** of the framework - automatic exploration, analysis, and test generation with minimal human involvement.
+
+#### Scenario
+
+You have two mobile apps (Android + iOS) and want to:
+1. ✅ Explore **all screens** automatically
+2. ✅ Capture **all UI elements** and **API calls**
+3. ✅ Generate **Page Objects** with selectors
+4. ✅ Generate **API clients** for all endpoints
+5. ✅ Create **BDD scenarios** and step definitions
+6. ✅ Run **comprehensive analysis** (security, performance, visual)
+7. ✅ Get **production-ready tests** without writing code
+
+#### Configuration
+
+Create `exploration.yaml`:
+
+```yaml
+# Full automation configuration
+apps:
+  android:
+    source: demo-app/android
+    build: observe-build
+    package: com.yourapp
+  ios:
+    source: demo-app/ios
+    build: observe-build
+    bundle: com.yourapp
+
+# Test credentials and data
+test_data:
+  users:
+    - email: test.user@example.com
+      password: SecurePass123!
+      pin: 1234
+      biometric: true
+    - email: admin@example.com
+      password: AdminPass456!
+      pin: 5678
+      biometric: false
+  
+  # Bank cards for payment testing
+  cards:
+    - card_number: "4242424242424242"
+      expiry: "12/25"
+      cvv: "123"
+      cardholder: "Test User"
+      type: visa
+      country: US
+    - card_number: "5555555555554444"
+      expiry: "06/26"
+      cvv: "456"
+      cardholder: "Test User"
+      type: mastercard
+      country: US
+    - card_number: "378282246310005"
+      expiry: "09/27"
+      cvv: "7890"
+      cardholder: "Admin User"
+      type: amex
+      country: US
+    # Test different scenarios
+    - card_number: "4000000000000002"  # Declined card
+      expiry: "12/24"
+      cvv: "111"
+      cardholder: "Declined Test"
+      type: visa
+      expected_result: declined
+    - card_number: "4000000000009995"  # Insufficient funds
+      expiry: "03/25"
+      cvv: "222"
+      cardholder: "Insufficient Funds"
+      type: visa
+      expected_result: insufficient_funds
+  
+  # Bank accounts for transfers
+  bank_accounts:
+    - account_number: "1234567890"
+      routing_number: "110000000"
+      account_type: checking
+      balance: 5000.00
+    - account_number: "0987654321"
+      routing_number: "110000000"
+      account_type: savings
+      balance: 10000.00
+  
+  # Transfer scenarios
+  transfer_data:
+    - amount: 100
+      currency: USD
+      recipient: recipient@example.com
+      description: "Payment for services"
+    - amount: 500
+      currency: USD
+      recipient: partner@example.com
+      description: "Monthly subscription"
+    - amount: 50.50
+      currency: EUR
+      recipient: friend@example.com
+      description: "Split bill"
+  
+  # Top-up scenarios (for WebView payment testing)
+  topup_data:
+    - amount: 100
+      currency: USD
+      payment_method: card
+      card_index: 0  # Use first card from cards list
+    - amount: 500
+      currency: USD
+      payment_method: card
+      card_index: 1  # Use second card
+    - amount: 1000
+      currency: USD
+      payment_method: bank_account
+      account_index: 0  # Use first bank account
+
+# Exploration strategy
+exploration:
+  strategy: exhaustive  # Options: exhaustive | targeted | ml-guided
+  max_depth: 10         # How deep to navigate
+  timeout: 3600         # 1 hour max
+  coverage_threshold: 0.95  # Stop at 95% coverage
+  
+  # What to capture
+  capture:
+    - ui_interactions
+    - api_calls
+    - screenshots
+    - performance_metrics
+    - accessibility_info
+    - network_traffic
+
+# Devices configuration
+devices:
+  android:
+    - type: emulator
+      name: Pixel_6_API_33
+      api_level: 33
+    - type: emulator
+      name: Samsung_S23_API_34
+      api_level: 34
+  
+  ios:
+    - type: simulator
+      name: iPhone_14_Pro
+      version: 16.0
+    - type: simulator  
+      name: iPhone_15
+      version: 17.0
+
+# Optional: Use real devices or cloud
+# devices:
+#   android:
+#     - type: real
+#       serial: RF8N12ABC
+#   browserstack:
+#     - Samsung Galaxy S23
+#     - Google Pixel 7
+
+# Comprehensive analysis
+analysis:
+  static_code: true
+  security:
+    - certificate_pinning
+    - root_detection
+    - code_obfuscation
+    - hardcoded_secrets
+    - insecure_network
+  
+  performance:
+    - cpu_usage
+    - memory_leaks
+    - network_latency
+    - battery_drain
+    - fps_tracking
+  
+  accessibility:
+    - contrast_ratio
+    - touch_target_size
+    - screen_reader
+  
+  visual:
+    baseline: baselines/
+    threshold: 0.95
+
+# ML-powered enhancements
+ml:
+  use_ml: true
+  model: ml_models/universal_element_classifier.pkl
+  min_confidence: 0.8
+  
+  # Element classification
+  classify_elements: true
+  
+  # Selector optimization
+  optimize_selectors: true
+  
+  # Flow detection
+  detect_patterns: true
+
+# Test generation
+generation:
+  output_dir: tests/
+  framework: pytest-bdd
+  language: python
+  
+  # What to generate
+  artifacts:
+    - page_objects
+    - api_clients
+    - bdd_scenarios
+    - step_definitions
+    - fixtures
+    - conftest
+  
+  # Generation preferences
+  preferences:
+    api_first: true        # Prefer API tests over UI
+    api_coverage: 0.80     # 80% API tests
+    ui_coverage: 0.20      # 20% UI tests
+    cross_platform: true   # Unified tests for Android/iOS
+    self_healing: true     # Enable auto-healing
+    parallel_ready: true   # Generate parallel-safe tests
+
+# CI/CD integration
+ci:
+  generate_workflows: true
+  providers:
+    - github
+    - gitlab
+  
+  features:
+    - smart_test_selection
+    - self_healing
+    - parallel_execution
+    - reports
+
+# Reporting
+reporting:
+  formats:
+    - html
+    - junit
+    - allure
+  
+  notifications:
+    slack:
+      webhook: ${SLACK_WEBHOOK_URL}
+      on_failure: true
+    
+    email:
+      recipients:
+        - qa-team@example.com
+      on_failure: true
+
+# Output preferences
+output:
+  verbose: true
+  dashboard: true
+  summary_report: true
+```
+
+#### Single Command Execution
+
+Run the entire process with one command:
+
+```bash
+observe auto-explore --config exploration.yaml
+```
+
+#### What Happens (Automatic)
+
+**Phase 1: Preparation (2 minutes)**
+```
+🔧 Building observe variants...
+   ✅ Android: assembleObserveDebug
+   ✅ iOS: build ObserveDebug scheme
+   
+📱 Setting up devices...
+   ✅ Starting emulator: Pixel_6_API_33
+   ✅ Starting emulator: Samsung_S23_API_34
+   ✅ Starting simulator: iPhone_14_Pro
+   ✅ Starting simulator: iPhone_15
+   
+📦 Installing apps...
+   ✅ Android: com.yourapp.observe
+   ✅ iOS: com.yourapp ObserveDebug
+```
+
+**Phase 2: Exploration (20-60 minutes)**
+```
+🔍 Exploring Android app (Pixel_6_API_33)...
+   ✅ Login screen - 5 elements, 2 API calls
+   ✅ Dashboard screen - 12 elements, 4 API calls
+   ✅ Transfer screen - 8 elements, 3 API calls
+   ✅ Profile screen - 6 elements, 2 API calls
+   ✅ Settings screen - 10 elements, 1 API call
+   ✅ Payment screen (WebView) - 7 elements, 1 API call
+   ... (8 screens total)
+   
+   💳 Testing card payments:
+   ✅ Visa successful: 4242424242424242
+   ✅ Mastercard successful: 5555555555554444
+   ⚠️ Declined card detected: 4000000000000002
+   ⚠️ Insufficient funds: 4000000000009995
+   
+🔍 Exploring iOS app (iPhone_14_Pro)...
+   ✅ Login screen - 5 elements, 2 API calls
+   ✅ Dashboard screen - 11 elements, 4 API calls
+   ✅ Payment screen (WebView) - 7 elements, 1 API call
+   ... (8 screens total)
+   
+   💳 Testing card payments:
+   ✅ Visa successful: 4242424242424242
+   ✅ Amex successful: 378282246310005
+   
+📊 Coverage: 95% (19/20 screens discovered)
+📈 API endpoints: 23
+💳 Payment scenarios tested: 6 (4 successful, 2 failed)
+🌐 WebView interactions: 14
+🎯 User flows: 12
+⏱️ Duration: 42 minutes
+```
+
+**Phase 3: Static Analysis (5 minutes)**
+```
+🔬 Analyzing Android source code...
+   ✅ Parsed 234 Kotlin files
+   ✅ Found 45 activities/fragments
+   ✅ Extracted 189 UI elements
+   ✅ Discovered 28 API endpoints
+   
+🔬 Analyzing iOS source code...
+   ✅ Parsed 187 Swift files
+   ✅ Found 38 ViewControllers
+   ✅ Extracted 156 UI elements
+   ✅ Discovered 26 API endpoints
+```
+
+**Phase 4: Comprehensive Analysis (10 minutes)**
+```
+🔒 Security Analysis...
+   ✅ Certificate pinning: ENABLED
+   ✅ Root detection: ENABLED
+   ✅ Code obfuscation: ENABLED (ProGuard/R8)
+   ⚠️ Hardcoded secrets: 2 found (API keys)
+   ✅ Network security: HTTPS only
+   
+⚡ Performance Analysis...
+   ✅ CPU usage: Normal (avg 12%)
+   ✅ Memory: 145 MB (no leaks detected)
+   ⚠️ Network: 3 slow endpoints (>2s)
+   ✅ FPS: 60 (smooth)
+   ✅ Battery: Normal drain
+   
+♿ Accessibility Analysis...
+   ✅ Contrast ratio: WCAG AA compliant
+   ⚠️ Touch targets: 3 buttons too small (<44pt)
+   ✅ Screen reader: Full support
+   
+👁️ Visual Analysis...
+   ✅ Captured baselines for 8 screens
+   ✅ No regressions detected
+```
+
+**Phase 5: Model Building (5 minutes)**
+```
+🧠 Building unified app model...
+   ✅ Merged Android + iOS observations
+   ✅ Correlated 127 UI actions with API calls
+   ✅ Identified 8 unique screens
+   ✅ Extracted 145 unique elements
+   ✅ Discovered 23 API endpoints
+   ✅ Mapped 15 screen transitions
+   
+🤖 ML Classification...
+   ✅ Classified 145/145 elements (100%)
+   ✅ Average confidence: 0.91
+   ✅ Optimized 132 selectors
+   
+💾 Model saved: models/app-model.json (456 KB)
+```
+
+**Phase 6: Test Generation (3 minutes)**
+```
+🏗️ Generating test artifacts...
+
+Page Objects (Python):
+   ✅ tests/pages/login_page.py
+   ✅ tests/pages/dashboard_page.py
+   ✅ tests/pages/transfer_page.py
+   ✅ tests/pages/profile_page.py
+   ✅ tests/pages/settings_page.py
+   ... (8 files, 1,234 lines)
+
+API Clients (Python):
+   ✅ tests/api/auth_client.py
+   ✅ tests/api/transfer_client.py
+   ✅ tests/api/account_client.py
+   ... (6 files, 892 lines)
+
+BDD Scenarios (Gherkin):
+   ✅ tests/features/authentication.feature
+   ✅ tests/features/transfers.feature
+   ✅ tests/features/account_management.feature
+   ... (12 files, 145 scenarios)
+
+Step Definitions (pytest-bdd):
+   ✅ tests/step_definitions/test_auth_steps.py
+   ✅ tests/step_definitions/test_transfer_steps.py
+   ... (12 files, 2,345 lines)
+
+Fixtures & Configuration:
+   ✅ tests/conftest.py (pytest configuration)
+   ✅ tests/fixtures/users.json (test data)
+   ✅ tests/fixtures/api_responses.json (mocks)
+```
+
+**Phase 7: CI/CD Setup (1 minute)**
+```
+🔄 Generating CI/CD workflows...
+   ✅ .github/workflows/mobile-tests.yml
+   ✅ .gitlab-ci.yml
+   
+Features enabled:
+   ✅ Smart test selection
+   ✅ Self-healing on failure
+   ✅ Parallel execution (4 workers)
+   ✅ HTML + Allure reports
+   ✅ Slack notifications
+```
+
+**Phase 8: Dashboard Setup (1 minute)**
+```
+📊 Setting up dashboard...
+   ✅ Database initialized: .observe/dashboard.db
+   ✅ Imported 145 selectors
+   ✅ Imported 23 API endpoints
+   ✅ Dashboard ready: http://localhost:8080
+```
+
+#### Final Output
+
+**Generated Structure:**
+
+```
+tests/
+├── conftest.py                    # Pytest configuration
+├── pytest.ini                     # Pytest settings
+├── requirements.txt               # Test dependencies
+│
+├── pages/                         # Page Objects (Android + iOS)
+│   ├── android/
+│   │   ├── login_page.py         # 45 lines, 5 elements, 4 methods
+│   │   ├── dashboard_page.py     # 67 lines, 12 elements, 8 methods
+│   │   └── transfer_page.py      # 52 lines, 8 elements, 6 methods
+│   └── ios/
+│       ├── login_page.py
+│       ├── dashboard_page.py
+│       └── transfer_page.py
+│
+├── api/                           # API Clients (shared)
+│   ├── auth_client.py            # login(), logout(), refresh_token()
+│   ├── transfer_client.py        # create_transfer(), get_status()
+│   └── account_client.py         # get_balance(), get_history()
+│
+├── features/                      # BDD Scenarios
+│   ├── authentication.feature    # 8 scenarios
+│   ├── transfers.feature         # 12 scenarios
+│   └── account.feature           # 6 scenarios
+│
+├── step_definitions/              # Step Implementations
+│   ├── test_auth_steps.py
+│   ├── test_transfer_steps.py
+│   └── test_account_steps.py
+│
+├── fixtures/                      # Test Data
+│   ├── users.json                # Test accounts
+│   ├── cards.json                # Bank card data
+│   ├── bank_accounts.json        # Bank account data
+│   ├── transfers.json            # Transfer scenarios
+│   ├── topup.json                # Top-up scenarios
+│   └── api_responses.json        # Mock responses
+│
+└── reports/                       # Analysis Reports
+    ├── security-report.html
+    ├── performance-report.html
+    ├── accessibility-report.html
+    └── coverage-report.html
+```
+
+**.github/workflows/mobile-tests.yml:**
+
+```yaml
+name: Mobile Tests
+
+on: [push, pull_request]
+
+jobs:
+  api-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.13'
+      
+      - name: Install dependencies
+        run: |
+          pip install -r tests/requirements.txt
+      
+      - name: Run API tests (fast)
+        run: pytest tests/api/ -v --maxfail=3
+
+  android-ui-tests:
+    needs: api-tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        api-level: [33, 34]
+    steps:
+      - name: Run Android UI tests
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api-level }}
+          script: pytest tests/step_definitions/ -m android
+
+  ios-ui-tests:
+    needs: api-tests
+    runs-on: macos-latest
+    steps:
+      - name: Run iOS UI tests
+        run: pytest tests/step_definitions/ -m ios
+```
+
+#### Statistics
+
+**Total Time:** ~90 minutes (mostly automated)
+
+**Generated Code:**
+- **Lines:** 5,234
+- **Files:** 48
+- **Page Objects:** 16 (8 Android, 8 iOS)
+- **API Methods:** 34
+- **BDD Scenarios:** 145
+- **Test Steps:** 287
+
+**Coverage:**
+- **Screens:** 8/8 (100%)
+- **API Endpoints:** 23/23 (100%)
+- **User Flows:** 12/12 (100%)
+
+**Quality:**
+- **Selector Confidence:** 91% average
+- **Security Score:** 8.5/10
+- **Performance Score:** 9.2/10
+- **Accessibility Score:** 8.8/10
+
+#### Example: Generated Payment Test
+
+**BDD Scenario (tests/features/payment.feature):**
+
+```gherkin
+Feature: Card Payment
+  As a user
+  I want to add funds using my card
+  So that I can make transfers
+
+  Scenario: Successful card payment with Visa
+    Given I am logged in as "test.user@example.com"
+    And I am on the dashboard screen
+    When I navigate to top-up screen
+    And I enter amount "100" in currency "USD"
+    And I select payment method "card"
+    And I enter card details:
+      | field      | value            |
+      | number     | 4242424242424242 |
+      | expiry     | 12/25            |
+      | cvv        | 123              |
+      | cardholder | Test User        |
+    And I submit payment
+    Then I should see payment confirmation
+    And my balance should increase by 100 USD
+    And I should receive payment receipt via email
+
+  Scenario: Declined card payment
+    Given I am logged in as "test.user@example.com"
+    When I attempt payment with declined card "4000000000000002"
+    Then I should see error "Payment declined"
+    And my balance should remain unchanged
+
+  Scenario: Insufficient funds on card
+    Given I am logged in as "test.user@example.com"
+    When I attempt payment with card "4000000000009995"
+    Then I should see error "Insufficient funds"
+    And transaction should be marked as failed
+```
+
+**Page Object (tests/pages/payment_page.py):**
+
+```python
+from appium.webdriver.common.mobileby import MobileBy
+from typing import Dict
+
+class PaymentPage:
+    """Payment screen page object - auto-generated"""
+    
+    # Selectors
+    amount_input = (MobileBy.ID, "amount_input")
+    currency_selector = (MobileBy.ID, "currency_spinner")
+    card_number_input = (MobileBy.ID, "card_number")
+    expiry_input = (MobileBy.ID, "card_expiry")
+    cvv_input = (MobileBy.ID, "card_cvv")
+    cardholder_input = (MobileBy.ID, "cardholder_name")
+    submit_button = (MobileBy.ID, "submit_payment_button")
+    error_message = (MobileBy.ID, "payment_error_text")
+    
+    def __init__(self, driver):
+        self.driver = driver
+    
+    def enter_amount(self, amount: str):
+        """Enter payment amount"""
+        self.driver.find_element(*self.amount_input).send_keys(amount)
+    
+    def select_currency(self, currency: str):
+        """Select currency (USD, EUR, etc.)"""
+        self.driver.find_element(*self.currency_selector).click()
+        currency_option = (MobileBy.XPATH, f"//android.widget.TextView[@text='{currency}']")
+        self.driver.find_element(*currency_option).click()
+    
+    def enter_card_details(self, card_data: Dict[str, str]):
+        """
+        Enter complete card details
+        
+        Args:
+            card_data: Dict with keys: number, expiry, cvv, cardholder
+        """
+        self.driver.find_element(*self.card_number_input).send_keys(card_data['number'])
+        self.driver.find_element(*self.expiry_input).send_keys(card_data['expiry'])
+        self.driver.find_element(*self.cvv_input).send_keys(card_data['cvv'])
+        self.driver.find_element(*self.cardholder_input).send_keys(card_data['cardholder'])
+    
+    def submit_payment(self):
+        """Submit payment form"""
+        self.driver.find_element(*self.submit_button).click()
+    
+    def get_error_message(self) -> str:
+        """Get payment error message if any"""
+        return self.driver.find_element(*self.error_message).text
+    
+    def complete_payment(self, amount: str, currency: str, card_data: Dict[str, str]):
+        """Complete full payment flow"""
+        self.enter_amount(amount)
+        self.select_currency(currency)
+        self.enter_card_details(card_data)
+        self.submit_payment()
+```
+
+**Step Definition (tests/step_definitions/test_payment_steps.py):**
+
+```python
+from pytest_bdd import scenarios, given, when, then, parsers
+from pages.payment_page import PaymentPage
+import json
+
+scenarios('../features/payment.feature')
+
+# Load test data
+with open('tests/fixtures/cards.json') as f:
+    CARDS = json.load(f)
+
+@when(parsers.parse('I enter card details:\n{table}'))
+def enter_card_details(driver, table):
+    """Enter card details from table"""
+    page = PaymentPage(driver)
+    
+    # Parse table and extract card data
+    card_data = {}
+    for row in table.split('\n')[1:]:  # Skip header
+        field, value = row.split('|')[1:3]
+        card_data[field.strip()] = value.strip()
+    
+    page.enter_card_details(card_data)
+
+@when(parsers.parse('I attempt payment with declined card "{card_number}"'))
+def payment_with_declined_card(driver, card_number):
+    """Attempt payment with card that will be declined"""
+    page = PaymentPage(driver)
+    
+    # Find card data by number
+    card = next(c for c in CARDS if c['card_number'] == card_number)
+    
+    page.complete_payment(
+        amount="100",
+        currency="USD",
+        card_data=card
+    )
+
+@then(parsers.parse('I should see error "{error_text}"'))
+def verify_error_message(driver, error_text):
+    """Verify error message is displayed"""
+    page = PaymentPage(driver)
+    actual_error = page.get_error_message()
+    assert error_text in actual_error, f"Expected '{error_text}', got '{actual_error}'"
+```
+
+**Test Fixtures (tests/fixtures/cards.json):**
+
+```json
+[
+  {
+    "card_number": "4242424242424242",
+    "expiry": "12/25",
+    "cvv": "123",
+    "cardholder": "Test User",
+    "type": "visa",
+    "country": "US"
+  },
+  {
+    "card_number": "5555555555554444",
+    "expiry": "06/26",
+    "cvv": "456",
+    "cardholder": "Test User",
+    "type": "mastercard",
+    "country": "US"
+  },
+  {
+    "card_number": "4000000000000002",
+    "expiry": "12/24",
+    "cvv": "111",
+    "cardholder": "Declined Test",
+    "type": "visa",
+    "expected_result": "declined"
+  }
+]
+```
+
+---
+
+#### Immediate Next Steps
+
+**1. Review Generated Tests:**
+
+```bash
+# Open in IDE
+code tests/
+
+# Review Page Objects
+cat tests/pages/android/login_page.py
+
+# Review payment tests
+cat tests/features/payment.feature
+cat tests/pages/payment_page.py
+```
+
+**2. Run Tests Locally:**
+
+```bash
+# Start Appium
+appium &
+
+# Run all tests
+pytest tests/ --html=report.html --self-contained-html
+
+# Run only API tests (fast)
+pytest tests/api/ -v
+
+# Run specific feature
+pytest tests/features/transfers.feature
+```
+
+**3. Review Dashboard:**
+
+```bash
+observe dashboard
+# Open http://localhost:8080
+```
+
+**4. Review Analysis Reports:**
+
+```bash
+open reports/security-report.html
+open reports/performance-report.html
+open reports/accessibility-report.html
+```
+
+**5. Commit to Repository:**
+
+```bash
+git add tests/ .github/ reports/
+git commit -m "feat: Add auto-generated test suite
+
+- 145 BDD scenarios
+- 16 Page Objects (Android + iOS)
+- 34 API client methods
+- CI/CD workflows
+- Security/Performance reports
+
+Generated by Mobile Test Recorder auto-explore"
+
+git push origin feature/automated-tests
+```
+
+#### Maintenance
+
+**Weekly Updates (Automated):**
+
+```bash
+# Add to cron: 0 2 * * 0 (Every Sunday 2 AM)
+observe auto-explore \
+  --config exploration.yaml \
+  --incremental \
+  --update-existing
+```
+
+**When UI Changes:**
+
+```bash
+# Tests fail? Auto-heal!
+pytest tests/ --junit-xml=results.xml || true
+
+observe heal auto \
+  --test-results results.xml \
+  --commit \
+  --create-pr
+
+# Tests fixed automatically!
+pytest tests/ --junit-xml=results-healed.xml
+```
+
+#### Key Benefits
+
+**For QA Engineers:**
+- ✅ No manual test writing
+- ✅ Focus on business logic, not selectors
+- ✅ Self-healing tests reduce maintenance
+- ✅ Fast feedback (API-first approach)
+
+**For Developers:**
+- ✅ Zero SDK footprint in production
+- ✅ Security/Performance insights
+- ✅ Tests update with code changes
+- ✅ CI/CD ready out of the box
+
+**For Management:**
+- ✅ 90% reduction in test creation time
+- ✅ 80% reduction in maintenance effort
+- ✅ Production-ready tests in hours, not weeks
+- ✅ Comprehensive coverage (UI + API + Security + Performance)
+
+#### Alternative: Manual Approach Comparison
+
+**Traditional manual testing:**
+```
+Week 1-2: Write Page Objects manually
+Week 3-4: Write test scenarios
+Week 5-6: Implement step definitions
+Week 7-8: Setup CI/CD
+Week 9-10: Fix flaky tests
+Week 11-12: Maintenance starts...
+
+Total: 12 weeks, 480 hours
+```
+
+**With this framework:**
+```
+Hour 1: Configure exploration.yaml
+Hour 2: Run observe auto-explore
+Hour 3: Review and commit
+
+Total: 3 hours, 160x faster
+```
+
+#### Advanced: WebView Payment Forms
+
+The framework automatically handles WebView payment forms:
+
+**Auto-detection:**
+```
+🌐 WebView detected in screen: TopUpScreen
+   📝 Form elements found:
+      - input[name="cardNumber"] (text)
+      - input[name="expiryDate"] (text)
+      - input[name="cvv"] (text)
+      - input[name="cardholderName"] (text)
+      - button[type="submit"] (button)
+   
+   🔄 Context switching: NATIVE → WEBVIEW_com.yourapp
+   ✅ Card data auto-filled from test_data.cards[0]
+   ✅ Form submitted successfully
+   🔄 Context switching: WEBVIEW → NATIVE
+   ✅ Payment confirmation captured
+```
+
+**Generated WebView test code:**
+
+```python
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+
+def test_webview_payment(driver, test_cards):
+    """Test payment in WebView - auto-generated"""
+    
+    # Navigate to payment screen
+    page = TopUpPage(driver)
+    page.navigate_to_payment()
+    
+    # Wait for WebView to load
+    WebDriverWait(driver, 10).until(
+        lambda d: 'WEBVIEW' in [ctx for ctx in d.contexts]
+    )
+    
+    # Switch to WebView context
+    webview_context = [ctx for ctx in driver.contexts if 'WEBVIEW' in ctx][0]
+    driver.switch_to.context(webview_context)
+    
+    # Fill payment form (uses data from cards.json)
+    card = test_cards[0]  # Visa card
+    driver.find_element(By.NAME, "cardNumber").send_keys(card['card_number'])
+    driver.find_element(By.NAME, "expiryDate").send_keys(card['expiry'])
+    driver.find_element(By.NAME, "cvv").send_keys(card['cvv'])
+    driver.find_element(By.NAME, "cardholderName").send_keys(card['cardholder'])
+    
+    # Submit form
+    driver.find_element(By.CSS_SELECTOR, "button[type='submit']").click()
+    
+    # Wait for redirect
+    WebDriverWait(driver, 10).until(
+        EC.url_contains("success")
+    )
+    
+    # Switch back to native context
+    driver.switch_to.context('NATIVE_APP')
+    
+    # Verify native confirmation
+    assert page.success_message.is_displayed()
+    assert "100 USD" in page.success_message.text
+```
+
+**Security handling:**
+
+```python
+# Framework automatically handles:
+# - Certificate pinning bypass (observe-build only)
+# - HTTPS traffic interception
+# - 3D Secure simulation
+# - Payment gateway mocking
+
+# Captured network traffic:
+{
+  "request": {
+    "method": "POST",
+    "url": "https://payment.gateway.com/v1/charge",
+    "headers": {
+      "Authorization": "Bearer ...",
+      "Content-Type": "application/json"
+    },
+    "body": {
+      "card_number": "4242...4242",  # Masked in logs
+      "amount": 10000,
+      "currency": "USD"
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "transaction_id": "tx_123456",
+      "status": "succeeded"
+    }
+  }
+}
+```
+
+---
+
 ## Core Concepts
 
 ### 1. Build Variants
