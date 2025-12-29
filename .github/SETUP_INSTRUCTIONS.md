@@ -15,13 +15,65 @@
 
 ### 1. Add Repository Topics
 
+**Option A: Using GitHub CLI (Fastest ⚡)**
+
+```bash
+# Install GitHub CLI (if not installed)
+brew install gh  # macOS
+# or: sudo apt install gh  # Linux
+
+# Login
+gh auth login
+
+# Add all topics at once
+gh repo edit VadimToptunov/mobile_test_recorder \
+  --add-topic mobile-testing \
+  --add-topic test-automation \
+  --add-topic appium \
+  --add-topic pytest \
+  --add-topic bdd \
+  --add-topic self-healing-tests \
+  --add-topic android-testing \
+  --add-topic ios-testing \
+  --add-topic kotlin \
+  --add-topic swift \
+  --add-topic python \
+  --add-topic machine-learning \
+  --add-topic page-object-model \
+  --add-topic ci-cd \
+  --add-topic github-actions \
+  --add-topic gitlab-ci \
+  --add-topic test-framework \
+  --add-topic quality-assurance \
+  --add-topic mobile-development \
+  --add-topic fintech
+```
+
+**Option B: Using Python Script**
+
+```bash
+# Get GitHub token: https://github.com/settings/tokens (scope: repo)
+export GITHUB_TOKEN=your_token_here
+
+# Run script
+python .github/add_github_topics.py
+```
+
+**Option C: Using GitHub API (curl)**
+
+```bash
+curl -X PUT \
+  -H "Authorization: token YOUR_TOKEN" \
+  -H "Accept: application/vnd.github.v3+json" \
+  https://api.github.com/repos/VadimToptunov/mobile_test_recorder/topics \
+  -d '{"names":["mobile-testing","test-automation","appium","pytest","bdd","self-healing-tests","android-testing","ios-testing","kotlin","swift","python","machine-learning","page-object-model","ci-cd","github-actions","gitlab-ci","test-framework","quality-assurance","mobile-development","fintech"]}'
+```
+
+**Option D: Manual (Slow)**
+
 1. Go to: https://github.com/VadimToptunov/mobile_test_recorder
 2. Click "About" section (gear icon ⚙️)
-3. Add these topics (copy-paste from `.github/TOPICS.md`):
-
-```
-mobile-testing test-automation appium pytest bdd self-healing-tests android-testing ios-testing kotlin swift python machine-learning page-object-model ci-cd github-actions gitlab-ci test-framework quality-assurance mobile-development fintech
-```
+3. Add topics one by one from `.github/TOPICS.md`
 
 ### 2. Update Repository Description
 
