@@ -1,17 +1,8 @@
-# Phase 6 - Test Maintenance & Self-Healing
+# Phase 6 - Self-Healing Tests & Maintenance
 
 ## Overview
 
-Phase 6 focuses on **automatic test maintenance** - keeping tests working as the app evolves. After Phase 5 gave us comprehensive CI/CD integration and analysis tools, Phase 6 makes the framework truly autonomous by automatically detecting and fixing broken tests.
-
----
-
-## Goals
-
-Make tests self-maintaining:
-1. Detect broken selectors automatically
-2. Find and apply fixes without human intervention  
-3. Keep Page Objects up-to-date with app changes
+Phase 6 focuses on **automatic test maintenance** - the framework detects broken selectors during test failures and fixes them automatically. Plus a simple dashboard to review and approve the changes.
 
 ---
 
@@ -23,76 +14,103 @@ Make tests self-maintaining:
 
 **Solution**: Automatically detect and fix broken selectors during test failures.
 
+**How it works**:
+1. Test fails because element not found
+2. Framework captures page state
+3. Tries alternative selector strategies (ID → XPath → CSS → Text)
+4. Uses ML model to identify correct element
+5. Validates healed selector on next run
+6. Updates Page Object with new selector
+7. Creates git commit with explanation
+
 **Features**:
-- **Selector Validation**
-  - Detect when selector fails to find element
-  - Capture page state at failure
-  - Extract all possible alternative selectors
-  
-- **Intelligent Healing**
-  - Try alternative selector strategies (ID → XPath → CSS → Text)
-  - Use ML model to identify correct element
-  - Validate healed selector on multiple runs
-  - Calculate confidence score
-  
-- **Auto-Update**
-  - Update Page Object files with new selectors
-  - Add comment explaining the change
-  - Preserve old selector as backup
-  - Create git commit with details
+- Automatic failure analysis
+- Multiple selector strategies with fallbacks
+- ML-based element identification (reuse Phase 4 model)
+- Confidence scoring (0.0 - 1.0)
+- Page Object auto-update
+- Git integration with detailed commits
 
 **CLI**:
 ```bash
+# Analyze failed tests
 observe heal analyze --test-results ./failed-tests.xml
-observe heal apply --selector LoginButton --new-selector "//button[@text='Sign In']"
-observe heal auto --confidence-threshold 0.8
+
+# Apply specific fix
+observe heal apply --file pages/login_page.py --selector login_button
+
+# Auto-heal all with high confidence
+observe heal auto --min-confidence 0.8 --dry-run
+observe heal auto --min-confidence 0.8 --commit
 ```
 
 **Example**:
 ```python
 # Before (broken):
 class LoginPage:
-    login_button = ("id", "btn_login")  # Element ID changed
+    login_button = ("id", "btn_login")  # ID changed in app
     
 # After auto-healing:
 class LoginPage:
-    # Auto-healed on 2025-01-29: Original ID 'btn_login' not found
-    # Confidence: 0.92 (XPath strategy)
-    login_button = ("xpath", "//button[@text='Login']")
-    # Fallback: ("id", "btn_login")
+    # Auto-healed: 2025-01-29 23:45:12
+    # Original: ("id", "btn_login") - element not found
+    # New: XPath strategy, confidence: 0.92
+    login_button = ("xpath", "//button[contains(@text, 'Login')]")
 ```
+
+**Technical Details**:
+- Hook into pytest failure reports
+- Parse screenshot + page source at failure
+- Extract all potential selectors for visible elements
+- Score each selector using ML classifier
+- Choose highest confidence match
+- Update Python/Kotlin/Swift Page Object files
+- Preserve git history with detailed messages
 
 ---
 
 ### 2. Test Maintenance Dashboard
 
-**Problem**: Hard to track which tests need attention and why.
+**Problem**: Need visibility into test health and easy way to review auto-healed selectors.
 
-**Solution**: Simple web dashboard showing test health and maintenance actions.
+**Solution**: Simple web dashboard showing test status and maintenance actions.
 
 **Features**:
-- **Test Health Overview**
-  - Pass/fail trends per test
-  - Flaky test detection (inconsistent results)
-  - Slow tests identification
-  - Last run timestamps
-  
-- **Maintenance Actions**
-  - List of healed selectors (pending review)
-  - Suggested test refactorings
-  - Obsolete tests detection
-  - Coverage gaps
-  
-- **One-Click Actions**
-  - Approve/reject healed selectors
-  - Re-run failed tests
-  - Disable flaky tests temporarily
-  - Export maintenance report
+
+**Test Health View**:
+- Pass/fail rate per test (last 30 runs)
+- Flaky test detection (pass rate 20-80%)
+- Average test duration
+- Last failure timestamp
+- Failure trends (chart)
+
+**Healed Selectors Review**:
+- List of auto-healed selectors pending approval
+- Before/after selector comparison
+- Confidence score
+- Test run results after healing
+- One-click approve/reject
+- Bulk operations
+
+**Test History**:
+- Timeline of all test runs
+- Filter by status, date, platform
+- Drill down to specific failure
+- View screenshots at failure
+- Access logs
+
+**Actions**:
+- Approve healed selector → commits to git
+- Reject → reverts to original
+- Re-run specific test
+- Disable flaky test temporarily
+- Export maintenance report (PDF/CSV)
 
 **Tech Stack**:
-- Backend: FastAPI (reuse existing code)
-- Frontend: Simple HTML + htmx (no React needed)
-- Storage: SQLite (reuse Event Store)
+- Backend: FastAPI (simple REST API)
+- Frontend: Plain HTML + Alpine.js (lightweight, no build step)
+- Storage: SQLite (reuse existing Event Store schema)
+- Auth: Simple token-based (optional)
 
 **Access**:
 ```bash
@@ -100,108 +118,68 @@ observe dashboard start --port 8080
 # Opens http://localhost:8080
 ```
 
-**UI Sections**:
-1. **Overview**: Test statistics, health score
-2. **Failures**: Recent failures with auto-heal suggestions
-3. **Flaky Tests**: Tests with inconsistent results
-4. **Maintenance**: Pending actions, approvals needed
-
----
-
-### 3. Smart Test Recommendations
-
-**Problem**: Don't know which tests to write or update.
-
-**Solution**: Analyze code changes and suggest test improvements.
-
-**Features**:
-- **Code Change Analysis**
-  - Detect new UI screens (new Activity/ViewController)
-  - Detect new API endpoints
-  - Detect modified flows
-  - Compare with existing tests
-  
-- **Recommendations**
-  - "New screen 'ProfileScreen' has no tests"
-  - "API endpoint /transfer changed but tests unchanged"
-  - "Flow 'Login → Transfer' not covered"
-  - "Selector for 'SendButton' is fragile (low stability score)"
-  
-- **Auto-Generate Stubs**
-  - Create Page Object skeleton for new screen
-  - Generate basic test structure
-  - Add TODO comments for manual completion
-
-**Integration**:
-```bash
-# Local analysis
-observe recommend analyze --since HEAD~5
-
-# CI/CD integration (GitHub Actions)
-observe recommend ci-comment --pr 123
-```
-
-**Example Output**:
-```
-Test Recommendations (5):
-
-1. [HIGH] New screen detected: ProfileScreen.kt
-   → No Page Object found
-   → Action: observe generate page-object --screen ProfileScreen
-   
-2. [MEDIUM] Modified flow: Login → Transfer
-   → Existing test may be outdated: test_transfer_flow.py
-   → Action: Review and update test
-   
-3. [LOW] Selector instability
-   → Element "SubmitButton" uses fragile XPath
-   → Confidence: 0.45 (consider using ID or accessibility label)
-```
+**UI Pages**:
+1. **Dashboard** - Overview, stats, charts
+2. **Tests** - List of all tests with status
+3. **Healed Selectors** - Review and approve fixes
+4. **History** - Test execution timeline
 
 ---
 
 ## Implementation Plan
 
-### Weeks 1-4: Self-Healing Engine
-- Selector failure detection
-- Alternative selector discovery
-- Healing algorithm with ML
-- Auto-update Page Objects
+### Weeks 1-2: Healing Engine Core
+- Failure detection hook
+- Screenshot + page source capture
+- Alternative selector extraction
 
-### Weeks 5-6: Maintenance Dashboard  
-- FastAPI backend
+### Weeks 3-4: ML Integration & Scoring
+- Element identification using existing ML model
+- Confidence scoring algorithm
+- Selector validation
+
+### Weeks 5-6: Auto-Update System
+- Parse and update Page Object files (Python/Kotlin/Swift)
+- Git integration (commit, diff, revert)
+- CLI commands
+
+### Weeks 7-8: Dashboard
+- FastAPI backend with CRUD operations
 - Simple HTML frontend
-- Test health metrics
+- Test history tracking
 - Approval workflow
-
-### Weeks 7-8: Smart Recommendations
-- Code diff analysis
-- Recommendation engine
-- CI/CD integration
-- Report generation
 
 ---
 
 ## Success Metrics
 
-- **90%** of broken selectors auto-healed successfully
+- **85%+** of broken selectors auto-healed successfully
 - **70%** reduction in manual test maintenance time
-- **50%** reduction in flaky tests (better selectors)
-- **< 5 minutes** to review and approve healed selectors
+- **< 2 minutes** to review and approve healed selector
+- **50%** reduction in false positives (wrong element identified)
 
 ---
 
 ## Deliverables
 
-### Code (~10,000 lines)
-- Self-healing engine (~4,000 lines)
-- Maintenance dashboard (~3,000 lines)
-- Recommendation system (~3,000 lines)
+### Code (~7,000 lines)
+- Self-healing engine (~4,500 lines)
+  - Failure analysis
+  - Selector discovery
+  - ML scoring
+  - File updates
+  - Git integration
+  
+- Maintenance dashboard (~2,500 lines)
+  - FastAPI backend
+  - HTML/Alpine.js frontend
+  - SQLite schema extensions
+  - Approval workflow
 
 ### Documentation
 - Self-healing guide
 - Dashboard user manual
-- CI/CD integration examples
+- Configuration reference
 
 ---
 
@@ -209,19 +187,43 @@ Test Recommendations (5):
 
 **Duration**: 8 weeks
 
-**Start**: Week of 2025-01-29  
-**Target Completion**: End of March 2025
+**Milestones**:
+- Week 2: Basic healing works locally
+- Week 4: ML integration complete
+- Week 6: Auto-update with git commits
+- Week 8: Dashboard ready for use
 
 ---
 
-## Next Steps
+## Example Workflow
 
 ```bash
-# Start with self-healing engine
-observe heal init
+# 1. Run tests (some fail due to UI changes)
+pytest tests/ --junit-xml=results.xml
 
-# Test on demo app
-observe heal analyze --test-results ./demo-results.xml
+# 2. Analyze failures
+observe heal analyze --test-results results.xml
+# Output: Found 5 selector failures, 4 can be auto-healed
+
+# 3. Apply fixes (dry run first)
+observe heal auto --min-confidence 0.8 --dry-run
+# Shows what would be changed
+
+# 4. Apply for real
+observe heal auto --min-confidence 0.8 --commit
+# Updates Page Objects, commits to git
+
+# 5. Review in dashboard
+observe dashboard start
+# Open browser, review changes, approve/reject
+
+# 6. Re-run tests
+pytest tests/
+# All pass!
 ```
 
-**Phase 6: Focused, achievable, valuable.** 🎯
+---
+
+**Phase 6: Simple, focused, valuable.** 🎯
+
+**2 components. 8 weeks. ~7,000 lines.**
