@@ -8,6 +8,7 @@ from .failure_analyzer import FailureAnalyzer, SelectorFailure
 from .selector_discovery import SelectorDiscovery, AlternativeSelector
 from .element_matcher import ElementMatcher, MatchResult
 from .file_updater import FileUpdater, UpdateResult
+from .git_integration import GitIntegration, GitCommitInfo
 
 __all__ = [
     'FailureAnalyzer',
@@ -18,5 +19,7 @@ __all__ = [
     'MatchResult',
     'FileUpdater',
     'UpdateResult',
+    'GitIntegration',
+    'GitCommitInfo',
 ]
 
