@@ -7,6 +7,9 @@
 [![iOS](https://img.shields.io/badge/ios-uikit%20%7C%20swiftui-blue.svg)](demo-app/ios)
 [![Cross-Platform](https://img.shields.io/badge/cross--platform-flutter%20%7C%20react%20native-purple.svg)](#features)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![GitHub Release](https://img.shields.io/github/v/release/VadimToptunov/mobile_test_recorder?include_prereleases)](https://github.com/VadimToptunov/mobile_test_recorder/releases)
+[![GitHub Stars](https://img.shields.io/github/stars/VadimToptunov/mobile_test_recorder?style=social)](https://github.com/VadimToptunov/mobile_test_recorder)
+[![Lines of Code](https://img.shields.io/badge/lines%20of%20code-63k-informational)](https://github.com/VadimToptunov/mobile_test_recorder)
 
 ---
 
