@@ -1192,6 +1192,629 @@ def test_webview_payment(driver, test_cards):
 
 ---
 
+## Framework Versatility: Beyond Fintech
+
+The framework is **platform-agnostic** and works with **any mobile application**. While examples above show fintech use cases, here are configurations for other industries:
+
+### E-Commerce Application
+
+**exploration.yaml:**
+
+```yaml
+apps:
+  android:
+    source: shop-app/android
+    package: com.myshop
+
+test_data:
+  users:
+    - email: customer@example.com
+      password: Shop123!
+      
+  products:
+    - id: "PROD-001"
+      name: "Wireless Headphones"
+      price: 99.99
+      category: "Electronics"
+    - id: "PROD-002"
+      name: "Running Shoes"
+      price: 129.99
+      category: "Sports"
+      
+  shipping_addresses:
+    - name: "John Doe"
+      street: "123 Main St"
+      city: "New York"
+      state: "NY"
+      zip: "10001"
+      country: "US"
+      
+  payment_methods:
+    - type: credit_card
+      card_number: "4242424242424242"
+      expiry: "12/25"
+      cvv: "123"
+    - type: paypal
+      email: "customer@example.com"
+      
+  shopping_scenarios:
+    - name: "Quick purchase"
+      products: ["PROD-001"]
+      quantity: 1
+      shipping: "standard"
+    - name: "Bulk order"
+      products: ["PROD-001", "PROD-002"]
+      quantity: [2, 1]
+      shipping: "express"
+
+exploration:
+  strategy: exhaustive
+  flows:
+    - search_product
+    - add_to_cart
+    - checkout
+    - track_order
+    - write_review
+```
+
+**Generated tests will cover:**
+- Product search and filtering
+- Cart operations (add/remove/update)
+- Checkout flows
+- Payment processing
+- Order tracking
+- Reviews and ratings
+
+---
+
+### Social Media Application
+
+**exploration.yaml:**
+
+```yaml
+apps:
+  android:
+    source: social-app/android
+    package: com.mysocial
+
+test_data:
+  users:
+    - username: "testuser1"
+      email: "user1@example.com"
+      password: "Social123!"
+      bio: "Test account for automation"
+      profile_pic: "fixtures/avatars/user1.jpg"
+    - username: "testuser2"
+      email: "user2@example.com"
+      password: "Social456!"
+      
+  posts:
+    - type: text
+      content: "Hello world! #testing #automation"
+      visibility: public
+    - type: image
+      content: "Check out this view!"
+      image: "fixtures/images/landscape.jpg"
+      tags: ["travel", "nature"]
+    - type: video
+      content: "Quick tutorial"
+      video: "fixtures/videos/demo.mp4"
+      duration: 30
+      
+  social_actions:
+    - action: follow
+      target_user: "testuser2"
+    - action: like
+      target_post: "post_123"
+    - action: comment
+      target_post: "post_456"
+      text: "Great post!"
+    - action: share
+      target_post: "post_789"
+      
+  messaging:
+    - recipient: "testuser2"
+      message: "Hey, how are you?"
+    - recipient: "testuser2"
+      message: "Check this out!"
+      attachment: "fixtures/images/funny.jpg"
+
+exploration:
+  flows:
+    - create_post
+    - browse_feed
+    - interact_with_posts
+    - messaging
+    - profile_management
+    - search_users
+```
+
+---
+
+### Healthcare/Medical Application
+
+**exploration.yaml:**
+
+```yaml
+apps:
+  android:
+    source: health-app/android
+    package: com.myhealth
+
+test_data:
+  patients:
+    - first_name: "John"
+      last_name: "Doe"
+      dob: "1985-03-15"
+      ssn: "123-45-6789"  # Test SSN
+      insurance_id: "INS-123456"
+      blood_type: "O+"
+      allergies: ["Penicillin", "Peanuts"]
+      
+  appointments:
+    - doctor: "Dr. Smith"
+      specialty: "Cardiology"
+      date: "2025-02-15"
+      time: "14:00"
+      type: "consultation"
+      reason: "Annual checkup"
+    - doctor: "Dr. Johnson"
+      specialty: "Dentistry"
+      date: "2025-02-20"
+      time: "10:00"
+      type: "cleaning"
+      
+  prescriptions:
+    - medication: "Aspirin"
+      dosage: "100mg"
+      frequency: "Once daily"
+      duration: "30 days"
+      refills: 3
+      
+  lab_results:
+    - test_type: "Blood Test"
+      date: "2025-01-15"
+      results_file: "fixtures/lab_results/blood_test_01.pdf"
+      
+  vital_signs:
+    - date: "2025-01-20"
+      blood_pressure: "120/80"
+      heart_rate: 72
+      temperature: 98.6
+      weight: 165
+
+exploration:
+  flows:
+    - book_appointment
+    - view_medical_history
+    - check_prescriptions
+    - upload_documents
+    - telemedicine_call
+    
+analysis:
+  security:
+    - hipaa_compliance
+    - data_encryption
+    - secure_storage
+  accessibility:
+    - screen_reader
+    - large_text
+    - voice_control
+```
+
+---
+
+### Food Delivery Application
+
+**exploration.yaml:**
+
+```yaml
+apps:
+  android:
+    source: food-app/android
+    package: com.myfood
+
+test_data:
+  users:
+    - email: "hungry@example.com"
+      password: "Food123!"
+      phone: "+1-555-0100"
+      
+  addresses:
+    - label: "Home"
+      street: "456 Oak Ave"
+      apt: "Apt 5B"
+      city: "San Francisco"
+      zip: "94102"
+      instructions: "Ring doorbell twice"
+    - label: "Work"
+      street: "789 Market St"
+      city: "San Francisco"
+      zip: "94103"
+      
+  restaurants:
+    - name: "Pizza Palace"
+      cuisine: "Italian"
+      rating: 4.5
+      delivery_time: "30-40 min"
+    - name: "Sushi Express"
+      cuisine: "Japanese"
+      rating: 4.8
+      delivery_time: "25-35 min"
+      
+  menu_items:
+    - restaurant: "Pizza Palace"
+      item: "Margherita Pizza"
+      size: "Large"
+      price: 18.99
+      customizations:
+        - extra_cheese: true
+        - spicy: false
+    - restaurant: "Sushi Express"
+      item: "California Roll"
+      quantity: 2
+      price: 12.99
+      
+  order_scenarios:
+    - restaurant: "Pizza Palace"
+      items: ["Margherita Pizza", "Caesar Salad"]
+      delivery_address: "Home"
+      payment_method: "credit_card"
+      tip_percentage: 20
+      promo_code: "FIRST10"
+
+exploration:
+  flows:
+    - browse_restaurants
+    - search_food
+    - add_to_order
+    - apply_promo_code
+    - track_delivery
+    - rate_order
+```
+
+---
+
+### Travel/Booking Application
+
+**exploration.yaml:**
+
+```yaml
+apps:
+  android:
+    source: travel-app/android
+    package: com.mytravel
+
+test_data:
+  users:
+    - email: "traveler@example.com"
+      password: "Travel123!"
+      passport: "AB1234567"
+      frequent_flyer: "FF123456"
+      
+  travelers:
+    - first_name: "John"
+      last_name: "Smith"
+      dob: "1985-05-20"
+      passport: "AB1234567"
+      nationality: "US"
+    - first_name: "Jane"
+      last_name: "Smith"
+      dob: "1988-08-15"
+      passport: "AB7654321"
+      nationality: "US"
+      
+  flight_searches:
+    - from: "JFK"
+      to: "LAX"
+      departure_date: "2025-03-15"
+      return_date: "2025-03-22"
+      passengers: 2
+      class: "economy"
+    - from: "SFO"
+      to: "NRT"
+      departure_date: "2025-06-01"
+      passengers: 1
+      class: "business"
+      
+  hotel_searches:
+    - city: "Los Angeles"
+      check_in: "2025-03-15"
+      check_out: "2025-03-22"
+      rooms: 1
+      guests: 2
+      rating: 4
+      
+  car_rentals:
+    - location: "LAX Airport"
+      pickup_date: "2025-03-15"
+      return_date: "2025-03-22"
+      car_type: "SUV"
+
+exploration:
+  flows:
+    - search_flights
+    - book_flight
+    - search_hotels
+    - book_hotel
+    - rent_car
+    - view_itinerary
+    - check_in_online
+```
+
+---
+
+### Education/Learning Application
+
+**exploration.yaml:**
+
+```yaml
+apps:
+  android:
+    source: edu-app/android
+    package: com.myedu
+
+test_data:
+  students:
+    - email: "student@example.com"
+      password: "Study123!"
+      grade: 10
+      school: "Test High School"
+      
+  courses:
+    - name: "Introduction to Python"
+      duration: "8 weeks"
+      level: "Beginner"
+      price: 49.99
+    - name: "Advanced Mathematics"
+      duration: "12 weeks"
+      level: "Advanced"
+      price: 79.99
+      
+  lessons:
+    - course: "Introduction to Python"
+      module: 1
+      lesson: "Variables and Data Types"
+      type: "video"
+      duration: 15
+    - course: "Introduction to Python"
+      module: 1
+      lesson: "Practice Exercises"
+      type: "quiz"
+      questions: 10
+      
+  quizzes:
+    - course: "Introduction to Python"
+      quiz_name: "Module 1 Quiz"
+      questions: 15
+      time_limit: 30
+      passing_score: 80
+      
+  assignments:
+    - course: "Introduction to Python"
+      title: "Build a Calculator"
+      due_date: "2025-02-28"
+      submission_file: "fixtures/assignments/calculator.py"
+
+exploration:
+  flows:
+    - browse_courses
+    - enroll_course
+    - watch_video
+    - take_quiz
+    - submit_assignment
+    - track_progress
+    - earn_certificate
+```
+
+---
+
+### Productivity/Task Management Application
+
+**exploration.yaml:**
+
+```yaml
+apps:
+  android:
+    source: tasks-app/android
+    package: com.mytasks
+
+test_data:
+  users:
+    - email: "productive@example.com"
+      password: "Tasks123!"
+      
+  workspaces:
+    - name: "Personal"
+      description: "Personal tasks and goals"
+    - name: "Work"
+      description: "Professional projects"
+      
+  projects:
+    - workspace: "Work"
+      name: "Q1 Marketing Campaign"
+      color: "#FF5733"
+      members: ["user1@example.com", "user2@example.com"]
+      
+  tasks:
+    - project: "Q1 Marketing Campaign"
+      title: "Create social media content"
+      description: "Design posts for Instagram and Twitter"
+      priority: "high"
+      due_date: "2025-02-15"
+      assignee: "user1@example.com"
+      tags: ["marketing", "social-media"]
+    - project: "Q1 Marketing Campaign"
+      title: "Schedule email campaign"
+      priority: "medium"
+      due_date: "2025-02-20"
+      checklist:
+        - "Write email copy"
+        - "Design template"
+        - "Test sending"
+        
+  time_entries:
+    - task: "Create social media content"
+      duration: 120
+      date: "2025-01-20"
+      notes: "Designed 5 posts"
+
+exploration:
+  flows:
+    - create_workspace
+    - create_project
+    - add_task
+    - assign_task
+    - track_time
+    - set_reminders
+    - generate_reports
+```
+
+---
+
+### Gaming Application
+
+**exploration.yaml:**
+
+```yaml
+apps:
+  android:
+    source: game-app/android
+    package: com.mygame
+
+test_data:
+  players:
+    - username: "player1"
+      email: "player1@example.com"
+      password: "Game123!"
+      level: 15
+      coins: 5000
+      gems: 250
+      
+  characters:
+    - name: "Warrior"
+      class: "Tank"
+      level: 10
+      health: 1000
+      attack: 150
+    - name: "Mage"
+      class: "DPS"
+      level: 12
+      health: 600
+      attack: 300
+      
+  items:
+    - name: "Magic Sword"
+      type: "weapon"
+      rarity: "legendary"
+      power: 250
+      price: 1000
+    - name: "Health Potion"
+      type: "consumable"
+      effect: "+100 HP"
+      quantity: 10
+      
+  missions:
+    - name: "Dragon's Lair"
+      difficulty: "hard"
+      reward_coins: 500
+      reward_exp: 1000
+      
+  in_app_purchases:
+    - item: "Gem Pack (Small)"
+      gems: 100
+      price: 0.99
+    - item: "Gem Pack (Large)"
+      gems: 1000
+      price: 9.99
+
+exploration:
+  flows:
+    - character_selection
+    - complete_tutorial
+    - start_mission
+    - use_items
+    - level_up
+    - shop_purchase
+    - pvp_battle
+    
+analysis:
+  performance:
+    - fps_tracking
+    - load_times
+    - battery_drain
+```
+
+---
+
+## Universal Configuration Template
+
+**For ANY application type:**
+
+```yaml
+apps:
+  android:
+    source: path/to/android/app
+    package: com.yourapp
+  ios:
+    source: path/to/ios/app
+    bundle: com.yourapp
+
+# Generic test data structure
+test_data:
+  users: []           # User accounts
+  entities: []        # Main app entities (products, posts, tasks, etc.)
+  actions: []         # User actions to perform
+  scenarios: []       # End-to-end scenarios
+  
+exploration:
+  strategy: exhaustive
+  flows: []           # List your app's main user flows
+  
+generation:
+  output_dir: tests/
+  framework: pytest-bdd
+  
+# The framework will:
+# 1. Discover your app structure automatically
+# 2. Generate appropriate Page Objects
+# 3. Create BDD scenarios based on observed flows
+# 4. Generate API clients for any HTTP calls
+# 5. Set up fixtures with your test data
+```
+
+---
+
+## Key Takeaway
+
+**The framework is industry-agnostic!**
+
+✅ **Fintech** - Banking, payments, crypto  
+✅ **E-commerce** - Shopping, marketplaces  
+✅ **Social Media** - Posts, messaging, profiles  
+✅ **Healthcare** - Appointments, records, telemedicine  
+✅ **Education** - Courses, quizzes, assignments  
+✅ **Travel** - Bookings, itineraries, check-ins  
+✅ **Food Delivery** - Orders, tracking, ratings  
+✅ **Gaming** - Missions, items, leaderboards  
+✅ **Productivity** - Tasks, projects, time tracking  
+✅ **Any mobile app** - The framework adapts!
+
+**What stays the same:**
+- One-command automation
+- Auto-generated Page Objects
+- BDD scenario generation
+- API-first testing
+- Self-healing selectors
+- CI/CD integration
+
+**What changes:**
+- Test data structure (cards vs products vs tasks)
+- User flows (checkout vs quest vs booking)
+- Domain-specific validations
+
+---
+
 ## Core Concepts
 
 ### 1. Build Variants
