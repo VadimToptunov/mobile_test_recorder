@@ -13,7 +13,7 @@
 
 ## Manual Steps (5 minutes)
 
-### 1. Add Repository Topics
+### 1. Configure Repository (Description + Topics)
 
 **Option A: Using GitHub CLI (Fastest ⚡)**
 
@@ -24,6 +24,10 @@ brew install gh  # macOS
 
 # Login
 gh auth login
+
+# Set description
+gh repo edit VadimToptunov/mobile_test_recorder \
+  --description "AI-powered mobile testing framework with self-healing tests and automatic test generation from user behavior"
 
 # Add all topics at once
 gh repo edit VadimToptunov/mobile_test_recorder \
@@ -49,19 +53,28 @@ gh repo edit VadimToptunov/mobile_test_recorder \
   --add-topic fintech
 ```
 
-**Option B: Using Python Script**
+**Option B: Using Python Script (Recommended!)**
 
 ```bash
 # Get GitHub token: https://github.com/settings/tokens (scope: repo)
 export GITHUB_TOKEN=your_token_here
 
-# Run script
+# Run script - sets description AND topics automatically
 python .github/add_github_topics.py
 ```
 
 **Option C: Using GitHub API (curl)**
 
 ```bash
+# Set description
+curl -X PATCH \
+  -H "Authorization: token YOUR_TOKEN" \
+  -H "Accept: application/vnd.github+json" \
+  -H "X-GitHub-Api-Version: 2022-11-28" \
+  https://api.github.com/repos/VadimToptunov/mobile_test_recorder \
+  -d '{"description":"AI-powered mobile testing framework with self-healing tests and automatic test generation from user behavior"}'
+
+# Add topics
 curl -X PUT \
   -H "Authorization: token YOUR_TOKEN" \
   -H "Accept: application/vnd.github+json" \
@@ -74,16 +87,20 @@ curl -X PUT \
 
 1. Go to: https://github.com/VadimToptunov/mobile_test_recorder
 2. Click "About" section (gear icon ⚙️)
-3. Add topics one by one from `.github/TOPICS.md`
+3. Set description: `AI-powered mobile testing framework with self-healing tests and automatic test generation from user behavior`
+4. Add topics one by one from `.github/TOPICS.md`
 
-### 2. Update Repository Description
+### 2. Additional Settings (Optional)
+
+If you used Option A or B above, description and topics are already set! ✅
+
+Otherwise, manually configure:
 
 1. Go to: https://github.com/VadimToptunov/mobile_test_recorder
 2. Click "About" (gear icon ⚙️)
-3. Set:
-   - **Description**: `AI-powered mobile testing framework with self-healing tests and automatic test generation from user behavior`
+3. Additional settings:
    - **Website**: (optional - add if you have one)
-   - ✅ Check "Packages"
+   - ✅ Check "Packages" (if you publish packages)
 
 ### 3. Enable GitHub Discussions (Optional)
 

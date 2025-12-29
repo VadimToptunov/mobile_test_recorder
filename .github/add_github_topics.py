@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """
-Add GitHub repository topics using GitHub API
+Configure GitHub repository (description and topics) using GitHub API
+
+This script sets:
+- Repository description
+- Repository topics (tags)
 
 Usage:
     python add_github_topics.py
@@ -19,6 +23,8 @@ import sys
 # Configuration
 OWNER = "VadimToptunov"
 REPO = "mobile_test_recorder"
+
+DESCRIPTION = "AI-powered mobile testing framework with self-healing tests and automatic test generation from user behavior"
 
 TOPICS = [
     "mobile-testing",
@@ -44,6 +50,33 @@ TOPICS = [
 ]
 
 
+def set_description(owner: str, repo: str, description: str, token: str):
+    """Set repository description"""
+    
+    url = f"https://api.github.com/repos/{owner}/{repo}"
+    
+    headers = {
+        "Authorization": f"token {token}",
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+    }
+    
+    data = {"description": description}
+    
+    print(f"Setting description for {owner}/{repo}...")
+    print(f"Description: {description}")
+    
+    response = requests.patch(url, json=data, headers=headers)
+    
+    if response.status_code == 200:
+        print("✅ Description set successfully!")
+        return True
+    else:
+        print(f"❌ Error: {response.status_code}")
+        print(f"Response: {response.text}")
+        return False
+
+
 def add_topics(owner: str, repo: str, topics: list, token: str):
     """Add topics to GitHub repository"""
     
@@ -57,8 +90,8 @@ def add_topics(owner: str, repo: str, topics: list, token: str):
     
     data = {"names": topics}
     
-    print(f"Adding {len(topics)} topics to {owner}/{repo}...")
-    print(f"Topics: {', '.join(topics)}")
+    print(f"\nAdding {len(topics)} topics to {owner}/{repo}...")
+    print(f"Topics: {', '.join(topics[:3])}... (+{len(topics)-3} more)")
     
     response = requests.put(url, json=data, headers=headers)
     
@@ -84,8 +117,24 @@ def main():
         print("  python add_github_topics.py")
         sys.exit(1)
     
-    success = add_topics(OWNER, REPO, TOPICS, token)
-    sys.exit(0 if success else 1)
+    print(f"🚀 Configuring GitHub repository: {OWNER}/{REPO}\n")
+    print("=" * 60)
+    
+    # Set description
+    desc_success = set_description(OWNER, REPO, DESCRIPTION, token)
+    
+    # Add topics
+    topics_success = add_topics(OWNER, REPO, TOPICS, token)
+    
+    print("\n" + "=" * 60)
+    
+    if desc_success and topics_success:
+        print("\n✅ Repository configured successfully!")
+        print(f"\nView at: https://github.com/{OWNER}/{REPO}")
+        sys.exit(0)
+    else:
+        print("\n❌ Some operations failed")
+        sys.exit(1)
 
 
 if __name__ == "__main__":
