@@ -64,7 +64,8 @@ python .github/add_github_topics.py
 ```bash
 curl -X PUT \
   -H "Authorization: token YOUR_TOKEN" \
-  -H "Accept: application/vnd.github.v3+json" \
+  -H "Accept: application/vnd.github+json" \
+  -H "X-GitHub-Api-Version: 2022-11-28" \
   https://api.github.com/repos/VadimToptunov/mobile_test_recorder/topics \
   -d '{"names":["mobile-testing","test-automation","appium","pytest","bdd","self-healing-tests","android-testing","ios-testing","kotlin","swift","python","machine-learning","page-object-model","ci-cd","github-actions","gitlab-ci","test-framework","quality-assurance","mobile-development","fintech"]}'
 ```
