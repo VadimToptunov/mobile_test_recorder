@@ -2617,5 +2617,38 @@ def heal_revert(commit_hash):
         raise click.Abort()
 
 
+@cli.command('dashboard')
+@click.option('--port', type=int, default=8080,
+              help='Port to run dashboard on')
+@click.option('--host', type=str, default='0.0.0.0',
+              help='Host to bind to')
+@click.option('--db', type=click.Path(),
+              help='Path to dashboard database (default: .dashboard.db)')
+def dashboard(port, host, db):
+    """
+    Start test maintenance dashboard
+    
+    Example:
+        observe dashboard
+        observe dashboard --port 8080 --host 127.0.0.1
+    """
+    from framework.dashboard.server import DashboardServer
+    
+    try:
+        repo_path = Path.cwd()
+        db_path = Path(db) if db else None
+        
+        server = DashboardServer(repo_path, db_path)
+        server.run(host=host, port=port)
+    
+    except KeyboardInterrupt:
+        click.echo("\n\nDashboard stopped")
+    except Exception as e:
+        click.echo(f"\n❌ Error starting dashboard: {e}", err=True)
+        import traceback
+        traceback.print_exc()
+        raise click.Abort()
+
+
 if __name__ == '__main__':
     cli()
