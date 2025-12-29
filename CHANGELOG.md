@@ -2,6 +2,49 @@
 
 All notable changes to Mobile Observe & Test Framework.
 
+## [Phase 6] - 2025-01-29
+
+### Added - Self-Healing Tests & Maintenance Dashboard
+
+**Self-Healing Engine (~2,030 lines):**
+- **FailureAnalyzer**: Parses JUnit XML, detects broken selectors from error patterns
+- **SelectorDiscovery**: Extracts alternative selectors (ID, XPath, CSS, Text, Accessibility)
+- **ElementMatcher**: ML-based element identification with confidence scoring
+- **FileUpdater**: Updates Python, Kotlin, Swift Page Objects with auto-generated comments
+- **GitIntegration**: Commits healed selectors with detailed messages, revert support
+- **HealingOrchestrator**: End-to-end workflow coordination
+
+**CLI Commands:**
+- `observe heal analyze` - Detect broken selectors from test failures
+- `observe heal auto` - Automatically fix selectors with ML (dry-run, commit, branch)
+- `observe heal history` - Show healing commit history
+- `observe heal revert` - Revert specific healing commit
+- `observe dashboard` - Launch maintenance dashboard
+
+**Test Maintenance Dashboard (~1,000 lines):**
+- **FastAPI Backend**: REST API for test results, health metrics, healed selectors
+- **Alpine.js Frontend**: Reactive UI with no build step, auto-refresh
+- **SQLite Database**: Test results, health tracking, selector approval workflow
+- **Interactive UI**: One-click approve/reject, confidence scoring, flaky test detection
+
+**Features:**
+- Automatic selector healing with ML confidence (0.0-1.0)
+- Multi-language Page Object support (Python/Kotlin/Swift)
+- Dry-run mode for testing
+- Git integration with detailed commit messages
+- Test health monitoring (pass rates, trends, flaky detection)
+- Interactive approval workflow
+- Real-time dashboard updates
+
+### Statistics
+- **Lines of Code**: ~3,030
+- **New Files**: 11
+- **CLI Commands**: 5
+- **API Endpoints**: 6
+- **Duration**: 8 weeks
+
+---
+
 ## [Phase 5] - 2025-01-29
 
 ### Added - Enterprise Integration & Deep Analysis

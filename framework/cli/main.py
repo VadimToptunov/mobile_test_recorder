@@ -2391,5 +2391,264 @@ def report_generate(input_path: str, output: str, format: str, title: str):
         traceback.print_exc()
         raise click.Abort()
 
+@cli.group()
+def heal():
+    """
+    Self-healing test commands
+    
+    Automatically detect and fix broken selectors when tests fail.
+    """
+    pass
+
+
+@heal.command('analyze')
+@click.option('--test-results', required=True, type=click.Path(exists=True),
+              help='Path to JUnit XML test results')
+@click.option('--screenshots', type=click.Path(exists=True),
+              help='Directory with failure screenshots')
+@click.option('--page-source', type=click.Path(exists=True),
+              help='Directory with page source dumps')
+@click.option('--page-objects', type=click.Path(exists=True),
+              help='Directory with Page Object files')
+@click.option('--min-confidence', type=float, default=0.7,
+              help='Minimum confidence threshold (0.0-1.0)')
+def heal_analyze(test_results, screenshots, page_source, page_objects, min_confidence):
+    """
+    Analyze test failures and detect broken selectors
+    
+    Example:
+        observe heal analyze --test-results ./reports/junit.xml --screenshots ./screenshots --page-source ./page-source --page-objects ./tests/pages
+    """
+    from framework.healing.orchestrator import HealingOrchestrator
+    
+    click.echo("\n🔍 Analyzing test failures...")
+    
+    try:
+        repo_path = Path.cwd()
+        orchestrator = HealingOrchestrator(
+            repo_path=repo_path,
+            min_confidence=min_confidence
+        )
+        
+        # Analyze failures
+        failures = orchestrator.analyze_failures(
+            junit_path=Path(test_results),
+            screenshots_dir=Path(screenshots) if screenshots else None,
+            page_source_dir=Path(page_source) if page_source else None,
+            page_objects_dir=Path(page_objects) if page_objects else None
+        )
+        
+        if not failures:
+            click.echo("\n✅ No selector failures detected!")
+            return
+        
+        # Show report
+        report = orchestrator.failure_analyzer.generate_report()
+        click.echo(report)
+        
+        # Show healable count
+        healable = len([f for f in failures if f.page_source_path])
+        click.echo(f"\n💡 {healable}/{len(failures)} failures can be auto-healed")
+        click.echo(f"\nNext step:")
+        click.echo(f"  observe heal auto --test-results {test_results} --min-confidence {min_confidence} --dry-run")
+    
+    except Exception as e:
+        click.echo(f"\n❌ Error analyzing failures: {e}", err=True)
+        import traceback
+        traceback.print_exc()
+        raise click.Abort()
+
+
+@heal.command('auto')
+@click.option('--test-results', required=True, type=click.Path(exists=True),
+              help='Path to JUnit XML test results')
+@click.option('--screenshots', type=click.Path(exists=True),
+              help='Directory with failure screenshots')
+@click.option('--page-source', type=click.Path(exists=True),
+              help='Directory with page source dumps')
+@click.option('--page-objects', type=click.Path(exists=True),
+              help='Directory with Page Object files')
+@click.option('--min-confidence', type=float, default=0.7,
+              help='Minimum confidence threshold (0.0-1.0)')
+@click.option('--dry-run', is_flag=True,
+              help='Simulate healing without updating files')
+@click.option('--commit', is_flag=True,
+              help='Auto-commit changes to git')
+@click.option('--branch', type=str,
+              help='Create new git branch for changes')
+@click.option('--ml-model', type=click.Path(exists=True),
+              help='Path to ML model (optional)')
+def heal_auto(test_results, screenshots, page_source, page_objects, min_confidence, dry_run, commit, branch, ml_model):
+    """
+    Automatically heal broken selectors
+    
+    Example:
+        observe heal auto --test-results ./reports/junit.xml --page-source ./page-source --page-objects ./tests/pages --min-confidence 0.8 --dry-run
+        observe heal auto --test-results ./reports/junit.xml --page-source ./page-source --page-objects ./tests/pages --commit --branch auto-heal
+    """
+    from framework.healing.orchestrator import HealingOrchestrator
+    
+    mode = "DRY RUN" if dry_run else "LIVE"
+    click.echo(f"\n🔧 Auto-healing ({mode})...")
+    
+    try:
+        repo_path = Path.cwd()
+        orchestrator = HealingOrchestrator(
+            repo_path=repo_path,
+            ml_model_path=Path(ml_model) if ml_model else None,
+            min_confidence=min_confidence
+        )
+        
+        # Analyze failures
+        click.echo("🔍 Analyzing failures...")
+        failures = orchestrator.analyze_failures(
+            junit_path=Path(test_results),
+            screenshots_dir=Path(screenshots) if screenshots else None,
+            page_source_dir=Path(page_source) if page_source else None,
+            page_objects_dir=Path(page_objects) if page_objects else None
+        )
+        
+        if not failures:
+            click.echo("\n✅ No selector failures detected!")
+            return
+        
+        click.echo(f"Found {len(failures)} selector failure(s)")
+        
+        # Heal all
+        click.echo("\n🔧 Healing selectors...")
+        results = orchestrator.heal_all(
+            failures=failures,
+            dry_run=dry_run,
+            auto_commit=commit and not dry_run,
+            branch_name=branch
+        )
+        
+        # Show report
+        report = orchestrator.generate_report(results)
+        click.echo("\n" + report)
+        
+        # Summary
+        successful = len([r for r in results if r.success])
+        if successful > 0:
+            if dry_run:
+                click.echo(f"\n💡 {successful} selector(s) would be healed")
+                click.echo(f"   Remove --dry-run to apply changes")
+            else:
+                click.echo(f"\n✅ {successful} selector(s) healed successfully!")
+                if commit:
+                    click.echo(f"   Changes committed to git")
+                else:
+                    click.echo(f"\n💡 Next step:")
+                    click.echo(f"   git add -A && git commit -m 'Auto-healed selectors'")
+    
+    except Exception as e:
+        click.echo(f"\n❌ Error during auto-healing: {e}", err=True)
+        import traceback
+        traceback.print_exc()
+        raise click.Abort()
+
+
+@heal.command('history')
+@click.option('--limit', type=int, default=10,
+              help='Maximum number of commits to show')
+def heal_history(limit):
+    """
+    Show history of healing commits
+    
+    Example:
+        observe heal history --limit 20
+    """
+    from framework.healing.git_integration import GitIntegration
+    
+    click.echo("\n📜 Healing history...")
+    
+    try:
+        repo_path = Path.cwd()
+        git = GitIntegration(repo_path)
+        
+        commits = git.get_healing_history(limit=limit)
+        
+        if not commits:
+            click.echo("\n❌ No healing commits found")
+            return
+        
+        for i, commit in enumerate(commits, 1):
+            click.echo(f"\n{i}. {commit.commit_hash[:8]} - {commit.timestamp.strftime('%Y-%m-%d %H:%M')}")
+            click.echo(f"   Files: {len(commit.files_changed)}")
+            click.echo(f"   Selectors: {commit.selectors_healed}")
+            click.echo(f"   {commit.message.split(chr(10))[0]}")
+    
+    except Exception as e:
+        click.echo(f"\n❌ Error getting history: {e}", err=True)
+        raise click.Abort()
+
+
+@heal.command('revert')
+@click.argument('commit_hash')
+def heal_revert(commit_hash):
+    """
+    Revert a healing commit
+    
+    Example:
+        observe heal revert abc12345
+    """
+    from framework.healing.git_integration import GitIntegration
+    
+    click.echo(f"\n⏪ Reverting commit {commit_hash}...")
+    
+    if not click.confirm("Are you sure?"):
+        click.echo("Cancelled")
+        return
+    
+    try:
+        repo_path = Path.cwd()
+        git = GitIntegration(repo_path)
+        
+        success = git.revert_commit(commit_hash)
+        
+        if success:
+            click.echo(f"\n✅ Commit reverted successfully")
+        else:
+            click.echo(f"\n❌ Failed to revert commit", err=True)
+            raise click.Abort()
+    
+    except Exception as e:
+        click.echo(f"\n❌ Error reverting: {e}", err=True)
+        raise click.Abort()
+
+
+@cli.command('dashboard')
+@click.option('--port', type=int, default=8080,
+              help='Port to run dashboard on')
+@click.option('--host', type=str, default='0.0.0.0',
+              help='Host to bind to')
+@click.option('--db', type=click.Path(),
+              help='Path to dashboard database (default: .dashboard.db)')
+def dashboard(port, host, db):
+    """
+    Start test maintenance dashboard
+    
+    Example:
+        observe dashboard
+        observe dashboard --port 8080 --host 127.0.0.1
+    """
+    from framework.dashboard.server import DashboardServer
+    
+    try:
+        repo_path = Path.cwd()
+        db_path = Path(db) if db else None
+        
+        server = DashboardServer(repo_path, db_path)
+        server.run(host=host, port=port)
+    
+    except KeyboardInterrupt:
+        click.echo("\n\nDashboard stopped")
+    except Exception as e:
+        click.echo(f"\n❌ Error starting dashboard: {e}", err=True)
+        import traceback
+        traceback.print_exc()
+        raise click.Abort()
+
+
 if __name__ == '__main__':
     cli()
