@@ -16,6 +16,7 @@
 - [CI/CD Integration](#cicd-integration)
 - [Troubleshooting](#troubleshooting)
 - [Best Practices](#best-practices)
+- [Usage Scenarios](#usage-scenarios)
 - [API Reference](#api-reference)
 
 ---
@@ -1382,6 +1383,962 @@ tests/
 - Auto-approve all healings blindly
 - Keep broken tests disabled
 - Let technical debt accumulate
+
+---
+
+## Usage Scenarios
+
+Complete guide to all possible use cases and scenarios for using the framework.
+
+### Scenario 1: First-Time Project Setup
+
+**Goal:** Set up testing for a new mobile app from scratch.
+
+**Steps:**
+
+```bash
+# 1. Initialize new test project
+observe init --platform android --output ./my-app-tests
+
+# 2. Configure observe SDK in your app
+# Edit app/build.gradle.kts and add observe build variant
+
+# 3. Build and install observe variant
+./gradlew assembleObserveDebug
+adb install app/build/outputs/apk/observe/debug/app-observe-debug.apk
+
+# 4. Record first session (QA walks through app)
+# SDK automatically records events
+
+# 5. Pull events from device
+adb pull /sdcard/Android/data/com.yourapp/files/observe/ ./sessions/
+
+# 6. Import session
+observe import \
+  --session-file sessions/session_*.json \
+  --session-id onboarding-flow \
+  --platform android
+
+# 7. Analyze codebase
+observe analyze static \
+  --platform android \
+  --source ./app/src/main \
+  --output analysis.json
+
+# 8. Build app model
+observe model build \
+  --session onboarding-flow \
+  --static-analysis analysis.json \
+  --output app-model.json
+
+# 9. Generate all test artifacts
+observe generate all \
+  --model app-model.json \
+  --output ./tests/ \
+  --framework pytest-bdd
+
+# 10. Run first tests
+pytest tests/ --html=report.html
+```
+
+**Result:** Complete test suite ready in ~30 minutes.
+
+---
+
+### Scenario 2: Adding Tests for New Feature
+
+**Goal:** Your app added a new "Money Transfer" feature, need tests.
+
+**Steps:**
+
+```bash
+# 1. Record only the new feature
+# Install observe build, walk through transfer flow
+
+# 2. Import as separate session
+observe import \
+  --session-file transfer_session.json \
+  --session-id transfer-feature \
+  --platform android
+
+# 3. Build incremental model (merge with existing)
+observe model build \
+  --session transfer-feature \
+  --merge-with existing-model.json \
+  --output updated-model.json
+
+# 4. Generate only new pages/tests
+observe generate pages \
+  --model updated-model.json \
+  --output tests/pages/ \
+  --only-new
+
+observe generate bdd \
+  --model updated-model.json \
+  --output tests/features/ \
+  --filter "transfer"
+
+# 5. Run new tests
+pytest tests/features/transfer.feature -v
+```
+
+**Result:** New tests without regenerating existing ones.
+
+---
+
+### Scenario 3: Cross-Platform Testing (Android + iOS)
+
+**Goal:** Generate tests for both Android and iOS from separate observations.
+
+**Steps:**
+
+```bash
+# 1. Record Android session
+observe import \
+  --session-file android_session.json \
+  --session-id app-android \
+  --platform android
+
+# 2. Record iOS session  
+observe import \
+  --session-file ios_session.json \
+  --session-id app-ios \
+  --platform ios
+
+# 3. Build unified model
+observe model build \
+  --session app-android \
+  --session app-ios \
+  --cross-platform \
+  --output unified-model.json
+
+# 4. Generate platform-specific tests
+observe generate all \
+  --model unified-model.json \
+  --output tests/ \
+  --platforms android,ios
+
+# Result structure:
+tests/
+├── android/
+│   ├── pages/
+│   └── features/
+├── ios/
+│   ├── pages/
+│   └── features/
+└── shared/
+    └── api/  # Same API tests for both
+```
+
+**Result:** Shared API tests + platform-specific UI tests.
+
+---
+
+### Scenario 4: API-First Testing Strategy
+
+**Goal:** Focus on API testing, minimal UI tests.
+
+**Steps:**
+
+```bash
+# 1. Build model with API emphasis
+observe model build \
+  --session my-session \
+  --correlation-strategy temporal \
+  --api-first \
+  --output model.json
+
+# 2. Generate mostly API tests
+observe generate api \
+  --model model.json \
+  --output tests/api/ \
+  --full-coverage
+
+# 3. Generate minimal UI tests (smoke only)
+observe generate ui \
+  --model model.json \
+  --output tests/ui/ \
+  --smoke-only
+
+# 4. Run API tests (fast)
+pytest tests/api/ -v --maxfail=1
+
+# 5. Run UI tests (only if APIs pass)
+pytest tests/ui/ -v
+```
+
+**Test ratio achieved:** 85% API, 15% UI
+
+---
+
+### Scenario 5: Handling Flaky Tests
+
+**Goal:** Identify and fix flaky tests using dashboard.
+
+**Steps:**
+
+```bash
+# 1. Run tests multiple times and collect results
+for i in {1..30}; do
+  pytest tests/ --junit-xml=results/run_$i.xml
+done
+
+# 2. Aggregate results into database
+for file in results/*.xml; do
+  observe dashboard import --junit-xml $file
+done
+
+# 3. Start dashboard
+observe dashboard
+
+# 4. In browser (http://localhost:8080):
+#    - Go to "Test Health" tab
+#    - Sort by "Pass Rate" (ascending)
+#    - Find tests with 20-80% pass rate
+#    - Click on test to see details
+
+# 5. Fix identified issues:
+#    - Add explicit waits
+#    - Use better selectors
+#    - Fix timing dependencies
+
+# 6. Re-run and verify
+pytest tests/ --count=10 --flaky-test-marker
+```
+
+**Result:** Reduced flaky tests from 15% to <3%.
+
+---
+
+### Scenario 6: Self-Healing in CI Pipeline
+
+**Goal:** Automatically fix broken selectors in CI.
+
+**Create workflow:**
+
+```yaml
+# .github/workflows/tests-with-healing.yml
+name: Tests with Self-Healing
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.13'
+      
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install -e .
+      
+      - name: Start Appium
+        run: appium &
+      
+      - name: Run tests
+        id: tests
+        run: |
+          pytest tests/ --junit-xml=results.xml || true
+      
+      - name: Auto-heal broken selectors
+        if: failure()
+        run: |
+          observe heal auto \
+            --test-results results.xml \
+            --page-source ./page-dumps \
+            --page-objects ./tests/pages \
+            --commit \
+            --branch auto-heal-${{ github.run_id }}
+      
+      - name: Re-run tests after healing
+        if: failure()
+        run: pytest tests/ --junit-xml=results-healed.xml
+      
+      - name: Create PR with fixes
+        if: success()
+        uses: peter-evans/create-pull-request@v5
+        with:
+          branch: auto-heal-${{ github.run_id }}
+          title: "Auto-heal: Fixed selectors from run ${{ github.run_id }}"
+          body: "Automatically healed broken selectors. Review changes before merging."
+```
+
+**Result:** CI auto-fixes selectors and creates PR for review.
+
+---
+
+### Scenario 7: Performance Regression Testing
+
+**Goal:** Monitor app performance across releases.
+
+**Steps:**
+
+```bash
+# 1. Baseline measurement (v1.0)
+observe analyze performance \
+  --device emulator-5554 \
+  --app com.yourapp \
+  --duration 120 \
+  --scenario "login,dashboard,transfer" \
+  --output baseline-v1.0.json
+
+# 2. New release measurement (v1.1)
+observe analyze performance \
+  --device emulator-5554 \
+  --app com.yourapp \
+  --duration 120 \
+  --scenario "login,dashboard,transfer" \
+  --output current-v1.1.json
+
+# 3. Compare results
+observe analyze performance compare \
+  --baseline baseline-v1.0.json \
+  --current current-v1.1.json \
+  --threshold 10% \
+  --output comparison-report.html
+
+# 4. Fail CI if regression detected
+observe analyze performance compare \
+  --baseline baseline-v1.0.json \
+  --current current-v1.1.json \
+  --threshold 10% \
+  --fail-on-regression
+```
+
+**Metrics tracked:**
+- CPU usage
+- Memory consumption
+- FPS (UI smoothness)
+- Network latency
+- Battery drain
+
+---
+
+### Scenario 8: Security Audit
+
+**Goal:** Scan app for security vulnerabilities.
+
+**Steps:**
+
+```bash
+# 1. Decompile and analyze APK
+observe analyze security \
+  --apk app-release.apk \
+  --deep-scan \
+  --output security-report.json
+
+# 2. Check for common vulnerabilities
+observe analyze security \
+  --apk app-release.apk \
+  --checks hardcoded-secrets,weak-crypto,insecure-network \
+  --severity high,critical
+
+# 3. Verify certificate pinning
+observe analyze security \
+  --apk app-release.apk \
+  --check-pinning \
+  --expected-pins sha256/abc123,sha256/def456
+
+# 4. Test for root detection bypass
+observe analyze security \
+  --apk app-release.apk \
+  --test-root-detection \
+  --rooted-device true
+
+# 5. Generate compliance report
+observe analyze security \
+  --apk app-release.apk \
+  --compliance OWASP-MASVS \
+  --output compliance-report.pdf
+```
+
+**Checks performed:**
+- Hardcoded API keys/passwords
+- Weak encryption algorithms
+- Insecure network traffic
+- Certificate pinning status
+- Root/jailbreak detection
+- Code obfuscation level
+- SQL injection vulnerabilities
+- XSS vulnerabilities
+
+---
+
+### Scenario 9: Visual Regression Testing
+
+**Goal:** Detect unintended UI changes.
+
+**Steps:**
+
+```bash
+# 1. Capture baseline screenshots (v1.0)
+observe analyze visual capture \
+  --app com.yourapp \
+  --device emulator-5554 \
+  --flows login,dashboard,transfer \
+  --output baselines/v1.0/
+
+# 2. After UI update, capture new screenshots
+observe analyze visual capture \
+  --app com.yourapp \
+  --device emulator-5554 \
+  --flows login,dashboard,transfer \
+  --output current/
+
+# 3. Compare screenshots
+observe analyze visual compare \
+  --baseline baselines/v1.0/ \
+  --current current/ \
+  --threshold 0.95 \
+  --output visual-diff-report.html
+
+# 4. Review differences in browser
+open visual-diff-report.html
+
+# 5. Accept intentional changes
+observe analyze visual approve \
+  --screen login \
+  --update-baseline
+
+# 6. Fail CI on unintended changes
+observe analyze visual compare \
+  --baseline baselines/v1.0/ \
+  --current current/ \
+  --threshold 0.95 \
+  --fail-on-difference
+```
+
+**Features:**
+- Pixel-perfect comparison
+- Ignore regions (dynamic content)
+- Multiple viewport sizes
+- Cross-device comparison
+
+---
+
+### Scenario 10: Multi-Device Testing
+
+**Goal:** Run tests on multiple devices in parallel.
+
+**Steps:**
+
+```bash
+# 1. List available devices
+observe devices list --platform android
+
+# Output:
+# Emulators:
+#   1. emulator-5554 (Pixel 6, Android 13)
+#   2. emulator-5556 (Pixel 5, Android 12)
+# Real Devices:
+#   3. RF8N12ABC (Galaxy S23, Android 14)
+
+# 2. Create device pool
+observe devices pool create \
+  --name android-pool \
+  --devices emulator-5554,emulator-5556,RF8N12ABC
+
+# 3. Run tests in parallel
+observe execute parallel \
+  --tests tests/ \
+  --pool android-pool \
+  --sharding duration \
+  --workers 3
+
+# 4. Alternative: Use BrowserStack
+observe devices pool create \
+  --name cloud-pool \
+  --provider browserstack \
+  --devices "Samsung Galaxy S22,Google Pixel 7,OnePlus 10"
+
+observe execute parallel \
+  --tests tests/ \
+  --pool cloud-pool \
+  --workers 3
+```
+
+**Result:** Tests run 3x faster with parallel execution.
+
+---
+
+### Scenario 11: Smart Test Selection (CI Optimization)
+
+**Goal:** Run only tests affected by code changes.
+
+**Steps:**
+
+```bash
+# 1. Analyze what changed
+observe select \
+  --since origin/master \
+  --test-dir tests/ \
+  --source-dir app/src/main \
+  --output selected-tests.txt
+
+# Output:
+# Changed files:
+#   - app/src/main/java/com/app/LoginActivity.kt
+#   - app/src/main/java/com/app/api/AuthClient.kt
+# 
+# Affected tests:
+#   - tests/features/login.feature
+#   - tests/api/test_auth_api.py
+#   - tests/ui/test_login_ui.py
+
+# 2. Run only selected tests
+pytest $(cat selected-tests.txt) -v
+
+# 3. In CI:
+observe select \
+  --since $CI_COMMIT_BEFORE_SHA \
+  --test-dir tests/ \
+  --impact-analysis \
+  --output selected.txt
+
+pytest $(cat selected.txt) --junit-xml=results.xml
+```
+
+**Time savings:** 10x faster CI builds (run 10% of tests instead of 100%).
+
+---
+
+### Scenario 12: Test Data Management
+
+**Goal:** Generate and manage test data for different scenarios.
+
+**Steps:**
+
+```bash
+# 1. Extract test data from observations
+observe data extract \
+  --session my-session \
+  --output test-data.json
+
+# Output:
+# {
+#   "users": [
+#     {"email": "user@example.com", "password": "..."},
+#     {"email": "admin@example.com", "password": "..."}
+#   ],
+#   "transfers": [
+#     {"amount": 100, "currency": "USD", "to": "..."}
+#   ]
+# }
+
+# 2. Generate synthetic test data
+observe data generate \
+  --model app-model.json \
+  --scenario login \
+  --count 100 \
+  --output synthetic-users.json
+
+# 3. Parametrize tests with data
+pytest tests/test_login.py \
+  --test-data synthetic-users.json \
+  --parallel
+
+# 4. Clean up test data after run
+observe data cleanup \
+  --app com.yourapp \
+  --test-users-only
+```
+
+---
+
+### Scenario 13: WebView Testing
+
+**Goal:** Test interactions within embedded WebViews.
+
+**Steps:**
+
+```bash
+# 1. Enable WebView observation in SDK
+# ObserveSDK.observeWebView(webView) in app code
+
+# 2. Record session with WebView interactions
+# QA fills payment form in WebView
+
+# 3. Import and build model
+observe import --session-file webview-session.json --session-id payment
+observe model build --session payment --output model.json
+
+# 4. Generate WebView-aware tests
+observe generate all \
+  --model model.json \
+  --output tests/ \
+  --webview-support
+
+# Result: Tests with context switching
+def test_payment_in_webview(driver):
+    page = CheckoutPage(driver)
+    page.click_pay_button()
+    
+    # Switch to WebView context
+    driver.switch_to.context('WEBVIEW_com.yourapp')
+    
+    # Interact with web elements
+    driver.find_element(By.ID, "card-number").send_keys("4242424242424242")
+    driver.find_element(By.ID, "submit").click()
+    
+    # Switch back to native
+    driver.switch_to.context('NATIVE_APP')
+    
+    assert page.payment_success_message.is_displayed()
+```
+
+---
+
+### Scenario 14: ML Model Training/Update
+
+**Goal:** Improve ML element classification with app-specific data.
+
+**Steps:**
+
+```bash
+# 1. Export current model performance
+observe ml evaluate \
+  --model ml_models/universal_element_classifier.pkl \
+  --test-data validation-set.json \
+  --output metrics.json
+
+# 2. Collect misclassified examples
+observe ml collect-errors \
+  --sessions sessions/*.json \
+  --min-confidence 0.7 \
+  --output misclassified.json
+
+# 3. Manually label corrections
+# Edit misclassified.json and fix labels
+
+# 4. Fine-tune model
+observe ml train \
+  --base-model ml_models/universal_element_classifier.pkl \
+  --training-data misclassified.json \
+  --epochs 10 \
+  --output ml_models/fine_tuned_model.pkl
+
+# 5. Evaluate improved model
+observe ml evaluate \
+  --model ml_models/fine_tuned_model.pkl \
+  --test-data validation-set.json
+
+# 6. Use updated model
+observe model build \
+  --session my-session \
+  --ml-model ml_models/fine_tuned_model.pkl \
+  --output model.json
+```
+
+**Improvement:** 90% → 95% element classification accuracy.
+
+---
+
+### Scenario 15: Integration with Existing Test Suite
+
+**Goal:** Add observe-generated tests to existing pytest project.
+
+**Steps:**
+
+```bash
+# 1. Detect existing project structure
+observe framework detect --path ./existing-tests/
+
+# Output:
+# Framework: pytest
+# Test files: 45
+# Page Objects: Yes (Page Object Model)
+# BDD: No
+# API tests: 12
+# UI tests: 33
+
+# 2. Generate compatible tests
+observe generate all \
+  --model app-model.json \
+  --output ./existing-tests/ \
+  --integrate \
+  --match-style
+
+# 3. Merge fixtures
+observe framework merge-fixtures \
+  --source generated-tests/conftest.py \
+  --target existing-tests/conftest.py
+
+# 4. Run combined suite
+pytest existing-tests/ generated-tests/ -v
+
+# 5. Update CI configuration
+observe ci init \
+  --provider github \
+  --existing-workflow .github/workflows/tests.yml \
+  --append
+```
+
+**Result:** Seamless integration with existing tests.
+
+---
+
+### Scenario 16: Debugging Failed Tests
+
+**Goal:** Investigate why tests fail.
+
+**Steps:**
+
+```bash
+# 1. Run test with detailed output
+pytest tests/test_login.py -vv --capture=no --tb=long
+
+# 2. Capture screenshot on failure
+pytest tests/test_login.py \
+  --screenshot-on-failure \
+  --screenshot-dir=./failures/
+
+# 3. Save page source on failure
+pytest tests/test_login.py \
+  --page-source-on-failure \
+  --page-source-dir=./failures/
+
+# 4. Record video of test execution
+observe execute record \
+  --test tests/test_login.py \
+  --output-video login-test.mp4
+
+# 5. Analyze failure with healing
+observe heal analyze \
+  --test-results junit.xml \
+  --screenshots ./failures/ \
+  --page-source ./failures/ \
+  --detailed-report
+
+# 6. Get AI suggestions
+observe heal suggest \
+  --failure "NoSuchElementException: login_button" \
+  --page-source ./failures/page.xml \
+  --confidence-threshold 0.8
+```
+
+---
+
+### Scenario 17: Load/Stress Testing
+
+**Goal:** Test app under heavy load.
+
+**Steps:**
+
+```bash
+# 1. Define load scenario
+cat > load-scenario.yml <<EOF
+scenarios:
+  - name: concurrent-logins
+    users: 100
+    duration: 300s
+    ramp-up: 30s
+    actions:
+      - login
+      - view-dashboard
+      - logout
+
+  - name: heavy-transfers
+    users: 50
+    duration: 600s
+    actions:
+      - login
+      - create-transfer (repeat: 10)
+      - logout
+EOF
+
+# 2. Run load test
+observe execute load \
+  --scenario load-scenario.yml \
+  --devices 10 \
+  --output load-results.json
+
+# 3. Analyze results
+observe analyze load \
+  --results load-results.json \
+  --metrics response-time,error-rate,throughput \
+  --output load-report.html
+
+# 4. Compare with baseline
+observe analyze load compare \
+  --baseline baseline-load.json \
+  --current load-results.json \
+  --threshold 20%
+```
+
+---
+
+### Scenario 18: Monitoring Dashboard Usage
+
+**Goal:** Track test health over time.
+
+**Steps:**
+
+```bash
+# 1. Run tests and import results daily
+# In cron job or CI:
+pytest tests/ --junit-xml=results-$(date +%Y%m%d).xml
+observe dashboard import --junit-xml results-$(date +%Y%m%d).xml
+
+# 2. Start dashboard
+observe dashboard --port 8080
+
+# 3. View trends:
+#    - Go to http://localhost:8080
+#    - "Test Health" tab
+#    - Sort by "Trend" column
+#    - Identify degrading tests
+
+# 4. Export metrics for external monitoring
+observe dashboard export \
+  --format prometheus \
+  --output metrics.txt
+
+# 5. Set up alerts
+cat > alerts.yml <<EOF
+alerts:
+  - name: flaky-test-threshold
+    condition: flaky_tests_count > 5
+    action: email-team
+
+  - name: pass-rate-drop
+    condition: pass_rate < 0.85
+    action: slack-notification
+EOF
+
+observe dashboard alerts --config alerts.yml
+```
+
+---
+
+### Scenario 19: Accessibility Testing
+
+**Goal:** Verify app meets accessibility standards.
+
+**Steps:**
+
+```bash
+# 1. Run accessibility scan
+observe analyze accessibility \
+  --app com.yourapp \
+  --device emulator-5554 \
+  --screens login,dashboard,transfer \
+  --standards WCAG-2.1-AA \
+  --output accessibility-report.html
+
+# 2. Check specific issues
+observe analyze accessibility \
+  --app com.yourapp \
+  --checks \
+    contrast-ratio,\
+    touch-target-size,\
+    text-scaling,\
+    screen-reader-support
+
+# 3. Generate compliance report
+observe analyze accessibility \
+  --app com.yourapp \
+  --compliance ADA \
+  --output ada-compliance.pdf
+
+# 4. Fix detected issues and re-test
+observe analyze accessibility \
+  --app com.yourapp \
+  --baseline accessibility-baseline.json \
+  --show-improvements
+```
+
+---
+
+### Scenario 20: Continuous Test Generation
+
+**Goal:** Automatically update tests as app evolves.
+
+**Setup recurring job:**
+
+```bash
+#!/bin/bash
+# update-tests.sh - Run weekly
+
+# 1. Record latest app version
+observe record-session \
+  --app com.yourapp.observe \
+  --device emulator-5554 \
+  --scenario automated-walkthrough \
+  --output session-$(date +%Y%m%d).json
+
+# 2. Import session
+observe import \
+  --session-file session-$(date +%Y%m%d).json \
+  --session-id weekly-$(date +%Y%m%d) \
+  --platform android
+
+# 3. Build updated model
+observe model build \
+  --session weekly-$(date +%Y%m%d) \
+  --merge-with current-model.json \
+  --output updated-model.json
+
+# 4. Detect changes
+observe model diff \
+  --old current-model.json \
+  --new updated-model.json \
+  --output changes.json
+
+# 5. Generate tests for new/changed screens only
+observe generate incremental \
+  --model updated-model.json \
+  --changes changes.json \
+  --output tests/
+
+# 6. Run new tests
+pytest tests/ --new-tests-only -v
+
+# 7. Commit if successful
+if [ $? -eq 0 ]; then
+  git add tests/
+  git commit -m "Auto-update: Generated tests for $(date +%Y-%m-%d)"
+  git push origin auto-tests-$(date +%Y%m%d)
+fi
+```
+
+**Schedule in cron:**
+```bash
+# Run every Sunday at 2 AM
+0 2 * * 0 /path/to/update-tests.sh
+```
+
+---
+
+## Summary of All Scenarios
+
+| # | Scenario | Primary Commands | Use Case |
+|---|----------|------------------|----------|
+| 1 | First-Time Setup | `init`, `import`, `model build`, `generate` | New project |
+| 2 | New Feature | `import`, `model build --merge`, `generate` | Incremental |
+| 3 | Cross-Platform | `model build --cross-platform` | Android + iOS |
+| 4 | API-First | `generate api --full-coverage` | Fast tests |
+| 5 | Flaky Tests | `dashboard`, `analyze` | Quality |
+| 6 | Auto-Healing CI | `heal auto --commit` | Maintenance |
+| 7 | Performance | `analyze performance` | Regression |
+| 8 | Security | `analyze security` | Audit |
+| 9 | Visual Regression | `analyze visual` | UI changes |
+| 10 | Multi-Device | `devices pool`, `execute parallel` | Scale |
+| 11 | Smart Selection | `select --since` | CI optimization |
+| 12 | Test Data | `data extract`, `data generate` | Data management |
+| 13 | WebView | `generate --webview-support` | Hybrid apps |
+| 14 | ML Training | `ml train`, `ml evaluate` | Accuracy |
+| 15 | Integration | `framework detect`, `integrate` | Existing tests |
+| 16 | Debugging | `heal suggest`, `execute record` | Troubleshooting |
+| 17 | Load Testing | `execute load` | Performance |
+| 18 | Dashboard | `dashboard`, `export` | Monitoring |
+| 19 | Accessibility | `analyze accessibility` | Compliance |
+| 20 | Continuous | `model build --merge`, `generate incremental` | Automation |
 
 ---
 
