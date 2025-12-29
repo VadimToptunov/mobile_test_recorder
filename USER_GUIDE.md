@@ -948,7 +948,7 @@ Open http://localhost:8080 and review:
 - ✅ Success rate
 
 **Actions:**
-- 👍 **Approve** - Keep the change, commit to main
+- 👍 **Approve** - Keep the change, commit to master
 - 👎 **Reject** - Revert to original, manual fix needed
 
 ### Step 5: Re-run Tests
@@ -1188,7 +1188,7 @@ observe ci init \
 ```yaml
 - name: Select impacted tests
   run: |
-    observe select --since origin/main --output tests.txt
+    observe select --since origin/master --output tests.txt
     pytest $(cat tests.txt)
 ```
 
