@@ -1,1133 +1,187 @@
 # Mobile Observe & Test Framework
 
-> **Intelligent Mobile Testing Platform** - Observe, Analyze, Automate
+> **Intelligent Mobile Testing Platform** - Transform user interactions into production-ready automated tests
 
-[![Python Version](https://img.shields.io/badge/python-3.13%2B-blue.svg)](https://www.python.org/downloads/)
-[![Android Support](https://img.shields.io/badge/android-native%20%7C%20compose-green.svg)](demo-app/android)
-[![iOS Support](https://img.shields.io/badge/ios-uikit%20%7C%20swiftui-blue.svg)](demo-app/ios)
-[![Cross-Platform](https://img.shields.io/badge/cross--platform-flutter%20%7C%20react%20native-purple.svg)](#universal-ml-model)
-[![Phase 6](https://img.shields.io/badge/development-phase%206%20complete-brightgreen.svg)](#roadmap)
+[![Python 3.13+](https://img.shields.io/badge/python-3.13%2B-blue.svg)](https://www.python.org/downloads/)
+[![Android](https://img.shields.io/badge/android-native%20%7C%20compose-green.svg)](demo-app/android)
+[![iOS](https://img.shields.io/badge/ios-uikit%20%7C%20swiftui-blue.svg)](demo-app/ios)
+[![Cross-Platform](https://img.shields.io/badge/cross--platform-flutter%20%7C%20react%20native-purple.svg)](#features)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ---
 
-## Table of Contents
+## What It Does
 
-- [Overview](#overview)
-- [Key Features](#key-features)
-- [Architecture](#architecture)
-- [Quick Start](#quick-start)
-- [Demo Applications](#demo-applications)
-- [CLI Reference](#cli-reference)
-- [Documentation](#documentation)
-- [Roadmap](#roadmap)
-- [Technology Stack](#technology-stack)
-
----
-
-## Overview
-
-Mobile Observe & Test Framework is a next-generation platform for automatic mobile test generation based on observing real user behavior. It bridges the gap between manual QA work and automated testing by intelligently converting user interactions into maintainable test code.
-
-### How It Works
+**Stop writing tests manually.** Let your QA team walk through the app once, and get production-ready automated tests automatically.
 
 ```
-┌─────────────┐      ┌──────────────┐      ┌─────────────┐      ┌──────────────┐
-│   OBSERVE   │  →   │   ANALYZE    │  →   │  CORRELATE  │  →   │   GENERATE   │
-│             │      │              │      │             │      │              │
-│ QA walks    │      │ Build App    │      │ Link UI →   │      │ Page Objects │
-│ through app │      │ Model from   │      │ API → Nav   │      │ API Clients  │
-│ in observe  │      │ events +     │      │ using ML &  │      │ BDD Scenarios│
-│ build       │      │ static code  │      │ heuristics  │      │ Test Scripts │
-└─────────────┘      └──────────────┘      └─────────────┘      └──────────────┘
+QA explores app  →  AI observes & learns  →  Tests generated  →  Self-healing when UI changes
 ```
 
-### What Makes It Different
+### The Problem
 
-| Traditional Approach | Our Framework |
-|---------------------|---------------|
-| Manual selector writing | Automatic robust selector generation with fallbacks |
-| UI-only tests (slow & flaky) | 80-90% API tests, 10-20% UI tests |
-| Manual API endpoint discovery | Automatic network traffic analysis |
-| Platform-specific tests | Cross-platform from single model |
-| Breaks on UI changes | Self-healing selectors with ML |
-| No flow understanding | Intelligent flow pattern recognition |
+- Writing mobile tests is **slow and tedious**
+- Tests break when **UI changes**
+- API endpoints are **hard to discover**
+- Selectors are **fragile**
+- Cross-platform testing requires **double the work**
+
+### The Solution
+
+- **Observe** real user behavior in special build
+- **Extract** screens, elements, APIs, flows automatically
+- **Generate** Page Objects, API clients, BDD scenarios
+- **Self-heal** when selectors break
+- **Cross-platform** tests from single model
 
 ---
 
 ## Key Features
 
-### Core Capabilities
+### 🎯 Smart Test Generation
+- **API-first approach** - 80% API tests, 20% UI tests
+- **Robust selectors** - ID → XPath → CSS → Text fallbacks
+- **BDD scenarios** - Human-readable Gherkin features
+- **Page Objects** - Maintainable test structure
+- **Cross-platform** - One model, tests for Android & iOS
 
-<table>
-<tr>
-<td width="50%">
+### 🔧 Self-Healing Tests
+- **Automatic repair** - Broken selectors fixed by ML
+- **Confidence scoring** - Only high-quality fixes applied
+- **Interactive dashboard** - Review and approve changes
+- **Git integration** - All fixes tracked in version control
 
-**Observation & Recording**
-- Non-invasive SDK for Android & iOS
-- Captures UI events, navigation, network calls
-- WebView interaction support
-- Zero impact on production builds
-- Real device & emulator support
+### 🚀 Enterprise Ready
+- **CI/CD integration** - GitHub Actions, GitLab CI
+- **Device management** - Emulators, real devices, BrowserStack
+- **Smart test selection** - Run only affected tests
+- **Parallel execution** - Intelligent sharding
+- **Rich reporting** - HTML, Allure, JUnit
 
-</td>
-<td width="50%">
-
-**Intelligent Analysis**
-- Static code analysis (Kotlin, Swift)
-- Dynamic event correlation
-- ML-based element classification
-- Flow pattern recognition
-- API schema inference
-
-</td>
-</tr>
-<tr>
-<td width="50%">
-
-**Smart Test Generation**
-- Page Object pattern with robust selectors
-- API-first testing approach
-- pytest-bdd with Gherkin scenarios
-- Cross-platform test suites
-- Automatic test data extraction
-
-</td>
-<td width="50%">
-
-**Advanced Features**
-- Self-healing selectors with ML
-- Test maintenance dashboard
-- Visual regression testing
-- Universal ML model (no training needed)
-- Analytics dashboards
-- Traffic decryption for HTTPS
-
-</td>
-</tr>
-</table>
-
-### Universal ML Model
-
-The framework includes a **pre-trained universal element classifier** that works out-of-the-box with:
-
-- **Native Android** (View, Jetpack Compose, Material Design)
-- **Native iOS** (UIKit, SwiftUI)
-- **Flutter** (Dart, cross-platform)
-- **React Native** (JavaScript/TypeScript, cross-platform)
-
-**No app-specific training required** - just install and use.
-
-### Robust Selectors
-
-Generated selectors include:
-- Primary strategy (ID, accessibility ID, name)
-- 5-10 fallback strategies (XPath, CSS, text, class)
-- Stability scoring (HIGH/MEDIUM/LOW)
-- Automatic healing on failure
-- Platform-specific optimizations
-
-Example:
-```python
-LOGIN_BUTTON_SELECTOR = {
-    "android": "id:login_button",
-    "ios": "accessibility:loginButton",
-    "android_fallback": [
-        "xpath://android.widget.Button[@text='Login']",
-        "xpath://android.widget.Button[contains(@text,'Log')]",
-        "text:Login",
-        "class:androidx.compose.material3.Button"
-    ],
-    "ios_fallback": [
-        "xpath://XCUIElementTypeButton[@label='Login']",
-        "accessibility:submit_button",
-        "text:Login"
-    ],
-    "stability": "high"
-}
-```
-
----
-
-## Architecture
-
-### High-Level Architecture
-
-```
-┌───────────────────────────────────────────────────────────────────────────┐
-│                         CLI / Orchestrator                                │
-│                    (Python Click, Single Entry Point)                     │
-└───────────────────────────────────────────────────────────────────────────┘
-                                     │
-        ┌────────────────────────────┼────────────────────────────┐
-        │                            │                            │
-        ▼                            ▼                            ▼
-┌───────────────┐          ┌────────────────┐          ┌────────────────┐
-│    Static     │          │    Observe     │          │  Correlation   │
-│   Analyzer    │          │    Runtime     │          │     Engine     │
-│               │          │     (SDK)      │          │                │
-│ • Android     │          │                │          │ • UI → API     │
-│ • iOS         │          │ • Android SDK  │          │ • API → Nav    │
-│ • Tree-sitter │          │ • iOS SDK      │          │ • 5 strategies │
-│               │          │ • WebView      │          │ • ML scoring   │
-└───────────────┘          └────────────────┘          └────────────────┘
-        │                            │                            │
-        └────────────────────────────┼────────────────────────────┘
-                                     │
-                                     ▼
-                    ┌────────────────────────────┐
-                    │      App Model Core        │
-                    │                            │
-                    │ • Screens & Elements       │
-                    │ • Actions & Transitions    │
-                    │ • API Calls & Schemas      │
-                    │ • State Machine            │
-                    │ • Flows & Preconditions    │
-                    └────────────────────────────┘
-                                     │
-        ┌────────────────────────────┼────────────────────────────┐
-        │                            │                            │
-        ▼                            ▼                            ▼
-┌───────────────┐          ┌────────────────┐          ┌────────────────┐
-│  Generators   │          │   ML / AI      │          │   Analytics    │
-│               │          │                │          │                │
-│ • Page        │          │ • Classifier   │          │ • Dashboards   │
-│   Objects     │          │ • Healing      │          │ • Reports      │
-│ • API Clients │          │ • Visual Diff  │          │ • Metrics      │
-│ • BDD Tests   │          │ • Patterns     │          │ • Coverage     │
-└───────────────┘          └────────────────┘          └────────────────┘
-```
-
-### Component Overview
-
-| Component | Technology | Purpose |
-|-----------|-----------|---------|
-| **CLI** | Python Click | Single entry point for all operations |
-| **App Model** | Pydantic | Canonical representation of app structure |
-| **Event Store** | SQLite | Persistent storage for captured events |
-| **Static Analyzer** | tree-sitter | Parse source code without compilation |
-| **Observe SDK (Android)** | Kotlin | Capture UI/network events in Android apps |
-| **Observe SDK (iOS)** | Swift | Capture UI/network events in iOS apps |
-| **Correlation Engine** | Python | Link UI → API → Navigation intelligently |
-| **Generators** | Jinja2 | Templated code generation |
-| **ML Classifier** | scikit-learn | Element type prediction |
-| **Selector Builder** | Python | Multi-strategy robust selectors |
+### 🔒 Security & Performance
+- **Traffic decryption** - Capture encrypted API calls
+- **Security analysis** - OWASP Mobile Top 10 checks
+- **Performance profiling** - CPU, memory, FPS monitoring
+- **Visual regression** - Screenshot comparison
 
 ---
 
 ## Quick Start
 
-### Prerequisites
-
-```
-Required:
-  • Python 3.13+
-  • Android SDK (for Android demo)
-  • Xcode 14+ (for iOS demo)
-  • Java 17+ (for Android builds)
-
-Optional:
-  • Android Studio / IntelliJ IDEA
-  • Xcode
-  • ADB tools
-```
-
 ### Installation
 
 ```bash
-# 1. Clone or navigate to project
+# Clone repository
+git clone https://github.com/yourusername/mobile_test_recorder.git
 cd mobile_test_recorder
 
-# 2. Create virtual environment
-python3 -m venv .venv
+# Create virtual environment
+python3.13 -m venv .venv
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 
-# 3. Install dependencies
+# Install dependencies
 pip install -r requirements.txt
 
-# 4. Install CLI in editable mode
+# Install CLI
 pip install -e .
-
-# 5. Verify installation
-observe --help
-observe info
 ```
 
-### Build Demo Apps
-
-#### Android
+### Basic Workflow
 
 ```bash
-cd demo-app/android
+# 1. Record user session (run observe build on device)
+# QA walks through app features
 
-# Build observe variant (with SDK)
-./gradlew assembleObserveDebug
+# 2. Import events
+observe import --session-file /path/to/events.json --platform android
 
-# Build test variant (without SDK)
-./gradlew assembleTestDebug
+# 3. Build app model
+observe model build --session my-session --output ./app-model.json
 
-# Install on device/emulator
-./gradlew installObserveDebug
+# 4. Generate tests
+observe generate all --model ./app-model.json --output ./tests/
 
-# Check installed packages
-adb shell pm list packages | grep findemo
+# 5. Run tests
+pytest tests/
 ```
 
-#### iOS
+### Self-Healing Tests
 
 ```bash
-cd demo-app/ios
+# When tests fail due to UI changes:
+observe heal auto --test-results junit.xml --commit
 
-# Open in Xcode
-open FinDemo/FinDemo.xcodeproj
-
-# Select Observe scheme
-# Product → Scheme → Observe
-
-# Build and run (⌘R)
-# Or build from command line:
-xcodebuild -scheme Observe -configuration Debug -sdk iphonesimulator
+# Review changes in dashboard:
+observe dashboard
+# → http://localhost:8080
 ```
 
-### First Recording Session
+---
 
-```bash
-# 1. Initialize project
-observe init --platform android
+## Documentation
 
-# 2. Start mock backend (optional)
-cd demo-app/mock-backend
-pip install -r requirements.txt
-python main.py &
+- **[User Guide](USER_GUIDE.md)** - Complete step-by-step guide
+- **[Changelog](CHANGELOG.md)** - Version history and updates
+- **[Demo Apps](demo-app/README.md)** - Example Android & iOS applications
 
-# 3. Start recording
-observe record start --device emulator-5554 --package com.findemo.observe
+---
 
-# 4. Use the app
-#    - Complete onboarding
-#    - Login
-#    - Navigate through screens
-#    - Perform transactions
+## Architecture
 
-# 5. Stop recording
-observe record stop --device emulator-5554 --package com.findemo.observe
-
-# 6. Import events
-observe record import --input observe_events.json
-
-# 7. Correlate events
-observe record correlate --session <session-id>
-
-# 8. Build app model
-observe model build --session <session-id> --output app_model.json
-
-# 9. Generate tests
-observe generate pages --model app_model.json --output tests/pages/
-observe generate api --model app_model.json --output tests/api/
-observe generate features --model app_model.json --output tests/features/
+```
+┌─────────────┐      ┌──────────────┐      ┌─────────────┐      ┌──────────────┐
+│   OBSERVE   │  →   │   ANALYZE    │  →   │  CORRELATE  │  →   │   GENERATE   │
+│             │      │              │      │             │      │              │
+│ Record user │      │ Build model  │      │ Link UI +   │      │ Page Objects │
+│ interactions│      │ from events  │      │ API + flows │      │ + API clients│
+│ in observe  │      │ and static   │      │ using ML    │      │ + BDD tests  │
+│ build       │      │ code         │      │             │      │              │
+└─────────────┘      └──────────────┘      └─────────────┘      └──────────────┘
 ```
 
 ---
 
 ## Demo Applications
 
-Both Android and iOS demo apps implement a **production-grade fintech application** (inspired by Revolut/Wise) with comprehensive security features.
+Two production-grade fintech apps included:
 
-### Features Implemented
+- **Android** (Kotlin + Jetpack Compose) - [demo-app/android](demo-app/android)
+- **iOS** (Swift + SwiftUI) - [demo-app/ios](demo-app/ios)
 
-<table>
-<tr>
-<th>Feature</th>
-<th>Android</th>
-<th>iOS</th>
-<th>Description</th>
-</tr>
-<tr>
-<td>Onboarding</td>
-<td>✓</td>
-<td>✓</td>
-<td>Swipeable welcome screens</td>
-</tr>
-<tr>
-<td>Authentication</td>
-<td>✓</td>
-<td>✓</td>
-<td>Login with biometrics support</td>
-</tr>
-<tr>
-<td>KYC</td>
-<td>✓</td>
-<td>✓</td>
-<td>Document scanning (Regula SDK)</td>
-</tr>
-<tr>
-<td>Home Screen</td>
-<td>✓</td>
-<td>✓</td>
-<td>Balance, cards, quick actions</td>
-</tr>
-<tr>
-<td>Top-up</td>
-<td>✓</td>
-<td>✓</td>
-<td>Card payment via WebView</td>
-</tr>
-<tr>
-<td>Send Money</td>
-<td>✓</td>
-<td>✓</td>
-<td>P2P transfers</td>
-</tr>
-<tr>
-<td>Multi-currency</td>
-<td>✓</td>
-<td>✓</td>
-<td>20+ currencies, exchange</td>
-</tr>
-<tr>
-<td>Cards</td>
-<td>✓</td>
-<td>✓</td>
-<td>Virtual/physical card management</td>
-</tr>
-</table>
-
-### Security Features
-
-Both apps include **production-grade security**:
-
-- Certificate pinning (bypass-able in observe builds)
-- Root/jailbreak detection
-- Secure storage (Keystore/Keychain)
-- Biometric authentication
-- Code obfuscation (ProGuard/R8)
-- Traffic encryption with key export for testing
-
-See [Android Security Guide](demo-app/android/observe-sdk/SECURITY.md) for details on crypto key export and traffic decryption.
-
-### Build Variants
-
-| Variant | SDK Included | Purpose | Security |
-|---------|--------------|---------|----------|
-| **observe** | ✓ | Recording sessions | Bypassed |
-| **test** | ✗ | Automated tests | Minimal |
-| **production** | ✗ | Production release | Full |
-
-**Important:** The observe SDK is **completely isolated** from production builds using Gradle flavors (Android) and Xcode schemes (iOS).
+Features: Onboarding, Auth, Dashboard, Transfers, KYC, WebView payments
 
 ---
 
-## CLI Reference
+## Tech Stack
 
-### Main Commands
-
-```bash
-observe init          # Initialize project
-observe info          # Show project info
-observe analyze       # Static code analysis
-observe record        # Record user sessions
-observe model         # Manage app model
-observe generate      # Generate test code
-observe ml            # Machine learning features
-observe crypto        # Crypto key management (Android)
-```
-
-### Recording Workflow
-
-```bash
-# Start recording
-observe record start --device <device-id> --package <package-name>
-
-# Stop recording
-observe record stop --device <device-id> --package <package-name>
-
-# Import events
-observe record import --input <events.json>
-
-# List sessions
-observe record list
-
-# Show session details
-observe record show --session <session-id>
-
-# Correlate events
-observe record correlate --session <session-id>
-```
-
-### Model Management
-
-```bash
-# Build model from session
-observe model build --session <session-id> --output model.json
-
-# Build with ML classifier
-observe model build --session <session-id> --use-ml --output model.json
-
-# Validate model
-observe model validate --model model.json
-
-# Show model diff
-observe model diff --model1 old.json --model2 new.json
-
-# Analyze selectors
-observe model analyze-selectors --model model.json
-```
-
-### Code Generation
-
-```bash
-# Generate Page Objects
-observe generate pages --model model.json --output tests/pages/
-
-# Generate API clients
-observe generate api --model model.json --output tests/api/
-
-# Generate BDD features
-observe generate features --model model.json --output tests/features/
-```
-
-### ML Features
-
-```bash
-# Create universal model (no training data needed)
-observe ml create-universal-model --output ml_models/universal.pkl
-
-# Analyze flow patterns
-observe ml analyze-patterns --session <session-id>
-
-# Heal broken selectors
-observe ml heal-selectors --page-object tests/pages/login.py
-
-# Visual diff
-observe ml visual-diff --screenshot1 before.png --screenshot2 after.png
-
-# Generate analytics report
-observe ml report --model model.json --output report.html
-
-# Show fallback statistics
-observe ml fallback-stats --page-object tests/pages/
-```
-
-### Static Analysis
-
-```bash
-# Analyze Android project
-observe analyze android --source demo-app/android --output analysis.json
-
-# Analyze iOS project
-observe analyze ios --source demo-app/ios --output analysis.json
-```
-
-### Crypto Key Management (Android)
-
-```bash
-# Pull all crypto keys from device
-observe crypto pull --device <device-id> --package <package-name>
-
-# Show key statistics
-observe crypto show --device <device-id> --package <package-name>
-
-# Export keys for Wireshark
-observe crypto export --input crypto_keys.json --format nss-keylog
-```
-
-For detailed usage, see [USAGE_GUIDE.md](USAGE_GUIDE.md).
+| Component | Technology |
+|-----------|-----------|
+| **CLI** | Python 3.13, Click |
+| **Test Framework** | pytest, pytest-bdd, Appium 3 |
+| **ML** | scikit-learn, NumPy, Pandas |
+| **Static Analysis** | tree-sitter (Kotlin, Swift) |
+| **Mobile SDKs** | Kotlin, Swift |
+| **Dashboard** | FastAPI, Alpine.js |
+| **CI/CD** | GitHub Actions, GitLab CI |
 
 ---
 
-## Documentation
-
-### Core Documentation
-
-| Document | Description |
-|----------|-------------|
-| [RFC Specification](mobile_observe_test_framework_RFC.md) | Complete technical specification |
-| [Usage Guide](USAGE_GUIDE.md) | Step-by-step workflows and examples |
-
-### Demo Application
-
-| Document | Description |
-|----------|-------------|
-| [Demo App Overview](demo-app/README.md) | Features and setup guide |
-| [KYC Integration](demo-app/android/KYC_INTEGRATION.md) | Regula SDK integration details |
-| [Mock Backend API](demo-app/mock-backend/README.md) | API endpoints and mock data |
-| [XPath Test Elements](demo-app/XPATH_TEST_ELEMENTS.md) | Elements without IDs for XPath testing |
-
-### SDK Documentation
-
-| Document | Description |
-|----------|-------------|
-| [Android SDK Security](demo-app/android/observe-sdk/SECURITY.md) | Crypto keys & traffic decryption |
-| [iOS SDK Guide](demo-app/ios/ObserveSDK/README.md) | iOS SDK integration guide |
-
-### Technical References
-
-| Document | Description |
-|----------|-------------|
-| [Element Selectors Guide](docs/ELEMENT_SELECTORS_COMPREHENSIVE.md) | All selector types (Android/iOS/Flutter/RN) |
-| [Enhanced Selectors](docs/ENHANCED_SELECTORS.md) | Multi-strategy selector generation |
-| [Universal ML Model](docs/UNIVERSAL_ML_MODEL.md) | Pre-trained element classifier |
-
----
-
-## Roadmap
-
-### Phase 1: MVP (6-8 weeks) - ✓ 100% COMPLETE
-
-**Core Infrastructure & Android Foundation**
-
-<details>
-<summary>View Phase 1 Deliverables</summary>
-
-- [x] Project structure & setup
-- [x] Python 3.13+ virtual environment
-- [x] CLI framework (Click)
-- [x] App Model Core (Pydantic schemas)
-- [x] Demo Android App (Jetpack Compose)
-  - [x] Onboarding screens (swipeable)
-  - [x] Login with validation
-  - [x] KYC with Regula SDK
-  - [x] Home screen with balance
-  - [x] Top-up flow with WebView
-  - [x] Send Money multi-step flow
-  - [x] Full navigation graph
-- [x] Mock Backend API (FastAPI)
-  - [x] Authentication endpoints
-  - [x] Account management
-  - [x] Transaction APIs
-- [x] Android Observe SDK
-  - [x] UIObserver (tap, swipe, input)
-  - [x] NavigationObserver (screen tracking)
-  - [x] NetworkObserver (OkHttp interceptor)
-  - [x] EventExporter (JSON files)
-  - [x] EventBus & session management
-- [x] Event Store (SQLite)
-  - [x] Schema & indexing
-  - [x] Import/export
-  - [x] Query API with filters
-  - [x] Session tracking
-- [x] Code Generators
-  - [x] Page Object generator
-  - [x] API client generator
-  - [x] pytest-bdd generator
-  - [x] Jinja2 templates
-  - [x] CLI integration
-
-**Lines of Code:** ~15,000  
-**Duration:** 8 weeks
-
-</details>
-
-### Phase 2: Production Ready (4-6 weeks) - ✓ 100% COMPLETE
-
-**Event Correlation & Model Building**
-
-<details>
-<summary>View Phase 2 Deliverables</summary>
-
-- [x] Event Correlation Engine
-  - [x] UI → API correlation (5 strategies)
-  - [x] API → Navigation correlation
-  - [x] Full flow generation
-  - [x] Confidence scoring
-  - [x] CLI: `observe record correlate`
-- [x] Automatic Model Builder
-  - [x] Generate AppModel from events
-  - [x] Screen inference from navigation
-  - [x] Element extraction from hierarchy
-  - [x] API schema building
-  - [x] Flow generation
-  - [x] State machine construction
-  - [x] CLI: `observe model build`
-- [x] HierarchyCollector
-  - [x] Full UI hierarchy capture
-  - [x] Android View + Compose support
-  - [x] Element attribute extraction
-  - [x] Parent-child relationships
-- [x] Android Static Analyzer
-  - [x] Kotlin/Gradle parsing (tree-sitter)
-  - [x] Compose UI detection
-  - [x] Navigation routes extraction
-  - [x] Retrofit API discovery
-  - [x] Test tag extraction
-  - [x] CLI: `observe analyze android`
-- [x] Advanced Selector Strategies
-  - [x] Stability scoring (HIGH/MEDIUM/LOW)
-  - [x] Intelligent selector builder
-  - [x] Selector optimizer
-  - [x] Fallback chain generation (5-10 fallbacks)
-  - [x] Duplicate detection
-  - [x] CLI: `observe model analyze-selectors`
-- [x] Documentation
-  - [x] Complete usage guide
-  - [x] Workflow examples
-  - [x] Best practices
-
-**Lines of Code:** ~12,000  
-**Duration:** 6 weeks
-
-</details>
-
-### Phase 3: iOS Support (6-8 weeks) - ✓ 100% COMPLETE
-
-**Full Cross-Platform Capability**
-
-<details>
-<summary>View Phase 3 Deliverables</summary>
-
-- [x] iOS Demo App (SwiftUI)
-  - [x] Onboarding with TabView
-  - [x] Login screen
-  - [x] KYC screen (mock scanning)
-  - [x] Home with balance
-  - [x] Top-up with WKWebView
-  - [x] Send Money flow
-  - [x] Full accessibility identifiers
-- [x] iOS Observe SDK (Swift)
-  - [x] UIObserver (UIKit + SwiftUI)
-  - [x] NavigationObserver
-  - [x] NetworkObserver (URLProtocol)
-  - [x] HierarchyCollector (UIView traversal)
-  - [x] EventExporter (JSON)
-  - [x] Combine-based EventBus
-- [x] iOS Static Analyzer
-  - [x] Swift/SwiftUI parsing
-  - [x] View hierarchy analysis
-  - [x] Accessibility identifier extraction
-  - [x] Navigation route discovery
-  - [x] URLSession API detection
-  - [x] CLI: `observe analyze ios`
-- [x] Cross-Platform Generators
-  - [x] Page Objects (Android + iOS selectors)
-  - [x] API clients (platform-agnostic)
-  - [x] BDD features (unified Gherkin)
-  - [x] Platform detection in code
-- [x] Production-Grade Security
-  - [x] Certificate pinning (Android + iOS)
-  - [x] Root/jailbreak detection
-  - [x] Secure storage (Keystore/Keychain)
-  - [x] Biometric authentication
-  - [x] Code obfuscation
-  - [x] Traffic encryption
-  - [x] Crypto key export for testing
-  - [x] Traffic decryption utility
-
-**Lines of Code:** ~18,000  
-**Duration:** 8 weeks  
-**Feature Parity:** 100% (Android ↔ iOS)
-
-</details>
-
-### Phase 4: AI/ML & Advanced Features (8-10 weeks) - ✓ 100% COMPLETE
-
-**Intelligence & Automation**
-
-<details>
-<summary>View Phase 4 Deliverables</summary>
-
-- [x] Universal Pre-Trained ML Model
-  - [x] 2500+ synthetic training samples
-  - [x] Native Android support (View, Compose, Material Design)
-  - [x] Native iOS support (UIKit, SwiftUI)
-  - [x] Flutter support (Dart, widgets)
-  - [x] React Native support (JS/TS, components)
-  - [x] >85% accuracy across all platforms
-  - [x] No app-specific training required
-  - [x] One-command setup
-  - [x] CLI: `observe ml create-universal-model`
-- [x] ML-Based Element Classification
-  - [x] Element type prediction
-  - [x] Confidence-based fallback to rules
-  - [x] Integration into ModelBuilder
-  - [x] CLI: `observe model build --use-ml`
-- [x] Visual Element Detection
-  - [x] Screenshot capture & processing
-  - [x] Image similarity (SSIM, MSE, Histogram)
-  - [x] OCR integration (Tesseract)
-  - [x] Visual regression testing
-  - [x] Template matching (OpenCV)
-  - [x] CLI: `observe ml visual-diff`
-- [x] Smart Selector Healing
-  - [x] Broken selector detection
-  - [x] Alternative selector generation
-  - [x] Self-healing test scripts
-  - [x] 5 healing strategies with prioritization
-  - [x] Healing statistics tracking
-  - [x] Automatic model updates
-  - [x] CLI: `observe ml heal-selectors`
-- [x] Flow Pattern Recognition
-  - [x] Common flow detection
-  - [x] Critical path identification
-  - [x] Test scenario suggestions
-  - [x] Anomaly detection (dead ends, loops)
-  - [x] Sequential pattern mining
-  - [x] Automatic Gherkin generation
-  - [x] CLI: `observe ml analyze-patterns`
-- [x] Analytics Dashboard
-  - [x] Interactive HTML reports (Plotly)
-  - [x] Test execution metrics
-  - [x] Coverage analysis (screens, flows, APIs)
-  - [x] Selector stability reports
-  - [x] Visual charts & gauges
-  - [x] Trend analysis
-  - [x] CLI: `observe ml report`
-- [x] WebView Support
-  - [x] JavaScript injection for DOM observation
-  - [x] Enhanced selector generation (10+ strategies)
-  - [x] Page reload handling
-  - [x] Android WebView observer
-  - [x] iOS WKWebView observer
-  - [x] Non-invasive delegation pattern
-  - [x] Resource leak prevention
-
-**Lines of Code:** ~15,000  
-**Duration:** 10 weeks  
-**ML Model Size:** 2.1 MB  
-**Training Samples:** 2500
-
-</details>
-
-### Phase 5: Enterprise Integration & Deep Analysis (12-16 weeks) - ✓ 100% COMPLETE
-
-**Existing Project Integration, Multi-Environment, & Advanced Analysis**
-
-<details>
-<summary>View Phase 5 Deliverables</summary>
-
-- [x] **Project Integration** (`observe framework`)
-  - [x] Existing test project detector
-  - [x] Structure analysis (Page Objects, tests, fixtures)
-  - [x] Framework detection (pytest, unittest, Robot, behave)
-  - [x] Code style analyzer
-  - [x] Coverage analysis
-  - [x] Integration recommendations
-  - [x] Project initialization from templates
-
-- [x] **Device Management** (`observe devices`)
-  - [x] Unified device interface (Android + iOS)
-  - [x] Auto-detect connected devices (ADB, instruments)
-  - [x] Device pool system
-  - [x] Health checks & recovery
-  - [x] Load balancing for parallel execution
-  - [x] Multiple allocation strategies
-
-- [x] **Cloud Platform Integration**
-  - [x] BrowserStack API integration
-  - [x] Automatic session management
-  - [x] APK/IPA upload
-  - [x] Device listing and filtering
-
-- [x] **CI/CD Integration** (`observe ci`)
-  - [x] GitHub Actions workflow generator
-  - [x] GitLab CI pipeline generator
-  - [x] Basic and advanced workflows
-  - [x] Parallel execution support
-  - [x] Artifact management
-  - [x] Multi-platform support
-
-- [x] **Advanced Reporting** (`observe report`)
-  - [x] Beautiful HTML reports with modern UI
-  - [x] Allure JSON export
-  - [x] JUnit XML parsing
-  - [x] Multiple format support
-  - [x] Test statistics & analytics
-
-- [x] **Notification System**
-  - [x] Slack webhook integration
-  - [x] Microsoft Teams integration
-  - [x] Email notifications (SMTP)
-  - [x] Rich message formatting
-  - [x] Multi-channel support
-
-- [x] **Smart Test Selection**
-  - [x] Git diff-based change detection
-  - [x] Dependency tracking via AST
-  - [x] Impact level classification
-  - [x] Multiple selection strategies
-  - [x] Test impact analysis
-
-- [x] **Parallel Execution**
-  - [x] Intelligent test sharding (4 strategies)
-  - [x] Duration-based load balancing
-  - [x] Thread pool execution
-  - [x] Progress tracking
-  - [x] Speedup metrics
-
-- [x] **Comprehensive Analysis**
-  - [x] Security scanner (hardcoded secrets, weak crypto)
-  - [x] Performance profiler (CPU, memory, FPS)
-  - [x] Visual regression detection
-  - [x] Baseline management
-  - [x] CWE mapping for security issues
-
-</details>
-
-**Lines of Code:** ~8,400  
-**Duration:** 12 weeks  
-**Bugs Fixed:** 11 critical issues  
-**Duration:** ~12 weeks (3 months)
-
----
-
-### Phase 6: Future Enhancements
-
-**Planned Features**
-
-- [ ] CI/CD Integration
-  - [ ] Jenkins plugin
-  - [ ] GitHub Actions workflow
-  - [ ] GitLab CI templates
-- [ ] Test Management Integration
-  - [ ] TestRail sync
-  - [ ] Xray integration
-  - [ ] Allure reports
-- [ ] Web Support
-  - [ ] Selenium/Playwright integration
-  - [ ] Browser automation
-  - [ ] Responsive testing
-- [ ] Performance Testing
-  - [ ] Load time analysis
-  - [ ] Memory profiling
-  - [ ] Battery consumption
-- [ ] Advanced ML Models
-  - [ ] Deep learning for element detection
-  - [ ] NLP for test generation
-  - [ ] Anomaly detection in flows
-- [ ] Test Data Management
-  - [ ] Synthetic data generation
-  - [ ] Test data masking
-  - [ ] State restoration
-
----
-
-## Technology Stack
-
-### Framework (Python)
-
-| Component | Technology | Version |
-|-----------|-----------|---------|
-| **Language** | Python | 3.13+ |
-| **CLI** | Click | 8.x |
-| **Models** | Pydantic | 2.x |
-| **Templates** | Jinja2 | 3.x |
-| **Testing** | pytest, pytest-bdd | Latest |
-| **Automation** | Appium, Selenium | Latest |
-| **ML/AI** | scikit-learn, numpy, pandas | Latest |
-| **Image Processing** | Pillow, OpenCV, Tesseract | Latest |
-| **Visualization** | matplotlib, seaborn, plotly | Latest |
-| **Database** | SQLite, SQLAlchemy | Latest |
-| **HTTP** | requests, FastAPI | Latest |
-| **Parsing** | tree-sitter, lxml | Latest |
-
-### Android SDK (Kotlin)
-
-| Component | Technology | Version |
-|-----------|-----------|---------|
-| **Language** | Kotlin | 1.9+ |
-| **UI** | Jetpack Compose | 1.5+ |
-| **Navigation** | Compose Navigation | Latest |
-| **Networking** | OkHttp, Retrofit | Latest |
-| **Storage** | Room, SQLite | Latest |
-| **Coroutines** | Kotlin Coroutines | 1.7+ |
-| **Security** | Android Keystore, Biometric | Latest |
-| **KYC** | Regula Document Reader | Latest |
-| **Build** | Gradle | 8.x |
-
-### iOS SDK (Swift)
-
-| Component | Technology | Version |
-|-----------|-----------|---------|
-| **Language** | Swift | 5.9+ |
-| **UI** | SwiftUI, UIKit | iOS 16+ |
-| **Navigation** | NavigationStack | iOS 16+ |
-| **Networking** | URLSession, Alamofire | Latest |
-| **Storage** | CoreData, UserDefaults | Latest |
-| **Reactive** | Combine | Latest |
-| **Security** | Keychain, LocalAuthentication | Latest |
-| **Build** | Xcode | 14+ |
-
-### Demo Backend
-
-| Component | Technology | Version |
-|-----------|-----------|---------|
-| **Framework** | FastAPI | Latest |
-| **Server** | Uvicorn | Latest |
-| **Validation** | Pydantic | 2.x |
-
----
-
-## Project Structure
-
-```
-mobile_test_recorder/
-├── demo-app/                          # Demo Applications
-│   ├── android/                       # Android Fintech App
-│   │   ├── app/                       # Main application module
-│   │   │   ├── src/
-│   │   │   │   ├── main/              # Shared code
-│   │   │   │   ├── observe/           # Observe build variant
-│   │   │   │   ├── test/              # Test build variant
-│   │   │   │   └── production/        # Production build variant
-│   │   │   └── build.gradle.kts
-│   │   ├── observe-sdk/               # Android Observe SDK
-│   │   │   └── src/main/java/com/observe/sdk/
-│   │   │       ├── ObserveSDK.kt      # Main SDK entry point
-│   │   │       ├── core/              # Configuration & session
-│   │   │       ├── events/            # Event definitions
-│   │   │       ├── observers/         # UI, Network, Navigation observers
-│   │   │       ├── export/            # Event exporter
-│   │   │       └── security/          # Crypto & security features
-│   │   ├── KYC_INTEGRATION.md
-│   │   └── README.md
-│   ├── ios/                           # iOS Fintech App
-│   │   ├── FinDemo/                   # Main Xcode project
-│   │   │   ├── FinDemo.xcodeproj
-│   │   │   └── FinDemo/               # Source code
-│   │   │       ├── Views/             # SwiftUI views
-│   │   │       ├── Models/            # Data models
-│   │   │       └── Assets.xcassets
-│   │   └── ObserveSDK/                # iOS Observe SDK
-│   │       ├── ObserveSDK.swift       # Main SDK entry point
-│   │       ├── Core/                  # Configuration & session
-│   │       ├── Events/                # Event definitions
-│   │       ├── Observers/             # UI, Network, Navigation observers
-│   │       └── Export/                # Event exporter
-│   ├── mock-backend/                  # FastAPI Mock Server
-│   │   ├── main.py                    # API implementation
-│   │   ├── requirements.txt
-│   │   └── README.md
-│   ├── README.md                      # Demo app overview
-│   └── XPATH_TEST_ELEMENTS.md         # Test elements without IDs
-│
-├── framework/                         # Core Framework (Python)
-│   ├── cli/                           # Command-line interface
-│   │   └── main.py                    # CLI entry point (Click)
-│   ├── model/                         # App Model Core
-│   │   └── app_model.py               # Pydantic schemas
-│   ├── storage/                       # Event persistence
-│   │   └── event_store.py             # SQLite storage
-│   ├── analyzers/                     # Static code analysis
-│   │   ├── android_analyzer.py        # Android/Kotlin parser
-│   │   └── ios_analyzer.py            # iOS/Swift parser
-│   ├── correlation/                   # Event correlation
-│   │   ├── correlator.py              # Main engine
-│   │   ├── strategies.py              # Correlation strategies
-│   │   └── types.py                   # Result types
-│   ├── model_builder/                 # Automatic model building
-│   │   └── builder.py                 # Build AppModel from events
-│   ├── generators/                    # Code generation
-│   │   ├── page_object_gen.py         # Page Object generator
-│   │   ├── api_client_gen.py          # API client generator
-│   │   └── bdd_gen.py                 # BDD feature generator
-│   ├── selectors/                     # Selector strategies
-│   │   ├── selector_builder.py        # Multi-strategy builder
-│   │   ├── selector_scorer.py         # Stability scoring
-│   │   └── selector_optimizer.py      # Optimization & deduplication
-│   ├── ml/                            # Machine Learning features
-│   │   ├── element_classifier.py      # ML element classifier
-│   │   ├── universal_model.py         # Universal pre-trained model
-│   │   ├── selector_healer.py         # Self-healing selectors
-│   │   ├── visual_detector.py         # Visual element detection
-│   │   ├── pattern_analyzer.py        # Flow pattern recognition
-│   │   ├── analytics_dashboard.py     # Interactive reports
-│   │   └── training_data_generator.py # Synthetic training data
-│   ├── healing/                       # Self-healing test system
-│   │   ├── failure_analyzer.py        # Detect broken selectors
-│   │   ├── selector_discovery.py      # Find alternative selectors
-│   │   ├── element_matcher.py         # ML-based matching
-│   │   ├── file_updater.py            # Update Page Objects
-│   │   ├── git_integration.py         # Version control
-│   │   └── orchestrator.py            # Workflow coordination
-│   ├── dashboard/                     # Test maintenance dashboard
-│   │   ├── models.py                  # Data structures
-│   │   ├── database.py                # SQLite storage
-│   │   └── server.py                  # FastAPI + Alpine.js UI
-│   ├── devices/                       # Device management
-│   │   ├── device_manager.py          # Unified device interface
-│   │   ├── device_pool.py             # Device pooling
-│   │   └── browserstack.py            # BrowserStack integration
-│   ├── integration/                   # Framework integration
-│   │   ├── project_detector.py        # Detect existing projects
-│   │   └── project_templates.py       # New project templates
-│   ├── ci/                            # CI/CD integration
-│   │   ├── github_actions.py          # GitHub Actions generator
-│   │   └── gitlab_ci.py               # GitLab CI generator
-│   ├── reporting/                     # Test reporting
-│   │   ├── unified_reporter.py        # Multi-format reports
-│   │   ├── junit_parser.py            # JUnit XML parser
-│   │   └── allure_generator.py        # Allure JSON generator
-│   ├── notifications/                 # Notification system
-│   │   └── notifiers.py               # Slack, Teams, Email
-│   ├── selection/                     # Smart test selection
-│   │   ├── change_analyzer.py         # Git diff analysis
-│   │   └── test_selector.py           # Test selection logic
-│   ├── execution/                     # Test execution
-│   │   ├── test_sharding.py           # Intelligent sharding
-│   │   └── parallel_executor.py       # Parallel execution
-│   ├── analysis/                      # Advanced analysis
-│   │   ├── security_analyzer.py       # Security checks
-│   │   ├── performance_analyzer.py    # Performance profiling
-│   │   └── visual_analyzer.py         # Visual regression
-│   └── security/                      # Security & crypto
-│       └── traffic_decryptor.py       # Decrypt captured traffic
-│
-├── ml_models/                         # Machine Learning Models
-│   ├── universal_element_classifier.pkl   # Pre-trained universal model
-│   └── training_metadata.json         # Model metadata
-│
-├── docs/                              # Documentation
-│   ├── ELEMENT_SELECTORS_COMPREHENSIVE.md   # Selector reference
-│   ├── ENHANCED_SELECTORS.md          # Multi-strategy selectors
-│   └── UNIVERSAL_ML_MODEL.md          # ML model documentation
-│
-├── tests/                             # Generated Tests (Example)
-│   ├── pages/                         # Page Objects
-│   ├── api/                           # API clients
-│   └── features/                      # BDD features
-│
-├── .venv/                             # Python virtual environment
-├── requirements.txt                   # Python dependencies
-├── pyproject.toml                     # Python project config
-├── README.md                          # This file
-├── USAGE_GUIDE.md                     # Complete usage guide
-└── mobile_observe_test_framework_RFC.md   # Technical specification
-```
-
-**Total Lines of Code:** ~63,000  
-**Languages:** Python, Kotlin, Swift, HTML/CSS/JS  
-**Platforms:** Android, iOS, CLI, Web Dashboard
-
----
-
-## Contributing
-
-This is currently a private project. For contribution guidelines or access requests, please contact the maintainer.
+## Project Stats
+
+| Metric | Value |
+|--------|-------|
+| **Total Code** | ~63,000 lines |
+| **Languages** | Python, Kotlin, Swift, HTML/JS |
+| **Phases Complete** | 6 of 6 |
+| **CLI Commands** | 30+ |
+| **Platforms** | Android, iOS, Web Dashboard |
+| **Status** | ✅ Production Ready |
 
 ---
 
 ## License
 
-MIT License
-
-Copyright (c) 2025 Vadim Toptunov
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+MIT License - see [LICENSE](LICENSE) file for details.
 
 ---
 
@@ -1139,21 +193,10 @@ SOFTWARE.
 
 ---
 
-## Acknowledgments
+## Contributing
 
-- Inspired by real-world testing challenges in fintech
-- Designed to handle legacy code and complex UI scenarios
-- Built with modern technologies: Jetpack Compose, SwiftUI, Python 3.13
-- Special thanks to the open-source community for excellent libraries
+Contributions are welcome! Please read the [User Guide](USER_GUIDE.md) first.
 
 ---
 
-## Support & Contact
-
-For questions, bug reports, or feature requests, please contact the maintainer.
-
----
-
-**Last Updated:** January 2025  
-**Current Phase:** Phase 6 Complete  
-**Status:** Production Ready
+**Ready to transform your mobile testing?** Check out the [User Guide](USER_GUIDE.md) to get started. 🚀
