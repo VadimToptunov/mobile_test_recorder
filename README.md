@@ -6,7 +6,7 @@
 [![Android Support](https://img.shields.io/badge/android-native%20%7C%20compose-green.svg)](demo-app/android)
 [![iOS Support](https://img.shields.io/badge/ios-uikit%20%7C%20swiftui-blue.svg)](demo-app/ios)
 [![Cross-Platform](https://img.shields.io/badge/cross--platform-flutter%20%7C%20react%20native-purple.svg)](#universal-ml-model)
-[![Phase 5](https://img.shields.io/badge/development-phase%205%20complete-brightgreen.svg)](#roadmap)
+[![Phase 6](https://img.shields.io/badge/development-phase%206%20complete-brightgreen.svg)](#roadmap)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ---
@@ -96,7 +96,8 @@ Mobile Observe & Test Framework is a next-generation platform for automatic mobi
 <td width="50%">
 
 **Advanced Features**
-- Self-healing selectors
+- Self-healing selectors with ML
+- Test maintenance dashboard
 - Visual regression testing
 - Universal ML model (no training needed)
 - Analytics dashboards
@@ -1030,6 +1031,43 @@ mobile_test_recorder/
 │   │   ├── pattern_analyzer.py        # Flow pattern recognition
 │   │   ├── analytics_dashboard.py     # Interactive reports
 │   │   └── training_data_generator.py # Synthetic training data
+│   ├── healing/                       # Self-healing test system
+│   │   ├── failure_analyzer.py        # Detect broken selectors
+│   │   ├── selector_discovery.py      # Find alternative selectors
+│   │   ├── element_matcher.py         # ML-based matching
+│   │   ├── file_updater.py            # Update Page Objects
+│   │   ├── git_integration.py         # Version control
+│   │   └── orchestrator.py            # Workflow coordination
+│   ├── dashboard/                     # Test maintenance dashboard
+│   │   ├── models.py                  # Data structures
+│   │   ├── database.py                # SQLite storage
+│   │   └── server.py                  # FastAPI + Alpine.js UI
+│   ├── devices/                       # Device management
+│   │   ├── device_manager.py          # Unified device interface
+│   │   ├── device_pool.py             # Device pooling
+│   │   └── browserstack.py            # BrowserStack integration
+│   ├── integration/                   # Framework integration
+│   │   ├── project_detector.py        # Detect existing projects
+│   │   └── project_templates.py       # New project templates
+│   ├── ci/                            # CI/CD integration
+│   │   ├── github_actions.py          # GitHub Actions generator
+│   │   └── gitlab_ci.py               # GitLab CI generator
+│   ├── reporting/                     # Test reporting
+│   │   ├── unified_reporter.py        # Multi-format reports
+│   │   ├── junit_parser.py            # JUnit XML parser
+│   │   └── allure_generator.py        # Allure JSON generator
+│   ├── notifications/                 # Notification system
+│   │   └── notifiers.py               # Slack, Teams, Email
+│   ├── selection/                     # Smart test selection
+│   │   ├── change_analyzer.py         # Git diff analysis
+│   │   └── test_selector.py           # Test selection logic
+│   ├── execution/                     # Test execution
+│   │   ├── test_sharding.py           # Intelligent sharding
+│   │   └── parallel_executor.py       # Parallel execution
+│   ├── analysis/                      # Advanced analysis
+│   │   ├── security_analyzer.py       # Security checks
+│   │   ├── performance_analyzer.py    # Performance profiling
+│   │   └── visual_analyzer.py         # Visual regression
 │   └── security/                      # Security & crypto
 │       └── traffic_decryptor.py       # Decrypt captured traffic
 │
@@ -1055,9 +1093,9 @@ mobile_test_recorder/
 └── mobile_observe_test_framework_RFC.md   # Technical specification
 ```
 
-**Total Lines of Code:** ~60,000  
-**Languages:** Python, Kotlin, Swift  
-**Platforms:** Android, iOS, CLI
+**Total Lines of Code:** ~63,000  
+**Languages:** Python, Kotlin, Swift, HTML/CSS/JS  
+**Platforms:** Android, iOS, CLI, Web Dashboard
 
 ---
 
@@ -1116,6 +1154,6 @@ For questions, bug reports, or feature requests, please contact the maintainer.
 
 ---
 
-**Last Updated:** December 2025  
-**Current Phase:** Phase 4 Complete  
+**Last Updated:** January 2025  
+**Current Phase:** Phase 6 Complete  
 **Status:** Production Ready
