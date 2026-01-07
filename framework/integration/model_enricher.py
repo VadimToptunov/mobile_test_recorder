@@ -98,6 +98,8 @@ class ModelEnricher:
                         )
                         self.result.elements_added += 1
                         elements_added_to_screen += 1
+                        # Update the set to prevent duplicates from analysis data
+                        existing_elem_ids.add(elem_id)
 
                 # Only increment if we actually added elements to this screen
                 if elements_added_to_screen > 0:
