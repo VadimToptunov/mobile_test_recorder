@@ -10,6 +10,7 @@ This module extends mobile-observe-test-framework with:
 
 from pathlib import Path
 from typing import Dict, List, Optional, Set
+from copy import deepcopy
 import yaml
 import json
 from pydantic import BaseModel
@@ -51,9 +52,9 @@ class ModelEnricher:
             analysis_result: Static analysis results
 
         Returns:
-            Enriched model
+            Enriched model (deep copy, original unchanged)
         """
-        enriched = existing_model.copy()
+        enriched = deepcopy(existing_model)
 
         # Enrich screens
         enriched = self._enrich_screens(enriched, analysis_result)
@@ -81,6 +82,7 @@ class ModelEnricher:
 
                 # Add new elements
                 existing_elem_ids = {e["id"] for e in screen.get("elements", [])}
+                elements_added_to_screen = 0
 
                 for elem in screen_data.get("ui_elements", []):
                     elem_id = elem.get("id")
@@ -95,8 +97,11 @@ class ModelEnricher:
                             }
                         )
                         self.result.elements_added += 1
+                        elements_added_to_screen += 1
 
-                self.result.screens_enriched += 1
+                # Only increment if we actually added elements to this screen
+                if elements_added_to_screen > 0:
+                    self.result.screens_enriched += 1
             else:
                 # Optionally add new screen
                 if not self.preserve_existing:
