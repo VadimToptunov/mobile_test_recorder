@@ -284,18 +284,24 @@ class ProjectIntegrator:
 
         return screens
 
-    def integrate(self, analysis_results: Dict, output_path: Optional[Path] = None) -> EnrichmentResult:
+    def integrate(
+        self,
+        analysis_results: Dict,
+        output_path: Optional[Path] = None,
+        preserve_existing: bool = True,
+    ) -> EnrichmentResult:
         """
         Perform full integration
 
         Args:
             analysis_results: Static analysis results
             output_path: Optional output path for enriched model
+            preserve_existing: Whether to preserve existing elements (default: True)
 
         Returns:
             Enrichment result
         """
-        enricher = ModelEnricher()
+        enricher = ModelEnricher(preserve_existing=preserve_existing)
 
         # Detect framework
         self.framework_type = self.detect_framework()
@@ -305,7 +311,7 @@ class ProjectIntegrator:
         page_objects = self.find_page_objects()
         print(f"Found {len(page_objects)} Page Object files")
 
-        # Extract existing model
+        # Extract existing model elements from Page Objects
         existing_elements = self.extract_elements_from_page_objects(page_objects)
 
         # Create or load App Model
@@ -314,7 +320,21 @@ class ProjectIntegrator:
             with open(model_path) as f:
                 existing_model = yaml.safe_load(f)
         else:
+            # Create new model with elements extracted from Page Objects
             existing_model = {"name": "Mobile App", "version": "1.0.0", "screens": []}
+
+            # Add screens from existing Page Objects if no model file exists
+            if existing_elements:
+                for screen_name, elements in existing_elements.items():
+                    existing_model["screens"].append(
+                        {
+                            "name": screen_name,
+                            "id": screen_name.lower(),
+                            "description": f"Extracted from existing Page Object",
+                            "elements": elements,
+                        }
+                    )
+                print(f"Extracted {len(existing_elements)} screens from Page Objects")
 
         # Enrich model
         enriched_model = enricher.enrich_model(existing_model, analysis_results)
@@ -324,7 +344,7 @@ class ProjectIntegrator:
             output_path = self.project_path / "config" / "app_model_enriched.yaml"
         else:
             output_path = Path(output_path)
-        
+
         output_path.parent.mkdir(parents=True, exist_ok=True)
         with open(output_path, "w") as f:
             yaml.dump(enriched_model, f, default_flow_style=False, sort_keys=False)
