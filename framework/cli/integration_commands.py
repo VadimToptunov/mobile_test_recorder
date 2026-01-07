@@ -52,7 +52,14 @@ def integrate(project_path: str, analysis: str, output: str, preserve_existing: 
     
     # Perform integration
     click.echo(f"\n🔄 Enriching App Model...")
-    result = integrator.integrate(analysis_data)
+    
+    # Determine output path
+    if output:
+        enriched_path = Path(output)
+    else:
+        enriched_path = project_path / "config" / "app_model_enriched.yaml"
+    
+    result = integrator.integrate(analysis_data, output_path=enriched_path)
     
     # Print results
     click.echo(f"\n✅ Integration Complete!")
@@ -73,7 +80,6 @@ def integrate(project_path: str, analysis: str, output: str, preserve_existing: 
         for error in result.errors[:5]:
             click.echo(f"   • {error}")
     
-    enriched_path = project_path / "config" / "app_model_enriched.yaml"
     click.echo(f"\n💾 Enriched model saved: {enriched_path}")
     click.echo(f"\nNext steps:")
     click.echo(f"  1. Review enriched model: {enriched_path}")
