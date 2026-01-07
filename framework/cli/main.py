@@ -2976,5 +2976,14 @@ def pageobject(page_object_path: str, analysis_path: str):
     click.echo("\n   [Implementation: Parses existing PO, adds elements, rewrites]")
 
 
+# ============================================================================
+# BUSINESS LOGIC ANALYSIS COMMANDS
+# ============================================================================
+
+from framework.cli.business_logic_commands import business
+
+cli.add_command(business)
+
+
 if __name__ == "__main__":
     cli()
