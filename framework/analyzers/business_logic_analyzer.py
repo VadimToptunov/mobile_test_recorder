@@ -7,13 +7,19 @@ Extracts business logic, rules, and user flows from source code:
 - Data models and relationships
 - State machines and workflows
 - Error handling logic
+- iOS Swift/SwiftUI support
+- Deep AST analysis
+- Negative test case generation
+- Edge case detection
 """
 
 from pathlib import Path
-from typing import List, Dict, Optional, Set
+from typing import List, Dict, Optional, Set, Tuple
 from dataclasses import dataclass, field
 from enum import Enum
 import re
+import ast
+import json
 
 
 class BusinessRuleType(Enum):
@@ -61,13 +67,36 @@ class DataModel:
 
 
 @dataclass
+class EdgeCase:
+    """Represents an edge case detected in code"""
+    type: str  # boundary, null, empty, overflow, etc.
+    description: str
+    test_data: List[any] = field(default_factory=list)
+    source_file: Optional[str] = None
+    severity: str = "medium"  # low, medium, high, critical
+
+
+@dataclass
+class StateMachine:
+    """Represents a state machine extracted from code"""
+    name: str
+    states: List[str]
+    transitions: Dict[str, List[str]]  # from_state -> [to_states]
+    initial_state: str
+    final_states: List[str] = field(default_factory=list)
+    source_file: Optional[str] = None
+
+
+@dataclass
 class BusinessLogicAnalysis:
     """Complete business logic analysis result"""
     user_flows: List[UserFlow] = field(default_factory=list)
     business_rules: List[BusinessRule] = field(default_factory=list)
     data_models: List[DataModel] = field(default_factory=list)
-    state_machines: Dict[str, List[str]] = field(default_factory=dict)
+    state_machines: List[StateMachine] = field(default_factory=list)
+    edge_cases: List[EdgeCase] = field(default_factory=list)
     mock_data: Dict[str, any] = field(default_factory=dict)
+    negative_test_cases: List[Dict] = field(default_factory=list)
 
 
 class BusinessLogicAnalyzer:
@@ -76,6 +105,16 @@ class BusinessLogicAnalyzer:
     def __init__(self, project_path: Path):
         self.project_path = Path(project_path)
         self.analysis = BusinessLogicAnalysis()
+        self.platform = self._detect_platform()
+
+    def _detect_platform(self) -> str:
+        """Detect if project is Android or iOS"""
+        if list(self.project_path.rglob("*.swift")):
+            return "ios"
+        elif list(self.project_path.rglob("*.kt")) or list(self.project_path.rglob("*.java")):
+            return "android"
+        else:
+            return "unknown"
 
     def analyze(self) -> BusinessLogicAnalysis:
         """
@@ -84,6 +123,28 @@ class BusinessLogicAnalyzer:
         Returns:
             BusinessLogicAnalysis with extracted information
         """
+        if self.platform == "android":
+            self._analyze_android()
+        elif self.platform == "ios":
+            self._analyze_ios()
+        else:
+            # Try both
+            self._analyze_android()
+            self._analyze_ios()
+
+        # Extract state machines
+        self._extract_state_machines()
+
+        # Detect edge cases
+        self._detect_edge_cases()
+
+        # Generate negative test cases
+        self._generate_negative_test_cases()
+
+        return self.analysis
+
+    def _analyze_android(self):
+        """Analyze Android (Kotlin/Java) project"""
         # Analyze Kotlin/Java files
         kotlin_files = list(self.project_path.rglob("*.kt"))
         java_files = list(self.project_path.rglob("*.java"))
@@ -103,7 +164,24 @@ class BusinessLogicAnalyzer:
         # Analyze mock data for business scenarios
         self._analyze_mock_data()
 
-        return self.analysis
+    def _analyze_ios(self):
+        """Analyze iOS (Swift/SwiftUI) project"""
+        swift_files = list(self.project_path.rglob("*.swift"))
+
+        for file_path in swift_files:
+            self._analyze_swift_file(file_path)
+
+        # Analyze SwiftUI Views for user flows
+        self._analyze_swiftui_views()
+
+        # Analyze ViewModels/ObservableObjects
+        self._analyze_swift_viewmodels()
+
+        # Analyze Swift models
+        self._analyze_swift_models()
+
+        # Analyze mock data
+        self._analyze_swift_mock_data()
 
     def _analyze_file(self, file_path: Path):
         """Analyze a single source file"""
@@ -384,6 +462,7 @@ class BusinessLogicAnalyzer:
     def export_to_json(self) -> Dict:
         """Export analysis to JSON-serializable dict"""
         return {
+            'platform': self.platform,
             'user_flows': [
                 {
                     'name': flow.name,
@@ -416,6 +495,574 @@ class BusinessLogicAnalyzer:
                 }
                 for model in self.analysis.data_models
             ],
+            'state_machines': [
+                {
+                    'name': sm.name,
+                    'states': sm.states,
+                    'transitions': sm.transitions,
+                    'initial_state': sm.initial_state,
+                    'final_states': sm.final_states,
+                    'source_file': sm.source_file
+                }
+                for sm in self.analysis.state_machines
+            ],
+            'edge_cases': [
+                {
+                    'type': ec.type,
+                    'description': ec.description,
+                    'test_data': ec.test_data,
+                    'source_file': ec.source_file,
+                    'severity': ec.severity
+                }
+                for ec in self.analysis.edge_cases
+            ],
+            'negative_test_cases': self.analysis.negative_test_cases,
             'mock_data': self.analysis.mock_data
         }
+
+    # ===== iOS Swift/SwiftUI Analysis =====
+
+    def _analyze_swift_file(self, file_path: Path):
+        """Analyze a Swift source file"""
+        try:
+            content = file_path.read_text(encoding='utf-8')
+
+            # Extract business rules from comments
+            self._extract_business_rules_from_comments(content, str(file_path))
+
+            # Extract validations (Swift guard statements)
+            self._extract_swift_validations(content, str(file_path))
+
+            # Extract error handling
+            self._extract_swift_error_handling(content, str(file_path))
+
+        except Exception as e:
+            print(f"Warning: Could not analyze Swift file {file_path}: {e}")
+
+    def _analyze_swiftui_views(self):
+        """Analyze SwiftUI Views for user flows"""
+        view_files = [
+            f for f in self.project_path.rglob("*.swift")
+            if "View" in f.stem and "ViewModel" not in f.stem
+        ]
+
+        for view_file in view_files:
+            try:
+                content = view_file.read_text(encoding='utf-8')
+
+                # Extract view name
+                view_match = re.search(r'struct\s+(\w+):\s*View', content)
+                if not view_match:
+                    continue
+
+                view_name = view_match.group(1)
+
+                # Extract Button actions
+                buttons = re.findall(
+                    r'Button\(["\']([^"\']+)["\'].*?\{(.*?)\}',
+                    content,
+                    re.DOTALL
+                )
+
+                # Extract NavigationLink destinations
+                nav_links = re.findall(
+                    r'NavigationLink\(.*?destination:\s*(\w+)',
+                    content
+                )
+
+                # Create user flow
+                if buttons or nav_links:
+                    steps = [f"Tap {btn[0]}" for btn in buttons]
+                    steps.extend([f"Navigate to {dest}" for dest in nav_links])
+
+                    flow = UserFlow(
+                        name=view_name.replace("View", ""),
+                        description=f"User flow for {view_name}",
+                        steps=steps,
+                        entry_point=view_name,
+                        success_outcome="Complete interaction",
+                        source_files=[str(view_file)]
+                    )
+
+                    self.analysis.user_flows.append(flow)
+
+            except Exception as e:
+                print(f"Warning: Could not analyze SwiftUI View {view_file}: {e}")
+
+    def _analyze_swift_viewmodels(self):
+        """Analyze Swift ViewModels/ObservableObjects"""
+        vm_files = list(self.project_path.rglob("*ViewModel.swift"))
+
+        for vm_file in vm_files:
+            try:
+                content = vm_file.read_text(encoding='utf-8')
+
+                # Extract class name
+                class_match = re.search(
+                    r'class\s+(\w+ViewModel):\s*ObservableObject',
+                    content
+                )
+                if not class_match:
+                    continue
+
+                class_name = class_match.group(1)
+
+                # Extract @Published properties (state)
+                published = re.findall(r'@Published\s+var\s+(\w+)', content)
+
+                # Extract public methods
+                methods = re.findall(
+                    r'func\s+(\w+)\([^)]*\)\s*(?:->.*?)?\{',
+                    content
+                )
+
+                # Create user flow
+                flow = UserFlow(
+                    name=class_name.replace("ViewModel", ""),
+                    description=f"User flow for {class_name}",
+                    steps=[f"User {method}" for method in methods],
+                    entry_point=f"{class_name}Screen",
+                    success_outcome="State updated",
+                    source_files=[str(vm_file)]
+                )
+
+                self.analysis.user_flows.append(flow)
+
+            except Exception as e:
+                print(f"Warning: Could not analyze Swift ViewModel {vm_file}: {e}")
+
+    def _analyze_swift_models(self):
+        """Analyze Swift data models"""
+        model_files = [
+            f for f in self.project_path.rglob("*.swift")
+            if "Model" in f.stem or f.parent.name == "Models"
+        ]
+
+        for model_file in model_files:
+            try:
+                content = model_file.read_text(encoding='utf-8')
+
+                # Extract struct/class definitions
+                for match in re.finditer(
+                    r'(?:struct|class)\s+(\w+):\s*(?:Codable|Identifiable|Hashable)(?:.*?)\{(.*?)\n\}',
+                    content,
+                    re.DOTALL
+                ):
+                    model_name = match.group(1)
+                    body = match.group(2)
+
+                    # Parse properties
+                    fields = {}
+                    for prop_match in re.finditer(
+                        r'(?:var|let)\s+(\w+):\s+([^\n=]+)',
+                        body
+                    ):
+                        prop_name = prop_match.group(1)
+                        prop_type = prop_match.group(2).strip()
+                        fields[prop_name] = prop_type
+
+                    if fields:
+                        model = DataModel(
+                            name=model_name,
+                            fields=fields,
+                            source_file=str(model_file)
+                        )
+                        self.analysis.data_models.append(model)
+
+            except Exception as e:
+                print(f"Warning: Could not analyze Swift model {model_file}: {e}")
+
+    def _analyze_swift_mock_data(self):
+        """Analyze Swift mock data"""
+        mock_files = [
+            f for f in self.project_path.rglob("*.swift")
+            if "Mock" in f.stem or "Preview" in f.stem
+        ]
+
+        for mock_file in mock_files:
+            try:
+                content = mock_file.read_text(encoding='utf-8')
+
+                # Extract static mock arrays
+                for match in re.finditer(
+                    r'static\s+(?:let|var)\s+(\w+):\s*\[(\w+)\]\s*=\s*\[(.*?)\]',
+                    content,
+                    re.DOTALL
+                ):
+                    entity_name = match.group(1)
+                    entity_type = match.group(2)
+                    array_content = match.group(3)
+
+                    # Count items
+                    items = [
+                        item.strip()
+                        for item in array_content.split(f"{entity_type}(")
+                        if item.strip()
+                    ]
+                    count = len(items)
+
+                    if count > 0:
+                        self.analysis.mock_data[entity_name] = {
+                            'count': count,
+                            'type': entity_type,
+                            'source': str(mock_file)
+                        }
+
+            except Exception as e:
+                print(f"Warning: Could not analyze Swift mock data {mock_file}: {e}")
+
+    def _extract_swift_validations(self, content: str, file_path: str):
+        """Extract Swift validation logic (guard statements)"""
+        # Find guard statements
+        guards = re.findall(
+            r'guard\s+(.*?)\s+else\s*\{([^}]*)\}',
+            content,
+            re.DOTALL
+        )
+
+        for condition, else_body in guards:
+            # Extract error message if present
+            error_msg_match = re.search(r'["\'](.+?)["\']', else_body)
+            error_msg = error_msg_match.group(1) if error_msg_match else "Validation failed"
+
+            rule = BusinessRule(
+                type=BusinessRuleType.VALIDATION,
+                description=f"Guard: {condition.strip()}",
+                condition=condition.strip(),
+                source_file=file_path,
+                error_messages=[error_msg]
+            )
+            self.analysis.business_rules.append(rule)
+
+    def _extract_swift_error_handling(self, content: str, file_path: str):
+        """Extract Swift error handling (do-catch, throws)"""
+        # Find catch blocks
+        catches = re.findall(
+            r'catch\s+(?:let\s+)?(\w+)?\s*\{([^}]+)\}',
+            content
+        )
+
+        for error_var, handler_body in catches:
+            error_type = error_var or "Error"
+            rule = BusinessRule(
+                type=BusinessRuleType.ERROR_HANDLING,
+                description=f"Handle {error_type}",
+                condition=f"When {error_type} is thrown",
+                source_file=file_path
+            )
+            self.analysis.business_rules.append(rule)
+
+    # ===== State Machine Extraction =====
+
+    def _extract_state_machines(self):
+        """Extract state machines from source code"""
+        # Look for sealed classes (Kotlin) or enums (Swift) representing states
+        if self.platform == "android" or self.platform == "unknown":
+            self._extract_kotlin_state_machines()
+
+        if self.platform == "ios" or self.platform == "unknown":
+            self._extract_swift_state_machines()
+
+    def _extract_kotlin_state_machines(self):
+        """Extract state machines from Kotlin sealed classes"""
+        kt_files = list(self.project_path.rglob("*.kt"))
+
+        for kt_file in kt_files:
+            try:
+                content = kt_file.read_text(encoding='utf-8')
+
+                # Find sealed classes that represent states
+                sealed_matches = re.finditer(
+                    r'sealed\s+class\s+(\w+State)\s*\{(.*?)\n\}',
+                    content,
+                    re.DOTALL
+                )
+
+                for match in sealed_matches:
+                    state_name = match.group(1)
+                    body = match.group(2)
+
+                    # Extract state variants
+                    states = re.findall(
+                        r'(?:data\s+)?class\s+(\w+)\s*(?:\(.*?\))?',
+                        body
+                    )
+                    states = [s for s in states if s != state_name]
+
+                    if len(states) > 1:
+                        # Try to find transitions in when expressions
+                        transitions = self._find_state_transitions(content, states)
+
+                        state_machine = StateMachine(
+                            name=state_name,
+                            states=states,
+                            transitions=transitions,
+                            initial_state=states[0] if states else "Unknown",
+                            source_file=str(kt_file)
+                        )
+                        self.analysis.state_machines.append(state_machine)
+
+            except Exception as e:
+                print(f"Warning: Could not extract state machine from {kt_file}: {e}")
+
+    def _extract_swift_state_machines(self):
+        """Extract state machines from Swift enums"""
+        swift_files = list(self.project_path.rglob("*.swift"))
+
+        for swift_file in swift_files:
+            try:
+                content = swift_file.read_text(encoding='utf-8')
+
+                # Find enums that represent states
+                enum_matches = re.finditer(
+                    r'enum\s+(\w+State)\s*\{(.*?)\n\}',
+                    content,
+                    re.DOTALL
+                )
+
+                for match in enum_matches:
+                    state_name = match.group(1)
+                    body = match.group(2)
+
+                    # Extract cases
+                    states = re.findall(r'case\s+(\w+)', body)
+
+                    if len(states) > 1:
+                        transitions = self._find_state_transitions(content, states)
+
+                        state_machine = StateMachine(
+                            name=state_name,
+                            states=states,
+                            transitions=transitions,
+                            initial_state=states[0] if states else "Unknown",
+                            source_file=str(swift_file)
+                        )
+                        self.analysis.state_machines.append(state_machine)
+
+            except Exception as e:
+                print(f"Warning: Could not extract Swift state machine from {swift_file}: {e}")
+
+    def _find_state_transitions(self, content: str, states: List[str]) -> Dict[str, List[str]]:
+        """Find state transitions in when/switch expressions"""
+        transitions = {state: [] for state in states}
+
+        # Look for patterns like "state = NewState"
+        for from_state in states:
+            pattern = rf'{from_state}.*?=\s*(\w+)'
+            matches = re.findall(pattern, content)
+            for to_state in matches:
+                if to_state in states and to_state not in transitions[from_state]:
+                    transitions[from_state].append(to_state)
+
+        return transitions
+
+    # ===== Edge Case Detection =====
+
+    def _detect_edge_cases(self):
+        """Detect edge cases from code analysis"""
+        # Boundary conditions
+        self._detect_boundary_conditions()
+
+        # Null/nil checks
+        self._detect_null_checks()
+
+        # Empty collection checks
+        self._detect_empty_checks()
+
+        # Overflow/underflow patterns
+        self._detect_overflow_patterns()
+
+    def _detect_boundary_conditions(self):
+        """Detect boundary condition checks"""
+        all_files = (
+            list(self.project_path.rglob("*.kt"))
+            + list(self.project_path.rglob("*.java"))
+            + list(self.project_path.rglob("*.swift"))
+        )
+
+        for file_path in all_files:
+            try:
+                content = file_path.read_text(encoding='utf-8')
+
+                # Find comparisons with boundaries
+                boundaries = re.findall(
+                    r'(\w+)\s*([<>=!]+)\s*(\d+)',
+                    content
+                )
+
+                for var_name, operator, value in boundaries:
+                    if operator in ['<', '<=', '>', '>='] and value != '0':
+                        test_values = self._generate_boundary_test_values(
+                            int(value), operator
+                        )
+
+                        edge_case = EdgeCase(
+                            type="boundary",
+                            description=f"Boundary check: {var_name} {operator} {value}",
+                            test_data=test_values,
+                            source_file=str(file_path),
+                            severity="high"
+                        )
+                        self.analysis.edge_cases.append(edge_case)
+
+            except Exception as e:
+                print(f"Warning: Could not detect boundaries in {file_path}: {e}")
+
+    def _generate_boundary_test_values(
+        self, boundary: int, operator: str
+    ) -> List[int]:
+        """Generate test values for boundary conditions"""
+        if operator in ['<', '<=']:
+            return [boundary - 1, boundary, boundary + 1]
+        elif operator in ['>', '>=']:
+            return [boundary - 1, boundary, boundary + 1]
+        else:
+            return [boundary]
+
+    def _detect_null_checks(self):
+        """Detect null/nil safety checks"""
+        all_files = (
+            list(self.project_path.rglob("*.kt"))
+            + list(self.project_path.rglob("*.swift"))
+        )
+
+        for file_path in all_files:
+            try:
+                content = file_path.read_text(encoding='utf-8')
+
+                # Kotlin null checks
+                kt_null_checks = re.findall(
+                    r'(\w+)\s*[?!]=\s*null',
+                    content
+                )
+
+                # Swift nil checks
+                swift_nil_checks = re.findall(
+                    r'(?:if|guard)\s+let\s+(\w+)',
+                    content
+                )
+
+                all_checks = set(kt_null_checks + swift_nil_checks)
+
+                for var_name in all_checks:
+                    edge_case = EdgeCase(
+                        type="null",
+                        description=f"Null safety check for {var_name}",
+                        test_data=[None, "valid_value"],
+                        source_file=str(file_path),
+                        severity="high"
+                    )
+                    self.analysis.edge_cases.append(edge_case)
+
+            except Exception as e:
+                print(f"Warning: Could not detect null checks in {file_path}: {e}")
+
+    def _detect_empty_checks(self):
+        """Detect empty collection/string checks"""
+        all_files = (
+            list(self.project_path.rglob("*.kt"))
+            + list(self.project_path.rglob("*.swift"))
+        )
+
+        for file_path in all_files:
+            try:
+                content = file_path.read_text(encoding='utf-8')
+
+                # isEmpty checks
+                empty_checks = re.findall(
+                    r'(\w+)\.isEmpty\(\)?',
+                    content
+                )
+
+                for var_name in set(empty_checks):
+                    edge_case = EdgeCase(
+                        type="empty",
+                        description=f"Empty check for {var_name}",
+                        test_data=[[], ["item"], "", "text"],
+                        source_file=str(file_path),
+                        severity="medium"
+                    )
+                    self.analysis.edge_cases.append(edge_case)
+
+            except Exception as e:
+                print(f"Warning: Could not detect empty checks in {file_path}: {e}")
+
+    def _detect_overflow_patterns(self):
+        """Detect potential overflow/underflow patterns"""
+        all_files = (
+            list(self.project_path.rglob("*.kt"))
+            + list(self.project_path.rglob("*.java"))
+        )
+
+        for file_path in all_files:
+            try:
+                content = file_path.read_text(encoding='utf-8')
+
+                # Arithmetic operations
+                arithmetic = re.findall(
+                    r'(\w+)\s*([+\-*/])\s*(\w+)',
+                    content
+                )
+
+                for left, op, right in arithmetic:
+                    if op in ['+', '*']:
+                        edge_case = EdgeCase(
+                            type="overflow",
+                            description=f"Potential overflow: {left} {op} {right}",
+                            test_data=["MAX_VALUE", "MIN_VALUE", 0, 1, -1],
+                            source_file=str(file_path),
+                            severity="medium"
+                        )
+                        self.analysis.edge_cases.append(edge_case)
+                        break  # Avoid too many duplicates per file
+
+            except Exception as e:
+                print(f"Warning: Could not detect overflow patterns in {file_path}: {e}")
+
+    # ===== Negative Test Case Generation =====
+
+    def _generate_negative_test_cases(self):
+        """Generate negative test cases from business rules and edge cases"""
+        # From validations
+        for rule in self.analysis.business_rules:
+            if rule.type == BusinessRuleType.VALIDATION:
+                negative_case = {
+                    'name': f"Negative: {rule.description}",
+                    'type': 'negative',
+                    'description': f"Test violation of: {rule.condition}",
+                    'expected_outcome': 'Validation error',
+                    'error_messages': rule.error_messages,
+                    'priority': 'high',
+                    'source': rule.source_file
+                }
+                self.analysis.negative_test_cases.append(negative_case)
+
+        # From edge cases
+        for edge_case in self.analysis.edge_cases:
+            if edge_case.severity in ['high', 'critical']:
+                negative_case = {
+                    'name': f"Negative: {edge_case.description}",
+                    'type': 'negative',
+                    'description': f"Test {edge_case.type} edge case",
+                    'test_data': edge_case.test_data,
+                    'expected_outcome': 'Handle edge case gracefully',
+                    'priority': edge_case.severity,
+                    'source': edge_case.source_file
+                }
+                self.analysis.negative_test_cases.append(negative_case)
+
+        # From user flows - generate failure scenarios
+        for flow in self.analysis.user_flows:
+            # Invalid input scenario
+            negative_case = {
+                'name': f"Negative: {flow.name} - Invalid Input",
+                'type': 'negative',
+                'description': f"Test {flow.name} with invalid input",
+                'steps': flow.steps,
+                'expected_outcome': 'Show error message',
+                'priority': 'high',
+                'source': flow.source_files[0] if flow.source_files else None
+            }
+            self.analysis.negative_test_cases.append(negative_case)
+
 
