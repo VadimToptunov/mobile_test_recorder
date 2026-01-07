@@ -14,16 +14,15 @@ Extracts business logic, rules, and user flows from source code:
 """
 
 from pathlib import Path
-from typing import List, Dict, Optional, Set, Tuple
+from typing import List, Dict, Optional, Any
 from dataclasses import dataclass, field
 from enum import Enum
 import re
-import ast
-import json
 
 
 class BusinessRuleType(Enum):
     """Types of business rules"""
+
     VALIDATION = "validation"
     AUTHORIZATION = "authorization"
     STATE_TRANSITION = "state_transition"
@@ -34,6 +33,7 @@ class BusinessRuleType(Enum):
 @dataclass
 class BusinessRule:
     """Represents a business rule extracted from code"""
+
     type: BusinessRuleType
     description: str
     condition: str
@@ -46,6 +46,7 @@ class BusinessRule:
 @dataclass
 class UserFlow:
     """Represents a user flow/journey"""
+
     name: str
     description: str
     steps: List[str]
@@ -59,6 +60,7 @@ class UserFlow:
 @dataclass
 class DataModel:
     """Represents a data model/entity"""
+
     name: str
     fields: Dict[str, str]  # field_name -> field_type
     validations: List[str] = field(default_factory=list)
@@ -69,9 +71,10 @@ class DataModel:
 @dataclass
 class EdgeCase:
     """Represents an edge case detected in code"""
+
     type: str  # boundary, null, empty, overflow, etc.
     description: str
-    test_data: List[any] = field(default_factory=list)
+    test_data: List[Any] = field(default_factory=list)
     source_file: Optional[str] = None
     severity: str = "medium"  # low, medium, high, critical
 
@@ -79,6 +82,7 @@ class EdgeCase:
 @dataclass
 class StateMachine:
     """Represents a state machine extracted from code"""
+
     name: str
     states: List[str]
     transitions: Dict[str, List[str]]  # from_state -> [to_states]
@@ -88,15 +92,33 @@ class StateMachine:
 
 
 @dataclass
+class APIContract:
+    """Represents an API contract/specification"""
+
+    endpoint: str
+    method: str  # GET, POST, PUT, DELETE, etc.
+    request_schema: Dict[str, Any] = field(default_factory=dict)
+    response_schema: Dict[str, Any] = field(default_factory=dict)
+    error_responses: List[Dict[str, Any]] = field(default_factory=list)
+    authentication: Optional[str] = None
+    rate_limit: Optional[str] = None
+    description: Optional[str] = None
+    source_file: Optional[str] = None
+
+
+@dataclass
 class BusinessLogicAnalysis:
     """Complete business logic analysis result"""
+
     user_flows: List[UserFlow] = field(default_factory=list)
     business_rules: List[BusinessRule] = field(default_factory=list)
     data_models: List[DataModel] = field(default_factory=list)
     state_machines: List[StateMachine] = field(default_factory=list)
     edge_cases: List[EdgeCase] = field(default_factory=list)
-    mock_data: Dict[str, any] = field(default_factory=dict)
-    negative_test_cases: List[Dict] = field(default_factory=list)
+    api_contracts: List[APIContract] = field(default_factory=list)
+    mock_data: Dict[str, Any] = field(default_factory=dict)
+    negative_test_cases: List[Dict[str, Any]] = field(default_factory=list)
+    platform: str = "android"  # android or ios
 
 
 class BusinessLogicAnalyzer:
@@ -140,6 +162,12 @@ class BusinessLogicAnalyzer:
 
         # Generate negative test cases
         self._generate_negative_test_cases()
+
+        # Generate API contracts
+        self._generate_api_contracts()
+
+        # Set platform in analysis
+        self.analysis.platform = self.platform
 
         return self.analysis
 
@@ -186,47 +214,41 @@ class BusinessLogicAnalyzer:
     def _analyze_file(self, file_path: Path):
         """Analyze a single source file"""
         try:
-            content = file_path.read_text(encoding='utf-8')
-            
+            content = file_path.read_text(encoding="utf-8")
+
             # Extract business rules from comments
             self._extract_business_rules_from_comments(content, str(file_path))
-            
+
             # Extract validation rules
             self._extract_validations(content, str(file_path))
-            
+
             # Extract error handling
             self._extract_error_handling(content, str(file_path))
-            
+
         except Exception as e:
             print(f"Warning: Could not analyze {file_path}: {e}")
 
     def _analyze_viewmodels(self):
         """Analyze ViewModels to extract user flows"""
         viewmodel_files = list(self.project_path.rglob("*ViewModel.kt"))
-        
+
         for vm_file in viewmodel_files:
             try:
-                content = vm_file.read_text(encoding='utf-8')
-                
+                content = vm_file.read_text(encoding="utf-8")
+
                 # Extract flow name from class name
-                class_match = re.search(r'class\s+(\w+)ViewModel', content)
+                class_match = re.search(r"class\s+(\w+)ViewModel", content)
                 if not class_match:
                     continue
-                
+
                 flow_name = class_match.group(1)
-                
+
                 # Extract state class
-                state_match = re.search(
-                    r'var\s+state\s+by\s+mutableStateOf\((\w+)\(\)\)',
-                    content
-                )
-                
+                state_match = re.search(r"var\s+state\s+by\s+mutableStateOf\((\w+)\(\)\)", content)
+
                 # Extract public methods (user actions)
-                methods = re.findall(
-                    r'fun\s+(\w+)\([^)]*\)\s*\{',
-                    content
-                )
-                
+                methods = re.findall(r"fun\s+(\w+)\([^)]*\)\s*\{", content)
+
                 # Create user flow
                 flow = UserFlow(
                     name=flow_name,
@@ -234,28 +256,25 @@ class BusinessLogicAnalyzer:
                     steps=[f"User {method}" for method in methods],
                     entry_point=f"{flow_name}Screen",
                     success_outcome="Navigate to next screen",
-                    source_files=[str(vm_file)]
+                    source_files=[str(vm_file)],
                 )
-                
+
                 self.analysis.user_flows.append(flow)
-                
+
             except Exception as e:
                 print(f"Warning: Could not analyze ViewModel {vm_file}: {e}")
 
     def _analyze_repositories(self):
         """Analyze repositories for data access patterns"""
         repo_files = list(self.project_path.rglob("*Repository.kt"))
-        
+
         for repo_file in repo_files:
             try:
-                content = repo_file.read_text(encoding='utf-8')
-                
+                content = repo_file.read_text(encoding="utf-8")
+
                 # Extract interface methods
-                interface_methods = re.findall(
-                    r'suspend\s+fun\s+(\w+)\([^)]*\):\s*(\w+)',
-                    content
-                )
-                
+                interface_methods = re.findall(r"suspend\s+fun\s+(\w+)\([^)]*\):\s*(\w+)", content)
+
                 for method_name, return_type in interface_methods:
                     # Create business rule for data access
                     rule = BusinessRule(
@@ -263,101 +282,89 @@ class BusinessLogicAnalyzer:
                         description=f"Data access: {method_name} returns {return_type}",
                         condition=f"User must be authenticated",
                         source_file=str(repo_file),
-                        related_entities=[return_type]
+                        related_entities=[return_type],
                     )
                     self.analysis.business_rules.append(rule)
-                    
+
             except Exception as e:
                 print(f"Warning: Could not analyze Repository {repo_file}: {e}")
 
     def _analyze_models(self):
         """Analyze data models"""
         model_files = list(self.project_path.rglob("models/*.kt"))
-        
+
         for model_file in model_files:
             try:
-                content = model_file.read_text(encoding='utf-8')
-                
+                content = model_file.read_text(encoding="utf-8")
+
                 # Extract data class
-                class_match = re.search(
-                    r'data\s+class\s+(\w+)\s*\((.*?)\)',
-                    content,
-                    re.DOTALL
-                )
-                
+                class_match = re.search(r"data\s+class\s+(\w+)\s*\((.*?)\)", content, re.DOTALL)
+
                 if not class_match:
                     continue
-                
+
                 class_name = class_match.group(1)
                 params = class_match.group(2)
-                
+
                 # Parse fields
                 fields = {}
-                for field_match in re.finditer(
-                    r'val\s+(\w+):\s+([^,\n]+)',
-                    params
-                ):
+                for field_match in re.finditer(r"val\s+(\w+):\s+([^,\n]+)", params):
                     field_name = field_match.group(1)
                     field_type = field_match.group(2).strip()
                     fields[field_name] = field_type
-                
-                model = DataModel(
-                    name=class_name,
-                    fields=fields,
-                    source_file=str(model_file)
-                )
-                
+
+                model = DataModel(name=class_name, fields=fields, source_file=str(model_file))
+
                 self.analysis.data_models.append(model)
-                
+
             except Exception as e:
                 print(f"Warning: Could not analyze model {model_file}: {e}")
 
     def _analyze_mock_data(self):
         """Analyze mock data to understand business scenarios"""
         mock_files = list(self.project_path.rglob("mock/*.kt"))
-        
+
         for mock_file in mock_files:
             try:
-                content = mock_file.read_text(encoding='utf-8')
-                
+                content = mock_file.read_text(encoding="utf-8")
+
                 # Extract lazy property with mock data
                 lazy_match = re.search(
-                    r'val\s+MockData\.(\w+).*?by\s+lazy\s*\{(.*?)\}',
-                    content,
-                    re.DOTALL
+                    r"val\s+MockData\.(\w+).*?by\s+lazy\s*\{(.*?)\}", content, re.DOTALL
                 )
-                
+
                 if lazy_match:
                     entity_name = lazy_match.group(1)
                     lazy_body = lazy_match.group(2)
-                    
+
                     # Extract range for test data count
-                    range_match = re.search(r'\((\d+)L?\.\.(\d+)L?\)', lazy_body)
+                    range_match = re.search(r"\((\d+)L?\.\.(\d+)L?\)", lazy_body)
                     if range_match:
                         start, end = range_match.groups()
                         self.analysis.mock_data[entity_name] = {
-                            'count': int(end) - int(start) + 1,
-                            'start_id': int(start),
-                            'end_id': int(end),
-                            'source': str(mock_file)
+                            "count": int(end) - int(start) + 1,
+                            "start_id": int(start),
+                            "end_id": int(end),
+                            "source": str(mock_file),
                         }
-                
+
             except Exception as e:
                 print(f"Warning: Could not analyze mock data {mock_file}: {e}")
 
     def _extract_business_rules_from_comments(self, content: str, file_path: str):
         """Extract business rules from TODO and comments"""
         # Find TODO comments
-        todos = re.findall(r'//\s*TODO:?\s*(.+)', content)
+        todos = re.findall(r"//\s*TODO:?\s*(.+)", content)
         for todo in todos:
-            if any(keyword in todo.lower() for keyword in [
-                'validate', 'check', 'auth', 'permission', 'rule'
-            ]):
+            if any(
+                keyword in todo.lower()
+                for keyword in ["validate", "check", "auth", "permission", "rule"]
+            ):
                 rule = BusinessRule(
                     type=BusinessRuleType.VALIDATION,
                     description=todo.strip(),
                     condition="Not yet implemented",
-                    source_file=file_path
+                    source_file=file_path,
                 )
                 self.analysis.business_rules.append(rule)
 
@@ -371,23 +378,20 @@ class BusinessLogicAnalyzer:
                 description=f"Validation: {condition}",
                 condition=condition.strip(),
                 source_file=file_path,
-                error_messages=[message]
+                error_messages=[message],
             )
             self.analysis.business_rules.append(rule)
 
     def _extract_error_handling(self, content: str, file_path: str):
         """Extract error handling logic"""
         # Find catch blocks
-        catches = re.findall(
-            r'catch\s*\(\s*\w+:\s*(\w+)\s*\)\s*\{([^}]+)\}',
-            content
-        )
+        catches = re.findall(r"catch\s*\(\s*\w+:\s*(\w+)\s*\)\s*\{([^}]+)\}", content)
         for exception_type, handler_body in catches:
             rule = BusinessRule(
                 type=BusinessRuleType.ERROR_HANDLING,
                 description=f"Handle {exception_type}",
                 condition=f"When {exception_type} occurs",
-                source_file=file_path
+                source_file=file_path,
             )
             self.analysis.business_rules.append(rule)
 
@@ -399,29 +403,33 @@ class BusinessLogicAnalyzer:
             List of test scenario dictionaries
         """
         scenarios = []
-        
+
         for flow in self.analysis.user_flows:
             # Happy path scenario
-            scenarios.append({
-                'name': f"{flow.name} - Happy Path",
-                'type': 'positive',
-                'description': flow.description,
-                'steps': flow.steps,
-                'expected_outcome': flow.success_outcome,
-                'priority': 'high'
-            })
-            
+            scenarios.append(
+                {
+                    "name": f"{flow.name} - Happy Path",
+                    "type": "positive",
+                    "description": flow.description,
+                    "steps": flow.steps,
+                    "expected_outcome": flow.success_outcome,
+                    "priority": "high",
+                }
+            )
+
             # Failure scenarios
             for failure in flow.failure_outcomes:
-                scenarios.append({
-                    'name': f"{flow.name} - {failure}",
-                    'type': 'negative',
-                    'description': f"Test {failure} scenario",
-                    'steps': flow.steps[:-1],  # All steps except last
-                    'expected_outcome': failure,
-                    'priority': 'medium'
-                })
-        
+                scenarios.append(
+                    {
+                        "name": f"{flow.name} - {failure}",
+                        "type": "negative",
+                        "description": f"Test {failure} scenario",
+                        "steps": flow.steps[:-1],  # All steps except last
+                        "expected_outcome": failure,
+                        "priority": "medium",
+                    }
+                )
+
         return scenarios
 
     def generate_bdd_features(self) -> str:
@@ -432,22 +440,22 @@ class BusinessLogicAnalyzer:
             Gherkin feature file content
         """
         feature_content = []
-        
+
         for flow in self.analysis.user_flows:
             feature_content.append(f"Feature: {flow.name}")
             feature_content.append(f"  {flow.description}")
             feature_content.append("")
-            
+
             # Generate scenario from flow
             feature_content.append(f"  Scenario: {flow.name} - Success")
             feature_content.append(f"    Given I am on the {flow.entry_point}")
-            
+
             for step in flow.steps:
                 feature_content.append(f"    When {step}")
-            
+
             feature_content.append(f"    Then {flow.success_outcome}")
             feature_content.append("")
-        
+
         return "\n".join(feature_content)
 
     def get_mock_test_data(self) -> Dict:
@@ -462,62 +470,76 @@ class BusinessLogicAnalyzer:
     def export_to_json(self) -> Dict:
         """Export analysis to JSON-serializable dict"""
         return {
-            'platform': self.platform,
-            'user_flows': [
+            "platform": self.platform,
+            "user_flows": [
                 {
-                    'name': flow.name,
-                    'description': flow.description,
-                    'steps': flow.steps,
-                    'entry_point': flow.entry_point,
-                    'success_outcome': flow.success_outcome,
-                    'failure_outcomes': flow.failure_outcomes,
-                    'source_files': flow.source_files
+                    "name": flow.name,
+                    "description": flow.description,
+                    "steps": flow.steps,
+                    "entry_point": flow.entry_point,
+                    "success_outcome": flow.success_outcome,
+                    "failure_outcomes": flow.failure_outcomes,
+                    "source_files": flow.source_files,
                 }
                 for flow in self.analysis.user_flows
             ],
-            'business_rules': [
+            "business_rules": [
                 {
-                    'type': rule.type.value,
-                    'description': rule.description,
-                    'condition': rule.condition,
-                    'source_file': rule.source_file,
-                    'related_entities': rule.related_entities,
-                    'error_messages': rule.error_messages
+                    "type": rule.type.value,
+                    "description": rule.description,
+                    "condition": rule.condition,
+                    "source_file": rule.source_file,
+                    "related_entities": rule.related_entities,
+                    "error_messages": rule.error_messages,
                 }
                 for rule in self.analysis.business_rules
             ],
-            'data_models': [
+            "data_models": [
                 {
-                    'name': model.name,
-                    'fields': model.fields,
-                    'validations': model.validations,
-                    'source_file': model.source_file
+                    "name": model.name,
+                    "fields": model.fields,
+                    "validations": model.validations,
+                    "source_file": model.source_file,
                 }
                 for model in self.analysis.data_models
             ],
-            'state_machines': [
+            "state_machines": [
                 {
-                    'name': sm.name,
-                    'states': sm.states,
-                    'transitions': sm.transitions,
-                    'initial_state': sm.initial_state,
-                    'final_states': sm.final_states,
-                    'source_file': sm.source_file
+                    "name": sm.name,
+                    "states": sm.states,
+                    "transitions": sm.transitions,
+                    "initial_state": sm.initial_state,
+                    "final_states": sm.final_states,
+                    "source_file": sm.source_file,
                 }
                 for sm in self.analysis.state_machines
             ],
-            'edge_cases': [
+            "edge_cases": [
                 {
-                    'type': ec.type,
-                    'description': ec.description,
-                    'test_data': ec.test_data,
-                    'source_file': ec.source_file,
-                    'severity': ec.severity
+                    "type": ec.type,
+                    "description": ec.description,
+                    "test_data": ec.test_data,
+                    "source_file": ec.source_file,
+                    "severity": ec.severity,
                 }
                 for ec in self.analysis.edge_cases
             ],
-            'negative_test_cases': self.analysis.negative_test_cases,
-            'mock_data': self.analysis.mock_data
+            "api_contracts": [
+                {
+                    "endpoint": contract.endpoint,
+                    "method": contract.method,
+                    "request_schema": contract.request_schema,
+                    "response_schema": contract.response_schema,
+                    "error_responses": contract.error_responses,
+                    "authentication": contract.authentication,
+                    "rate_limit": contract.rate_limit,
+                    "description": contract.description,
+                    "source_file": contract.source_file,
+                }
+                for contract in self.analysis.api_contracts
+            ],
+            "negative_test_cases": self.analysis.negative_test_cases,
+            "mock_data": self.analysis.mock_data,
         }
 
     # ===== iOS Swift/SwiftUI Analysis =====
@@ -525,7 +547,7 @@ class BusinessLogicAnalyzer:
     def _analyze_swift_file(self, file_path: Path):
         """Analyze a Swift source file"""
         try:
-            content = file_path.read_text(encoding='utf-8')
+            content = file_path.read_text(encoding="utf-8")
 
             # Extract business rules from comments
             self._extract_business_rules_from_comments(content, str(file_path))
@@ -542,33 +564,27 @@ class BusinessLogicAnalyzer:
     def _analyze_swiftui_views(self):
         """Analyze SwiftUI Views for user flows"""
         view_files = [
-            f for f in self.project_path.rglob("*.swift")
+            f
+            for f in self.project_path.rglob("*.swift")
             if "View" in f.stem and "ViewModel" not in f.stem
         ]
 
         for view_file in view_files:
             try:
-                content = view_file.read_text(encoding='utf-8')
+                content = view_file.read_text(encoding="utf-8")
 
                 # Extract view name
-                view_match = re.search(r'struct\s+(\w+):\s*View', content)
+                view_match = re.search(r"struct\s+(\w+):\s*View", content)
                 if not view_match:
                     continue
 
                 view_name = view_match.group(1)
 
                 # Extract Button actions
-                buttons = re.findall(
-                    r'Button\(["\']([^"\']+)["\'].*?\{(.*?)\}',
-                    content,
-                    re.DOTALL
-                )
+                buttons = re.findall(r'Button\(["\']([^"\']+)["\'].*?\{(.*?)\}', content, re.DOTALL)
 
                 # Extract NavigationLink destinations
-                nav_links = re.findall(
-                    r'NavigationLink\(.*?destination:\s*(\w+)',
-                    content
-                )
+                nav_links = re.findall(r"NavigationLink\(.*?destination:\s*(\w+)", content)
 
                 # Create user flow
                 if buttons or nav_links:
@@ -581,7 +597,7 @@ class BusinessLogicAnalyzer:
                         steps=steps,
                         entry_point=view_name,
                         success_outcome="Complete interaction",
-                        source_files=[str(view_file)]
+                        source_files=[str(view_file)],
                     )
 
                     self.analysis.user_flows.append(flow)
@@ -595,26 +611,20 @@ class BusinessLogicAnalyzer:
 
         for vm_file in vm_files:
             try:
-                content = vm_file.read_text(encoding='utf-8')
+                content = vm_file.read_text(encoding="utf-8")
 
                 # Extract class name
-                class_match = re.search(
-                    r'class\s+(\w+ViewModel):\s*ObservableObject',
-                    content
-                )
+                class_match = re.search(r"class\s+(\w+ViewModel):\s*ObservableObject", content)
                 if not class_match:
                     continue
 
                 class_name = class_match.group(1)
 
                 # Extract @Published properties (state)
-                published = re.findall(r'@Published\s+var\s+(\w+)', content)
+                published = re.findall(r"@Published\s+var\s+(\w+)", content)
 
                 # Extract public methods
-                methods = re.findall(
-                    r'func\s+(\w+)\([^)]*\)\s*(?:->.*?)?\{',
-                    content
-                )
+                methods = re.findall(r"func\s+(\w+)\([^)]*\)\s*(?:->.*?)?\{", content)
 
                 # Create user flow
                 flow = UserFlow(
@@ -623,7 +633,7 @@ class BusinessLogicAnalyzer:
                     steps=[f"User {method}" for method in methods],
                     entry_point=f"{class_name}Screen",
                     success_outcome="State updated",
-                    source_files=[str(vm_file)]
+                    source_files=[str(vm_file)],
                 )
 
                 self.analysis.user_flows.append(flow)
@@ -634,38 +644,34 @@ class BusinessLogicAnalyzer:
     def _analyze_swift_models(self):
         """Analyze Swift data models"""
         model_files = [
-            f for f in self.project_path.rglob("*.swift")
+            f
+            for f in self.project_path.rglob("*.swift")
             if "Model" in f.stem or f.parent.name == "Models"
         ]
 
         for model_file in model_files:
             try:
-                content = model_file.read_text(encoding='utf-8')
+                content = model_file.read_text(encoding="utf-8")
 
                 # Extract struct/class definitions
                 for match in re.finditer(
-                    r'(?:struct|class)\s+(\w+):\s*(?:Codable|Identifiable|Hashable)(?:.*?)\{(.*?)\n\}',
+                    r"(?:struct|class)\s+(\w+):\s*(?:Codable|Identifiable|Hashable)(?:.*?)\{(.*?)\n\}",
                     content,
-                    re.DOTALL
+                    re.DOTALL,
                 ):
                     model_name = match.group(1)
                     body = match.group(2)
 
                     # Parse properties
                     fields = {}
-                    for prop_match in re.finditer(
-                        r'(?:var|let)\s+(\w+):\s+([^\n=]+)',
-                        body
-                    ):
+                    for prop_match in re.finditer(r"(?:var|let)\s+(\w+):\s+([^\n=]+)", body):
                         prop_name = prop_match.group(1)
                         prop_type = prop_match.group(2).strip()
                         fields[prop_name] = prop_type
 
                     if fields:
                         model = DataModel(
-                            name=model_name,
-                            fields=fields,
-                            source_file=str(model_file)
+                            name=model_name, fields=fields, source_file=str(model_file)
                         )
                         self.analysis.data_models.append(model)
 
@@ -675,19 +681,16 @@ class BusinessLogicAnalyzer:
     def _analyze_swift_mock_data(self):
         """Analyze Swift mock data"""
         mock_files = [
-            f for f in self.project_path.rglob("*.swift")
-            if "Mock" in f.stem or "Preview" in f.stem
+            f for f in self.project_path.rglob("*.swift") if "Mock" in f.stem or "Preview" in f.stem
         ]
 
         for mock_file in mock_files:
             try:
-                content = mock_file.read_text(encoding='utf-8')
+                content = mock_file.read_text(encoding="utf-8")
 
                 # Extract static mock arrays
                 for match in re.finditer(
-                    r'static\s+(?:let|var)\s+(\w+):\s*\[(\w+)\]\s*=\s*\[(.*?)\]',
-                    content,
-                    re.DOTALL
+                    r"static\s+(?:let|var)\s+(\w+):\s*\[(\w+)\]\s*=\s*\[(.*?)\]", content, re.DOTALL
                 ):
                     entity_name = match.group(1)
                     entity_type = match.group(2)
@@ -703,9 +706,9 @@ class BusinessLogicAnalyzer:
 
                     if count > 0:
                         self.analysis.mock_data[entity_name] = {
-                            'count': count,
-                            'type': entity_type,
-                            'source': str(mock_file)
+                            "count": count,
+                            "type": entity_type,
+                            "source": str(mock_file),
                         }
 
             except Exception as e:
@@ -714,11 +717,7 @@ class BusinessLogicAnalyzer:
     def _extract_swift_validations(self, content: str, file_path: str):
         """Extract Swift validation logic (guard statements)"""
         # Find guard statements
-        guards = re.findall(
-            r'guard\s+(.*?)\s+else\s*\{([^}]*)\}',
-            content,
-            re.DOTALL
-        )
+        guards = re.findall(r"guard\s+(.*?)\s+else\s*\{([^}]*)\}", content, re.DOTALL)
 
         for condition, else_body in guards:
             # Extract error message if present
@@ -730,17 +729,14 @@ class BusinessLogicAnalyzer:
                 description=f"Guard: {condition.strip()}",
                 condition=condition.strip(),
                 source_file=file_path,
-                error_messages=[error_msg]
+                error_messages=[error_msg],
             )
             self.analysis.business_rules.append(rule)
 
     def _extract_swift_error_handling(self, content: str, file_path: str):
         """Extract Swift error handling (do-catch, throws)"""
         # Find catch blocks
-        catches = re.findall(
-            r'catch\s+(?:let\s+)?(\w+)?\s*\{([^}]+)\}',
-            content
-        )
+        catches = re.findall(r"catch\s+(?:let\s+)?(\w+)?\s*\{([^}]+)\}", content)
 
         for error_var, handler_body in catches:
             error_type = error_var or "Error"
@@ -748,7 +744,7 @@ class BusinessLogicAnalyzer:
                 type=BusinessRuleType.ERROR_HANDLING,
                 description=f"Handle {error_type}",
                 condition=f"When {error_type} is thrown",
-                source_file=file_path
+                source_file=file_path,
             )
             self.analysis.business_rules.append(rule)
 
@@ -769,13 +765,11 @@ class BusinessLogicAnalyzer:
 
         for kt_file in kt_files:
             try:
-                content = kt_file.read_text(encoding='utf-8')
+                content = kt_file.read_text(encoding="utf-8")
 
                 # Find sealed classes that represent states
                 sealed_matches = re.finditer(
-                    r'sealed\s+class\s+(\w+State)\s*\{(.*?)\n\}',
-                    content,
-                    re.DOTALL
+                    r"sealed\s+class\s+(\w+State)\s*\{(.*?)\n\}", content, re.DOTALL
                 )
 
                 for match in sealed_matches:
@@ -783,10 +777,7 @@ class BusinessLogicAnalyzer:
                     body = match.group(2)
 
                     # Extract state variants
-                    states = re.findall(
-                        r'(?:data\s+)?class\s+(\w+)\s*(?:\(.*?\))?',
-                        body
-                    )
+                    states = re.findall(r"(?:data\s+)?class\s+(\w+)\s*(?:\(.*?\))?", body)
                     states = [s for s in states if s != state_name]
 
                     if len(states) > 1:
@@ -798,7 +789,7 @@ class BusinessLogicAnalyzer:
                             states=states,
                             transitions=transitions,
                             initial_state=states[0] if states else "Unknown",
-                            source_file=str(kt_file)
+                            source_file=str(kt_file),
                         )
                         self.analysis.state_machines.append(state_machine)
 
@@ -811,21 +802,17 @@ class BusinessLogicAnalyzer:
 
         for swift_file in swift_files:
             try:
-                content = swift_file.read_text(encoding='utf-8')
+                content = swift_file.read_text(encoding="utf-8")
 
                 # Find enums that represent states
-                enum_matches = re.finditer(
-                    r'enum\s+(\w+State)\s*\{(.*?)\n\}',
-                    content,
-                    re.DOTALL
-                )
+                enum_matches = re.finditer(r"enum\s+(\w+State)\s*\{(.*?)\n\}", content, re.DOTALL)
 
                 for match in enum_matches:
                     state_name = match.group(1)
                     body = match.group(2)
 
                     # Extract cases
-                    states = re.findall(r'case\s+(\w+)', body)
+                    states = re.findall(r"case\s+(\w+)", body)
 
                     if len(states) > 1:
                         transitions = self._find_state_transitions(content, states)
@@ -835,7 +822,7 @@ class BusinessLogicAnalyzer:
                             states=states,
                             transitions=transitions,
                             initial_state=states[0] if states else "Unknown",
-                            source_file=str(swift_file)
+                            source_file=str(swift_file),
                         )
                         self.analysis.state_machines.append(state_machine)
 
@@ -848,7 +835,7 @@ class BusinessLogicAnalyzer:
 
         # Look for patterns like "state = NewState"
         for from_state in states:
-            pattern = rf'{from_state}.*?=\s*(\w+)'
+            pattern = rf"{from_state}.*?=\s*(\w+)"
             matches = re.findall(pattern, content)
             for to_state in matches:
                 if to_state in states and to_state not in transitions[from_state]:
@@ -882,65 +869,49 @@ class BusinessLogicAnalyzer:
 
         for file_path in all_files:
             try:
-                content = file_path.read_text(encoding='utf-8')
+                content = file_path.read_text(encoding="utf-8")
 
                 # Find comparisons with boundaries
-                boundaries = re.findall(
-                    r'(\w+)\s*([<>=!]+)\s*(\d+)',
-                    content
-                )
+                boundaries = re.findall(r"(\w+)\s*([<>=!]+)\s*(\d+)", content)
 
                 for var_name, operator, value in boundaries:
-                    if operator in ['<', '<=', '>', '>='] and value != '0':
-                        test_values = self._generate_boundary_test_values(
-                            int(value), operator
-                        )
+                    if operator in ["<", "<=", ">", ">="] and value != "0":
+                        test_values = self._generate_boundary_test_values(int(value), operator)
 
                         edge_case = EdgeCase(
                             type="boundary",
                             description=f"Boundary check: {var_name} {operator} {value}",
                             test_data=test_values,
                             source_file=str(file_path),
-                            severity="high"
+                            severity="high",
                         )
                         self.analysis.edge_cases.append(edge_case)
 
             except Exception as e:
                 print(f"Warning: Could not detect boundaries in {file_path}: {e}")
 
-    def _generate_boundary_test_values(
-        self, boundary: int, operator: str
-    ) -> List[int]:
+    def _generate_boundary_test_values(self, boundary: int, operator: str) -> List[int]:
         """Generate test values for boundary conditions"""
-        if operator in ['<', '<=']:
+        if operator in ["<", "<="]:
             return [boundary - 1, boundary, boundary + 1]
-        elif operator in ['>', '>=']:
+        elif operator in [">", ">="]:
             return [boundary - 1, boundary, boundary + 1]
         else:
             return [boundary]
 
     def _detect_null_checks(self):
         """Detect null/nil safety checks"""
-        all_files = (
-            list(self.project_path.rglob("*.kt"))
-            + list(self.project_path.rglob("*.swift"))
-        )
+        all_files = list(self.project_path.rglob("*.kt")) + list(self.project_path.rglob("*.swift"))
 
         for file_path in all_files:
             try:
-                content = file_path.read_text(encoding='utf-8')
+                content = file_path.read_text(encoding="utf-8")
 
                 # Kotlin null checks
-                kt_null_checks = re.findall(
-                    r'(\w+)\s*[?!]=\s*null',
-                    content
-                )
+                kt_null_checks = re.findall(r"(\w+)\s*[?!]=\s*null", content)
 
                 # Swift nil checks
-                swift_nil_checks = re.findall(
-                    r'(?:if|guard)\s+let\s+(\w+)',
-                    content
-                )
+                swift_nil_checks = re.findall(r"(?:if|guard)\s+let\s+(\w+)", content)
 
                 all_checks = set(kt_null_checks + swift_nil_checks)
 
@@ -950,7 +921,7 @@ class BusinessLogicAnalyzer:
                         description=f"Null safety check for {var_name}",
                         test_data=[None, "valid_value"],
                         source_file=str(file_path),
-                        severity="high"
+                        severity="high",
                     )
                     self.analysis.edge_cases.append(edge_case)
 
@@ -959,20 +930,14 @@ class BusinessLogicAnalyzer:
 
     def _detect_empty_checks(self):
         """Detect empty collection/string checks"""
-        all_files = (
-            list(self.project_path.rglob("*.kt"))
-            + list(self.project_path.rglob("*.swift"))
-        )
+        all_files = list(self.project_path.rglob("*.kt")) + list(self.project_path.rglob("*.swift"))
 
         for file_path in all_files:
             try:
-                content = file_path.read_text(encoding='utf-8')
+                content = file_path.read_text(encoding="utf-8")
 
                 # isEmpty checks
-                empty_checks = re.findall(
-                    r'(\w+)\.isEmpty\(\)?',
-                    content
-                )
+                empty_checks = re.findall(r"(\w+)\.isEmpty\(\)", content)
 
                 for var_name in set(empty_checks):
                     edge_case = EdgeCase(
@@ -980,7 +945,7 @@ class BusinessLogicAnalyzer:
                         description=f"Empty check for {var_name}",
                         test_data=[[], ["item"], "", "text"],
                         source_file=str(file_path),
-                        severity="medium"
+                        severity="medium",
                     )
                     self.analysis.edge_cases.append(edge_case)
 
@@ -989,29 +954,23 @@ class BusinessLogicAnalyzer:
 
     def _detect_overflow_patterns(self):
         """Detect potential overflow/underflow patterns"""
-        all_files = (
-            list(self.project_path.rglob("*.kt"))
-            + list(self.project_path.rglob("*.java"))
-        )
+        all_files = list(self.project_path.rglob("*.kt")) + list(self.project_path.rglob("*.java"))
 
         for file_path in all_files:
             try:
-                content = file_path.read_text(encoding='utf-8')
+                content = file_path.read_text(encoding="utf-8")
 
                 # Arithmetic operations
-                arithmetic = re.findall(
-                    r'(\w+)\s*([+\-*/])\s*(\w+)',
-                    content
-                )
+                arithmetic = re.findall(r"(\w+)\s*([+\-*/])\s*(\w+)", content)
 
                 for left, op, right in arithmetic:
-                    if op in ['+', '*']:
+                    if op in ["+", "*"]:
                         edge_case = EdgeCase(
                             type="overflow",
                             description=f"Potential overflow: {left} {op} {right}",
                             test_data=["MAX_VALUE", "MIN_VALUE", 0, 1, -1],
                             source_file=str(file_path),
-                            severity="medium"
+                            severity="medium",
                         )
                         self.analysis.edge_cases.append(edge_case)
                         break  # Avoid too many duplicates per file
@@ -1027,27 +986,27 @@ class BusinessLogicAnalyzer:
         for rule in self.analysis.business_rules:
             if rule.type == BusinessRuleType.VALIDATION:
                 negative_case = {
-                    'name': f"Negative: {rule.description}",
-                    'type': 'negative',
-                    'description': f"Test violation of: {rule.condition}",
-                    'expected_outcome': 'Validation error',
-                    'error_messages': rule.error_messages,
-                    'priority': 'high',
-                    'source': rule.source_file
+                    "name": f"Negative: {rule.description}",
+                    "type": "negative",
+                    "description": f"Test violation of: {rule.condition}",
+                    "expected_outcome": "Validation error",
+                    "error_messages": rule.error_messages,
+                    "priority": "high",
+                    "source": rule.source_file,
                 }
                 self.analysis.negative_test_cases.append(negative_case)
 
         # From edge cases
         for edge_case in self.analysis.edge_cases:
-            if edge_case.severity in ['high', 'critical']:
+            if edge_case.severity in ["high", "critical"]:
                 negative_case = {
-                    'name': f"Negative: {edge_case.description}",
-                    'type': 'negative',
-                    'description': f"Test {edge_case.type} edge case",
-                    'test_data': edge_case.test_data,
-                    'expected_outcome': 'Handle edge case gracefully',
-                    'priority': edge_case.severity,
-                    'source': edge_case.source_file
+                    "name": f"Negative: {edge_case.description}",
+                    "type": "negative",
+                    "description": f"Test {edge_case.type} edge case",
+                    "test_data": edge_case.test_data,
+                    "expected_outcome": "Handle edge case gracefully",
+                    "priority": edge_case.severity,
+                    "source": edge_case.source_file,
                 }
                 self.analysis.negative_test_cases.append(negative_case)
 
@@ -1055,14 +1014,181 @@ class BusinessLogicAnalyzer:
         for flow in self.analysis.user_flows:
             # Invalid input scenario
             negative_case = {
-                'name': f"Negative: {flow.name} - Invalid Input",
-                'type': 'negative',
-                'description': f"Test {flow.name} with invalid input",
-                'steps': flow.steps,
-                'expected_outcome': 'Show error message',
-                'priority': 'high',
-                'source': flow.source_files[0] if flow.source_files else None
+                "name": f"Negative: {flow.name} - Invalid Input",
+                "type": "negative",
+                "description": f"Test {flow.name} with invalid input",
+                "steps": flow.steps,
+                "expected_outcome": "Show error message",
+                "priority": "high",
+                "source": flow.source_files[0] if flow.source_files else None,
             }
             self.analysis.negative_test_cases.append(negative_case)
 
+    # ===== API Contract Generation =====
 
+    def _generate_api_contracts(self):
+        """
+        Generate API contracts from network calls and service definitions
+
+        Extracts:
+        - Endpoint URLs
+        - HTTP methods
+        - Request/response schemas
+        - Error responses
+        - Authentication requirements
+        """
+        if self.platform == "android":
+            self._generate_android_api_contracts()
+        elif self.platform == "ios":
+            self._generate_ios_api_contracts()
+
+    def _generate_android_api_contracts(self):
+        """Generate API contracts from Android/Kotlin code"""
+        # Find Retrofit service interfaces
+        for file_path in self.project_path.rglob("*.kt"):
+            try:
+                content = file_path.read_text(encoding="utf-8")
+
+                # Look for @GET, @POST, @PUT, @DELETE annotations
+                api_methods = re.findall(
+                    r"@(GET|POST|PUT|DELETE|PATCH)\(\"([^\"]+)\"\)\s+"
+                    r"(?:suspend\s+)?fun\s+(\w+)\s*\([^)]*\)\s*:\s*([^\s{]+)",
+                    content,
+                    re.MULTILINE,
+                )
+
+                for method, endpoint, func_name, return_type in api_methods:
+                    # Extract request parameters
+                    func_match = re.search(
+                        rf"fun\s+{func_name}\s*\(([^)]*)\)",
+                        content,
+                    )
+                    request_params = {}
+                    if func_match:
+                        params_str = func_match.group(1)
+                        # Parse @Body, @Query, @Path parameters
+                        body_params = re.findall(r"@Body\s+(\w+):\s*(\w+)", params_str)
+                        query_params = re.findall(
+                            r"@Query\(\"(\w+)\"\)\s+(\w+):\s*(\w+)", params_str
+                        )
+                        path_params = re.findall(r"@Path\(\"(\w+)\"\)\s+(\w+):\s*(\w+)", params_str)
+
+                        if body_params:
+                            request_params["body"] = {
+                                name: type_name for name, type_name in body_params
+                            }
+                        if query_params:
+                            request_params["query"] = {
+                                param: type_name for param, _, type_name in query_params
+                            }
+                        if path_params:
+                            request_params["path"] = {
+                                param: type_name for param, _, type_name in path_params
+                            }
+
+                    # Extract authentication info
+                    auth = None
+                    if "@Headers" in content or "Authorization" in content:
+                        auth = "Bearer Token"
+
+                    # Create API contract
+                    contract = APIContract(
+                        endpoint=endpoint,
+                        method=method,
+                        request_schema=request_params,
+                        response_schema={"type": return_type},
+                        authentication=auth,
+                        description=f"API endpoint: {func_name}",
+                        source_file=str(file_path),
+                    )
+
+                    # Extract possible error responses
+                    error_codes = re.findall(r"(4\d{2}|5\d{2})", content)
+                    if error_codes:
+                        contract.error_responses = [
+                            {"code": code, "description": "Error response"}
+                            for code in set(error_codes)
+                        ]
+
+                    self.analysis.api_contracts.append(contract)
+
+            except Exception as e:
+                print(f"Warning: Could not analyze API contracts in {file_path}: {e}")
+
+    def _generate_ios_api_contracts(self):
+        """Generate API contracts from iOS/Swift code"""
+        for file_path in self.project_path.rglob("*.swift"):
+            try:
+                content = file_path.read_text(encoding="utf-8")
+
+                # Look for URLSession calls
+                url_patterns = re.findall(r'URL\(string:\s*"([^"]+)"\)', content)
+
+                # Look for HTTP method definitions
+                method_patterns = re.findall(
+                    r'httpMethod\s*=\s*"(GET|POST|PUT|DELETE|PATCH)"', content
+                )
+
+                # Combine to create contracts
+                for i, url in enumerate(url_patterns):
+                    method = method_patterns[i] if i < len(method_patterns) else "GET"
+
+                    # Extract Codable structs as request/response schemas
+                    schemas = re.findall(
+                        r"struct\s+(\w+):\s*Codable\s*{([^}]+)}",
+                        content,
+                        re.MULTILINE,
+                    )
+
+                    request_schema = {}
+                    response_schema = {}
+
+                    if schemas:
+                        # Use first schema as response, second as request
+                        if len(schemas) > 0:
+                            struct_name, fields = schemas[0]
+                            response_schema = {
+                                "type": struct_name,
+                                "fields": self._parse_swift_fields(fields),
+                            }
+                        if len(schemas) > 1:
+                            struct_name, fields = schemas[1]
+                            request_schema = {
+                                "type": struct_name,
+                                "fields": self._parse_swift_fields(fields),
+                            }
+
+                    # Authentication
+                    auth = None
+                    if "Authorization" in content or "Bearer" in content:
+                        auth = "Bearer Token"
+
+                    contract = APIContract(
+                        endpoint=url,
+                        method=method,
+                        request_schema=request_schema,
+                        response_schema=response_schema,
+                        authentication=auth,
+                        description=f"iOS API call from {file_path.name}",
+                        source_file=str(file_path),
+                    )
+
+                    # Extract error handling
+                    if "catch" in content or "Result" in content:
+                        contract.error_responses = [
+                            {"type": "NetworkError", "description": "Network failure"},
+                            {"type": "DecodingError", "description": "JSON parsing error"},
+                        ]
+
+                    self.analysis.api_contracts.append(contract)
+
+            except Exception as e:
+                print(f"Warning: Could not analyze API contracts in {file_path}: {e}")
+
+    def _parse_swift_fields(self, fields_str: str) -> Dict[str, str]:
+        """Parse Swift struct fields"""
+        fields_dict = {}
+        field_matches = re.findall(r"let\s+(\w+):\s*(\w+)", fields_str)
+        for name, type_name in field_matches:
+            fields_dict[name] = type_name
+        return fields_dict
