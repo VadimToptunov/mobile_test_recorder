@@ -4,12 +4,13 @@ CLI commands for business logic analysis
 
 import click
 from pathlib import Path
+from typing import Dict
 import json
 import yaml
 
 
 @click.group()
-def business():
+def business() -> None:
     """
     Business logic analysis commands
 
@@ -27,7 +28,7 @@ def business():
     help="Output file for analysis results",
 )
 @click.option("--format", type=click.Choice(["yaml", "json"]), default="yaml", help="Output format")
-def analyze(source: str, output: str, format: str):
+def analyze(source: str, output: str, format: str) -> None:
     """
     Analyze business logic from source code
 
@@ -74,7 +75,7 @@ def analyze(source: str, output: str, format: str):
     # Show edge cases summary
     if analysis.edge_cases:
         click.echo(f"\n⚠️ Edge Cases:")
-        edge_types = {}
+        edge_types: Dict[str, int] = {}
         for ec in analysis.edge_cases:
             edge_types[ec.type] = edge_types.get(ec.type, 0) + 1
         for edge_type, count in edge_types.items():
@@ -149,7 +150,7 @@ def analyze(source: str, output: str, format: str):
     default="test_scenarios.yaml",
     help="Output file for test scenarios",
 )
-def scenarios(input_file: str, output: str):
+def scenarios(input_file: str, output: str) -> None:
     """
     Generate test scenarios from business logic
 
@@ -173,10 +174,7 @@ def scenarios(input_file: str, output: str):
     # Load data into analysis
     from framework.analyzers.business_logic_analyzer import (
         UserFlow,
-        BusinessRule,
-        DataModel,
         BusinessLogicAnalysis,
-        BusinessRuleType,
     )
 
     analysis = BusinessLogicAnalysis()
@@ -225,7 +223,7 @@ def scenarios(input_file: str, output: str):
     default="features/business_logic.feature",
     help="Output BDD feature file",
 )
-def features(input_file: str, output: str):
+def features(input_file: str, output: str) -> None:
     """
     Generate BDD feature files from business logic
 
@@ -291,7 +289,7 @@ def features(input_file: str, output: str):
     required=True,
     help="Business logic analysis file",
 )
-def testdata(input_file: str):
+def testdata(input_file: str) -> None:
     """
     Show available mock test data
 
@@ -348,7 +346,7 @@ def testdata(input_file: str):
     required=True,
     help="Business logic analysis file",
 )
-def edgecases(input_file: str):
+def edgecases(input_file: str) -> None:
     """
     Show detected edge cases
 
@@ -371,7 +369,7 @@ def edgecases(input_file: str):
         return
 
     # Group by type
-    by_type = {}
+    by_type: Dict[str, list] = {}
     for ec in edge_cases:
         ec_type = ec["type"]
         if ec_type not in by_type:
@@ -397,7 +395,7 @@ def edgecases(input_file: str):
     required=True,
     help="Business logic analysis file",
 )
-def statemachines(input_file: str):
+def statemachines(input_file: str) -> None:
     """
     Show extracted state machines
 
@@ -445,7 +443,7 @@ def statemachines(input_file: str):
     default="negative_tests.yaml",
     help="Output file for negative test cases",
 )
-def negative(input_file: str, output: str):
+def negative(input_file: str, output: str) -> None:
     """
     Show generated negative test cases
 
@@ -470,7 +468,7 @@ def negative(input_file: str, output: str):
     click.echo(f"\n   Total: {len(negative_tests)} test cases")
 
     # Group by priority
-    by_priority = {}
+    by_priority: Dict[str, list] = {}
     for test in negative_tests:
         priority = test.get("priority", "medium")
         if priority not in by_priority:
@@ -503,7 +501,7 @@ def negative(input_file: str, output: str):
     required=True,
     help="Business logic analysis file",
 )
-def contracts(input_file: str):
+def contracts(input_file: str) -> None:
     """
     Show extracted API contracts
 
@@ -558,3 +556,81 @@ def contracts(input_file: str):
 
         if contract.get("source_file"):
             click.echo(f"      Source: {contract['source_file']}")
+
+
+@business.command()
+@click.option(
+    "--source",
+    type=click.Path(exists=True),
+    required=True,
+    help="Path to source code",
+)
+@click.option(
+    "--output",
+    type=click.Path(),
+    default="ast_analysis.yaml",
+    help="Output file",
+)
+@click.option(
+    "--format",
+    type=click.Choice(["yaml", "json"]),
+    default="yaml",
+    help="Output format",
+)
+def complexity(source: str, output: str, format: str) -> None:
+    """
+    Analyze code complexity using AST
+
+    Example:
+        observe business complexity --source ./framework --output complexity.yaml
+    """
+    from framework.analyzers.ast_analyzer import ASTAnalyzer
+
+    click.echo("\n🔬 Analyzing code complexity with AST...")
+    click.echo(f"   Source: {source}")
+
+    analyzer = ASTAnalyzer(Path(source))
+    result = analyzer.analyze_python()
+
+    # Print summary
+    summary = result["summary"]
+    click.echo(f"\n📊 Complexity Summary:")
+    click.echo(f"   Total Functions: {summary['total_functions']}")
+    click.echo(f"   High Complexity (>10): {summary['high_complexity_functions']}")
+    click.echo(f"   Average Complexity: {summary['average_complexity']:.2f}")
+
+    # Show top 10 most complex functions
+    functions = result["functions"]
+    if functions:
+        click.echo("\n🎯 Most Complex Functions:")
+        sorted_funcs = sorted(
+            functions,
+            key=lambda f: f["cyclomatic_complexity"],
+            reverse=True,
+        )
+        for func in sorted_funcs[:10]:
+            click.echo(
+                f"   • {func['name']}: "
+                f"CC={func['cyclomatic_complexity']}, "
+                f"CogC={func['cognitive_complexity']}, "
+                f"Depth={func['nested_depth']}"
+            )
+
+    # Save to file
+    output_path = Path(output)
+    with open(output_path, "w") as f:
+        if format == "json":
+            json.dump(result, f, indent=2)
+        else:
+            yaml.dump(result, f, default_flow_style=False)
+
+    click.echo(f"\n💾 Analysis saved to: {output_path}")
+    click.echo(f"\nRecommendations:")
+    if summary["high_complexity_functions"] > 0:
+        click.echo(
+            f"  ⚠️  {summary['high_complexity_functions']} functions "
+            "have high complexity (CC > 10)"
+        )
+        click.echo("  💡 Consider refactoring these functions")
+    else:
+        click.echo("  ✅ All functions have acceptable complexity")

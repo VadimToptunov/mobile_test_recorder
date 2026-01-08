@@ -171,7 +171,7 @@ class BusinessLogicAnalyzer:
 
         return self.analysis
 
-    def _analyze_android(self):
+    def _analyze_android(self) -> None:
         """Analyze Android (Kotlin/Java) project"""
         # Analyze Kotlin/Java files
         kotlin_files = list(self.project_path.rglob("*.kt"))
@@ -192,7 +192,7 @@ class BusinessLogicAnalyzer:
         # Analyze mock data for business scenarios
         self._analyze_mock_data()
 
-    def _analyze_ios(self):
+    def _analyze_ios(self) -> None:
         """Analyze iOS (Swift/SwiftUI) project"""
         swift_files = list(self.project_path.rglob("*.swift"))
 
@@ -211,7 +211,7 @@ class BusinessLogicAnalyzer:
         # Analyze mock data
         self._analyze_swift_mock_data()
 
-    def _analyze_file(self, file_path: Path):
+    def _analyze_file(self, file_path: Path) -> None:
         """Analyze a single source file"""
         try:
             content = file_path.read_text(encoding="utf-8")
@@ -228,7 +228,7 @@ class BusinessLogicAnalyzer:
         except Exception as e:
             print(f"Warning: Could not analyze {file_path}: {e}")
 
-    def _analyze_viewmodels(self):
+    def _analyze_viewmodels(self) -> None:
         """Analyze ViewModels to extract user flows"""
         viewmodel_files = list(self.project_path.rglob("*ViewModel.kt"))
 
@@ -242,9 +242,6 @@ class BusinessLogicAnalyzer:
                     continue
 
                 flow_name = class_match.group(1)
-
-                # Extract state class
-                state_match = re.search(r"var\s+state\s+by\s+mutableStateOf\((\w+)\(\)\)", content)
 
                 # Extract public methods (user actions)
                 methods = re.findall(r"fun\s+(\w+)\([^)]*\)\s*\{", content)
@@ -264,7 +261,7 @@ class BusinessLogicAnalyzer:
             except Exception as e:
                 print(f"Warning: Could not analyze ViewModel {vm_file}: {e}")
 
-    def _analyze_repositories(self):
+    def _analyze_repositories(self) -> None:
         """Analyze repositories for data access patterns"""
         repo_files = list(self.project_path.rglob("*Repository.kt"))
 
@@ -280,7 +277,7 @@ class BusinessLogicAnalyzer:
                     rule = BusinessRule(
                         type=BusinessRuleType.AUTHORIZATION,
                         description=f"Data access: {method_name} returns {return_type}",
-                        condition=f"User must be authenticated",
+                        condition="User must be authenticated",
                         source_file=str(repo_file),
                         related_entities=[return_type],
                     )
@@ -289,7 +286,7 @@ class BusinessLogicAnalyzer:
             except Exception as e:
                 print(f"Warning: Could not analyze Repository {repo_file}: {e}")
 
-    def _analyze_models(self):
+    def _analyze_models(self) -> None:
         """Analyze data models"""
         model_files = list(self.project_path.rglob("models/*.kt"))
 
@@ -320,7 +317,7 @@ class BusinessLogicAnalyzer:
             except Exception as e:
                 print(f"Warning: Could not analyze model {model_file}: {e}")
 
-    def _analyze_mock_data(self):
+    def _analyze_mock_data(self) -> None:
         """Analyze mock data to understand business scenarios"""
         mock_files = list(self.project_path.rglob("mock/*.kt"))
 
@@ -330,7 +327,9 @@ class BusinessLogicAnalyzer:
 
                 # Extract lazy property with mock data
                 lazy_match = re.search(
-                    r"val\s+MockData\.(\w+).*?by\s+lazy\s*\{(.*?)\}", content, re.DOTALL
+                    r"val\s+MockData\.(\w+).*?by\s+lazy\s*\{(.*?)\}",
+                    content,
+                    re.DOTALL,
                 )
 
                 if lazy_match:
@@ -351,14 +350,20 @@ class BusinessLogicAnalyzer:
             except Exception as e:
                 print(f"Warning: Could not analyze mock data {mock_file}: {e}")
 
-    def _extract_business_rules_from_comments(self, content: str, file_path: str):
+    def _extract_business_rules_from_comments(self, content: str, file_path: str) -> None:
         """Extract business rules from TODO and comments"""
         # Find TODO comments
         todos = re.findall(r"//\s*TODO:?\s*(.+)", content)
         for todo in todos:
             if any(
                 keyword in todo.lower()
-                for keyword in ["validate", "check", "auth", "permission", "rule"]
+                for keyword in [
+                    "validate",
+                    "check",
+                    "auth",
+                    "permission",
+                    "rule",
+                ]
             ):
                 rule = BusinessRule(
                     type=BusinessRuleType.VALIDATION,
@@ -368,7 +373,7 @@ class BusinessLogicAnalyzer:
                 )
                 self.analysis.business_rules.append(rule)
 
-    def _extract_validations(self, content: str, file_path: str):
+    def _extract_validations(self, content: str, file_path: str) -> None:
         """Extract validation logic"""
         # Find require() statements
         requires = re.findall(r'require\((.*?)\)\s*\{?\s*["\'](.+?)["\']', content)
@@ -382,11 +387,11 @@ class BusinessLogicAnalyzer:
             )
             self.analysis.business_rules.append(rule)
 
-    def _extract_error_handling(self, content: str, file_path: str):
+    def _extract_error_handling(self, content: str, file_path: str) -> None:
         """Extract error handling logic"""
         # Find catch blocks
         catches = re.findall(r"catch\s*\(\s*\w+:\s*(\w+)\s*\)\s*\{([^}]+)\}", content)
-        for exception_type, handler_body in catches:
+        for exception_type, _ in catches:
             rule = BusinessRule(
                 type=BusinessRuleType.ERROR_HANDLING,
                 description=f"Handle {exception_type}",
@@ -544,7 +549,7 @@ class BusinessLogicAnalyzer:
 
     # ===== iOS Swift/SwiftUI Analysis =====
 
-    def _analyze_swift_file(self, file_path: Path):
+    def _analyze_swift_file(self, file_path: Path) -> None:
         """Analyze a Swift source file"""
         try:
             content = file_path.read_text(encoding="utf-8")
@@ -561,7 +566,7 @@ class BusinessLogicAnalyzer:
         except Exception as e:
             print(f"Warning: Could not analyze Swift file {file_path}: {e}")
 
-    def _analyze_swiftui_views(self):
+    def _analyze_swiftui_views(self) -> None:
         """Analyze SwiftUI Views for user flows"""
         view_files = [
             f
@@ -581,7 +586,11 @@ class BusinessLogicAnalyzer:
                 view_name = view_match.group(1)
 
                 # Extract Button actions
-                buttons = re.findall(r'Button\(["\']([^"\']+)["\'].*?\{(.*?)\}', content, re.DOTALL)
+                buttons = re.findall(
+                    r'Button\(["\']([^"\']+)["\'].*?\{(.*?)\}',
+                    content,
+                    re.DOTALL,
+                )
 
                 # Extract NavigationLink destinations
                 nav_links = re.findall(r"NavigationLink\(.*?destination:\s*(\w+)", content)
@@ -605,7 +614,7 @@ class BusinessLogicAnalyzer:
             except Exception as e:
                 print(f"Warning: Could not analyze SwiftUI View {view_file}: {e}")
 
-    def _analyze_swift_viewmodels(self):
+    def _analyze_swift_viewmodels(self) -> None:
         """Analyze Swift ViewModels/ObservableObjects"""
         vm_files = list(self.project_path.rglob("*ViewModel.swift"))
 
@@ -619,9 +628,6 @@ class BusinessLogicAnalyzer:
                     continue
 
                 class_name = class_match.group(1)
-
-                # Extract @Published properties (state)
-                published = re.findall(r"@Published\s+var\s+(\w+)", content)
 
                 # Extract public methods
                 methods = re.findall(r"func\s+(\w+)\([^)]*\)\s*(?:->.*?)?\{", content)
@@ -641,7 +647,7 @@ class BusinessLogicAnalyzer:
             except Exception as e:
                 print(f"Warning: Could not analyze Swift ViewModel {vm_file}: {e}")
 
-    def _analyze_swift_models(self):
+    def _analyze_swift_models(self) -> None:
         """Analyze Swift data models"""
         model_files = [
             f
@@ -671,14 +677,16 @@ class BusinessLogicAnalyzer:
 
                     if fields:
                         model = DataModel(
-                            name=model_name, fields=fields, source_file=str(model_file)
+                            name=model_name,
+                            fields=fields,
+                            source_file=str(model_file),
                         )
                         self.analysis.data_models.append(model)
 
             except Exception as e:
                 print(f"Warning: Could not analyze Swift model {model_file}: {e}")
 
-    def _analyze_swift_mock_data(self):
+    def _analyze_swift_mock_data(self) -> None:
         """Analyze Swift mock data"""
         mock_files = [
             f for f in self.project_path.rglob("*.swift") if "Mock" in f.stem or "Preview" in f.stem
@@ -690,7 +698,9 @@ class BusinessLogicAnalyzer:
 
                 # Extract static mock arrays
                 for match in re.finditer(
-                    r"static\s+(?:let|var)\s+(\w+):\s*\[(\w+)\]\s*=\s*\[(.*?)\]", content, re.DOTALL
+                    r"static\s+(?:let|var)\s+(\w+):\s*\[(\w+)\]\s*=\s*\[(.*?)\]",
+                    content,
+                    re.DOTALL,
                 ):
                     entity_name = match.group(1)
                     entity_type = match.group(2)
@@ -714,7 +724,7 @@ class BusinessLogicAnalyzer:
             except Exception as e:
                 print(f"Warning: Could not analyze Swift mock data {mock_file}: {e}")
 
-    def _extract_swift_validations(self, content: str, file_path: str):
+    def _extract_swift_validations(self, content: str, file_path: str) -> None:
         """Extract Swift validation logic (guard statements)"""
         # Find guard statements
         guards = re.findall(r"guard\s+(.*?)\s+else\s*\{([^}]*)\}", content, re.DOTALL)
@@ -733,12 +743,12 @@ class BusinessLogicAnalyzer:
             )
             self.analysis.business_rules.append(rule)
 
-    def _extract_swift_error_handling(self, content: str, file_path: str):
+    def _extract_swift_error_handling(self, content: str, file_path: str) -> None:
         """Extract Swift error handling (do-catch, throws)"""
         # Find catch blocks
         catches = re.findall(r"catch\s+(?:let\s+)?(\w+)?\s*\{([^}]+)\}", content)
 
-        for error_var, handler_body in catches:
+        for error_var, _ in catches:
             error_type = error_var or "Error"
             rule = BusinessRule(
                 type=BusinessRuleType.ERROR_HANDLING,
@@ -750,7 +760,7 @@ class BusinessLogicAnalyzer:
 
     # ===== State Machine Extraction =====
 
-    def _extract_state_machines(self):
+    def _extract_state_machines(self) -> None:
         """Extract state machines from source code"""
         # Look for sealed classes (Kotlin) or enums (Swift) representing states
         if self.platform == "android" or self.platform == "unknown":
@@ -759,7 +769,7 @@ class BusinessLogicAnalyzer:
         if self.platform == "ios" or self.platform == "unknown":
             self._extract_swift_state_machines()
 
-    def _extract_kotlin_state_machines(self):
+    def _extract_kotlin_state_machines(self) -> None:
         """Extract state machines from Kotlin sealed classes"""
         kt_files = list(self.project_path.rglob("*.kt"))
 
@@ -769,7 +779,9 @@ class BusinessLogicAnalyzer:
 
                 # Find sealed classes that represent states
                 sealed_matches = re.finditer(
-                    r"sealed\s+class\s+(\w+State)\s*\{(.*?)\n\}", content, re.DOTALL
+                    r"sealed\s+class\s+(\w+State)\s*\{(.*?)\n\}",
+                    content,
+                    re.DOTALL,
                 )
 
                 for match in sealed_matches:
@@ -796,7 +808,7 @@ class BusinessLogicAnalyzer:
             except Exception as e:
                 print(f"Warning: Could not extract state machine from {kt_file}: {e}")
 
-    def _extract_swift_state_machines(self):
+    def _extract_swift_state_machines(self) -> None:
         """Extract state machines from Swift enums"""
         swift_files = list(self.project_path.rglob("*.swift"))
 
@@ -831,7 +843,7 @@ class BusinessLogicAnalyzer:
 
     def _find_state_transitions(self, content: str, states: List[str]) -> Dict[str, List[str]]:
         """Find state transitions in when/switch expressions"""
-        transitions = {state: [] for state in states}
+        transitions: Dict[str, List[str]] = {state: [] for state in states}
 
         # Look for patterns like "state = NewState"
         for from_state in states:
@@ -845,7 +857,7 @@ class BusinessLogicAnalyzer:
 
     # ===== Edge Case Detection =====
 
-    def _detect_edge_cases(self):
+    def _detect_edge_cases(self) -> None:
         """Detect edge cases from code analysis"""
         # Boundary conditions
         self._detect_boundary_conditions()
@@ -859,7 +871,7 @@ class BusinessLogicAnalyzer:
         # Overflow/underflow patterns
         self._detect_overflow_patterns()
 
-    def _detect_boundary_conditions(self):
+    def _detect_boundary_conditions(self) -> None:
         """Detect boundary condition checks"""
         all_files = (
             list(self.project_path.rglob("*.kt"))
@@ -899,7 +911,7 @@ class BusinessLogicAnalyzer:
         else:
             return [boundary]
 
-    def _detect_null_checks(self):
+    def _detect_null_checks(self) -> None:
         """Detect null/nil safety checks"""
         all_files = list(self.project_path.rglob("*.kt")) + list(self.project_path.rglob("*.swift"))
 
@@ -928,7 +940,7 @@ class BusinessLogicAnalyzer:
             except Exception as e:
                 print(f"Warning: Could not detect null checks in {file_path}: {e}")
 
-    def _detect_empty_checks(self):
+    def _detect_empty_checks(self) -> None:
         """Detect empty collection/string checks"""
         all_files = list(self.project_path.rglob("*.kt")) + list(self.project_path.rglob("*.swift"))
 
@@ -952,7 +964,7 @@ class BusinessLogicAnalyzer:
             except Exception as e:
                 print(f"Warning: Could not detect empty checks in {file_path}: {e}")
 
-    def _detect_overflow_patterns(self):
+    def _detect_overflow_patterns(self) -> None:
         """Detect potential overflow/underflow patterns"""
         all_files = list(self.project_path.rglob("*.kt")) + list(self.project_path.rglob("*.java"))
 
@@ -980,7 +992,7 @@ class BusinessLogicAnalyzer:
 
     # ===== Negative Test Case Generation =====
 
-    def _generate_negative_test_cases(self):
+    def _generate_negative_test_cases(self) -> None:
         """Generate negative test cases from business rules and edge cases"""
         # From validations
         for rule in self.analysis.business_rules:
@@ -1006,7 +1018,7 @@ class BusinessLogicAnalyzer:
                     "test_data": edge_case.test_data,
                     "expected_outcome": "Handle edge case gracefully",
                     "priority": edge_case.severity,
-                    "source": edge_case.source_file,
+                    "source": ([edge_case.source_file] if edge_case.source_file else []),
                 }
                 self.analysis.negative_test_cases.append(negative_case)
 
@@ -1020,13 +1032,13 @@ class BusinessLogicAnalyzer:
                 "steps": flow.steps,
                 "expected_outcome": "Show error message",
                 "priority": "high",
-                "source": flow.source_files[0] if flow.source_files else None,
+                "source": ([flow.source_files[0]] if flow.source_files else []),
             }
             self.analysis.negative_test_cases.append(negative_case)
 
     # ===== API Contract Generation =====
 
-    def _generate_api_contracts(self):
+    def _generate_api_contracts(self) -> None:
         """
         Generate API contracts from network calls and service definitions
 
@@ -1042,7 +1054,7 @@ class BusinessLogicAnalyzer:
         elif self.platform == "ios":
             self._generate_ios_api_contracts()
 
-    def _generate_android_api_contracts(self):
+    def _generate_android_api_contracts(self) -> None:
         """Generate API contracts from Android/Kotlin code"""
         # Find Retrofit service interfaces
         for file_path in self.project_path.rglob("*.kt"):
@@ -1115,7 +1127,7 @@ class BusinessLogicAnalyzer:
             except Exception as e:
                 print(f"Warning: Could not analyze API contracts in {file_path}: {e}")
 
-    def _generate_ios_api_contracts(self):
+    def _generate_ios_api_contracts(self) -> None:
         """Generate API contracts from iOS/Swift code"""
         for file_path in self.project_path.rglob("*.swift"):
             try:
@@ -1176,8 +1188,14 @@ class BusinessLogicAnalyzer:
                     # Extract error handling
                     if "catch" in content or "Result" in content:
                         contract.error_responses = [
-                            {"type": "NetworkError", "description": "Network failure"},
-                            {"type": "DecodingError", "description": "JSON parsing error"},
+                            {
+                                "type": "NetworkError",
+                                "description": "Network failure",
+                            },
+                            {
+                                "type": "DecodingError",
+                                "description": "JSON parsing error",
+                            },
                         ]
 
                     self.analysis.api_contracts.append(contract)

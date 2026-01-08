@@ -4,7 +4,7 @@
 
 The **Business Logic Analyzer** is a powerful feature of the `mobile-test-recorder` framework that automatically extracts business logic, rules, and user flows from mobile application source code.
 
-**NEW in v2.0**: iOS Swift/SwiftUI support, deep state machine extraction, edge case detection, automatic negative test generation, and API contract generation!
+**NEW in v2.2**: Deep AST analysis for code complexity metrics, cyclomatic complexity calculation, and refactoring recommendations!
 
 ## Branch
 
@@ -17,11 +17,12 @@ Automatically analyzes source code to extract:
 1. **User Flows**: Complete user journeys from ViewModels (Android & iOS)
 2. **Business Rules**: Validations, authorizations, error handling
 3. **Data Models**: Entity structures with fields and relationships
-4. **State Machines**: State definitions and transitions ✨ NEW
-5. **Edge Cases**: Boundary conditions, null checks, overflow patterns ✨ NEW
-6. **Negative Test Cases**: Auto-generated from rules and edge cases ✨ NEW
-7. **API Contracts**: Endpoints, methods, schemas, authentication ✨ NEW
-8. **Mock Test Data**: Available test data with valid/invalid ID ranges
+4. **State Machines**: State definitions and transitions ✨ v2.0
+5. **Edge Cases**: Boundary conditions, null checks, overflow patterns ✨ v2.0
+6. **Negative Test Cases**: Auto-generated from rules and edge cases ✨ v2.0
+7. **API Contracts**: Endpoints, methods, schemas, authentication ✨ v2.1
+8. **Code Complexity**: AST-based cyclomatic & cognitive complexity ✨ v2.2
+9. **Mock Test Data**: Available test data with valid/invalid ID ranges
 
 ## Supported Platforms
 
@@ -202,6 +203,38 @@ observe business contracts --input business_logic.yaml
       Response: TransferResponse
       Errors: 5 defined
       Source: app/network/WalletService.kt
+```
+
+### `observe business complexity` ✨ NEW v2.2
+
+Analyze code complexity using Deep AST analysis.
+
+```bash
+observe business complexity --source ./framework --output complexity.yaml
+```
+
+**Output:**
+```
+🔬 Analyzing code complexity with AST...
+   Source: ./framework
+
+📊 Complexity Summary:
+   Total Functions: 127
+   High Complexity (>10): 8
+   Average Complexity: 4.3
+
+🎯 Most Complex Functions:
+   • analyze_complex_flow: CC=15, CogC=18, Depth=4
+   • process_user_data: CC=12, CogC=14, Depth=3
+   • validate_business_rules: CC=11, CogC=13, Depth=3
+   • extract_state_machine: CC=10, CogC=11, Depth=2
+   ...
+
+💾 Analysis saved to: complexity.yaml
+
+Recommendations:
+  ⚠️  8 functions have high complexity (CC > 10)
+  💡 Consider refactoring these functions
 ```
 
 ### `observe business scenarios`
@@ -634,7 +667,10 @@ observe generate pages --model app_model.yaml
 - [x] Negative test case generation ✅ IMPLEMENTED v2.0
 - [x] Edge case detection ✅ IMPLEMENTED v2.0
 - [x] API contract generation from network layer ✅ IMPLEMENTED v2.1
-- [ ] Deep AST analysis for complex logic (Kotlin/Swift parsers)
+- [x] Deep AST analysis for complexity metrics ✅ IMPLEMENTED v2.2
+- [ ] Kotlin/Swift AST parsers (ANTLR, SwiftSyntax)
+- [ ] Data flow analysis (taint tracking, security)
+- [ ] Control flow graph visualization
 - [ ] Integration with AI for natural language descriptions
 - [ ] OpenAPI/Swagger generation from API contracts
 - [ ] Flutter/Dart support
@@ -644,19 +680,21 @@ observe generate pages --model app_model.yaml
 
 ## Comparison
 
-| Feature | Manual Analysis | Business Logic Analyzer v1.0 | v2.0 ✨ | v2.1 ✨ NEW |
-|---------|----------------|------------------------|----------|-------------|
-| **Time** | 2-3 hours | 30 seconds | 30 seconds | 30 seconds |
-| **Platforms** | Any (manual) | Android only | Android + iOS | Android + iOS |
-| **Accuracy** | Variable | Consistent | Consistent | Consistent |
-| **Coverage** | Partial | Complete | Complete+ | Complete++ |
-| **Documentation** | Manual | Auto-generated | Auto-generated | Auto-generated |
-| **Test Data** | Guesswork | Precise ranges | Precise ranges | Precise ranges |
-| **Edge Cases** | Manual | - | Auto-detected | Auto-detected |
-| **Negative Tests** | Manual | - | Auto-generated | Auto-generated |
-| **State Machines** | Manual | - | Auto-extracted | Auto-extracted |
-| **API Contracts** | Manual | - | - | Auto-extracted ✨ |
-| **Updates** | Manual | Re-run command | Re-run command | Re-run command |
+| Feature | Manual | v1.0 | v2.0 ✨ | v2.1 ✨ | v2.2 ✨ NEW |
+|---------|--------|------|----------|----------|-------------|
+| **Time** | 2-3h | 30s | 30s | 30s | 30s |
+| **Platforms** | Any | Android | Android+iOS | Android+iOS | Android+iOS |
+| **Accuracy** | Variable | Consistent | Consistent | Consistent | Consistent |
+| **Coverage** | Partial | Complete | Complete+ | Complete++ | Complete+++ |
+| **Documentation** | Manual | Auto | Auto | Auto | Auto |
+| **Test Data** | Guess | Precise | Precise | Precise | Precise |
+| **Edge Cases** | Manual | - | Auto | Auto | Auto |
+| **Negative Tests** | Manual | - | Auto | Auto | Auto |
+| **State Machines** | Manual | - | Auto | Auto | Auto |
+| **API Contracts** | Manual | - | - | Auto ✨ | Auto |
+| **Code Complexity** | Manual | - | - | - | AST ✨ |
+| **Refactor Hints** | Manual | - | - | - | Auto ✨ |
+| **Updates** | Manual | Re-run | Re-run | Re-run | Re-run |
 
 ## Success Metrics
 

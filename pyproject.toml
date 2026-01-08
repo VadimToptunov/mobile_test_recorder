@@ -90,6 +90,11 @@ warn_unused_configs = true
 disallow_untyped_defs = true
 ignore_missing_imports = true
 
+[tool.flake8]
+max-line-length = 100
+extend-ignore = ["E501"]
+exclude = [".git", "__pycache__", ".venv", "venv", "build", "dist"]
+
 [tool.pytest.ini_options]
 minversion = "7.0"
 addopts = "-ra -q --strict-markers"
