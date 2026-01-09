@@ -2984,6 +2984,14 @@ from framework.cli.business_logic_commands import business
 
 cli.add_command(business)
 
+# ============================================================================
+# PROJECT ANALYSIS & INTEGRATION COMMANDS
+# ============================================================================
+
+from framework.cli.project_commands import project
+
+cli.add_command(project)
+
 
 if __name__ == "__main__":
     cli()

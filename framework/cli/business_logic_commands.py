@@ -96,9 +96,7 @@ def analyze(source: str, output: str, format: str) -> None:
             if isinstance(data, dict):
                 if "start_id" in data and "end_id" in data:
                     # Android mock data with ID ranges
-                    click.echo(
-                        f"   • {entity}: {data['count']} records (IDs {data['start_id']}-{data['end_id']})"
-                    )
+                    click.echo(f"   • {entity}: {data['count']} records (IDs {data['start_id']}-{data['end_id']})")
                 elif "type" in data:
                     # iOS mock data without ID ranges
                     click.echo(f"   • {entity}: {data['count']} {data['type']} objects")
@@ -320,9 +318,7 @@ def testdata(input_file: str) -> None:
                 click.echo(f"      ID Range: {entity_data['start_id']} - {entity_data['end_id']}")
                 click.echo(f"      Source: {entity_data.get('source', 'N/A')}")
                 click.echo(f"\n      💡 Use in tests:")
-                click.echo(
-                    f"         Valid IDs: {entity_data['start_id']}, {entity_data['start_id']+1}, ..."
-                )
+                click.echo(f"         Valid IDs: {entity_data['start_id']}, {entity_data['start_id']+1}, ...")
                 click.echo(f"         Invalid ID: {entity_data['end_id'] + 100}")
             elif "type" in entity_data:
                 # iOS mock data without ID ranges
@@ -627,10 +623,7 @@ def complexity(source: str, output: str, format: str) -> None:
     click.echo(f"\n💾 Analysis saved to: {output_path}")
     click.echo(f"\nRecommendations:")
     if summary["high_complexity_functions"] > 0:
-        click.echo(
-            f"  ⚠️  {summary['high_complexity_functions']} functions "
-            "have high complexity (CC > 10)"
-        )
+        click.echo(f"  ⚠️  {summary['high_complexity_functions']} functions " "have high complexity (CC > 10)")
         click.echo("  💡 Consider refactoring these functions")
     else:
         click.echo("  ✅ All functions have acceptable complexity")

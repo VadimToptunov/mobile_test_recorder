@@ -568,11 +568,7 @@ class BusinessLogicAnalyzer:
 
     def _analyze_swiftui_views(self) -> None:
         """Analyze SwiftUI Views for user flows"""
-        view_files = [
-            f
-            for f in self.project_path.rglob("*.swift")
-            if "View" in f.stem and "ViewModel" not in f.stem
-        ]
+        view_files = [f for f in self.project_path.rglob("*.swift") if "View" in f.stem and "ViewModel" not in f.stem]
 
         for view_file in view_files:
             try:
@@ -649,11 +645,7 @@ class BusinessLogicAnalyzer:
 
     def _analyze_swift_models(self) -> None:
         """Analyze Swift data models"""
-        model_files = [
-            f
-            for f in self.project_path.rglob("*.swift")
-            if "Model" in f.stem or f.parent.name == "Models"
-        ]
+        model_files = [f for f in self.project_path.rglob("*.swift") if "Model" in f.stem or f.parent.name == "Models"]
 
         for model_file in model_files:
             try:
@@ -688,9 +680,7 @@ class BusinessLogicAnalyzer:
 
     def _analyze_swift_mock_data(self) -> None:
         """Analyze Swift mock data"""
-        mock_files = [
-            f for f in self.project_path.rglob("*.swift") if "Mock" in f.stem or "Preview" in f.stem
-        ]
+        mock_files = [f for f in self.project_path.rglob("*.swift") if "Mock" in f.stem or "Preview" in f.stem]
 
         for mock_file in mock_files:
             try:
@@ -707,11 +697,7 @@ class BusinessLogicAnalyzer:
                     array_content = match.group(3)
 
                     # Count items
-                    items = [
-                        item.strip()
-                        for item in array_content.split(f"{entity_type}(")
-                        if item.strip()
-                    ]
+                    items = [item.strip() for item in array_content.split(f"{entity_type}(") if item.strip()]
                     count = len(items)
 
                     if count > 0:
@@ -1080,23 +1066,15 @@ class BusinessLogicAnalyzer:
                         params_str = func_match.group(1)
                         # Parse @Body, @Query, @Path parameters
                         body_params = re.findall(r"@Body\s+(\w+):\s*(\w+)", params_str)
-                        query_params = re.findall(
-                            r"@Query\(\"(\w+)\"\)\s+(\w+):\s*(\w+)", params_str
-                        )
+                        query_params = re.findall(r"@Query\(\"(\w+)\"\)\s+(\w+):\s*(\w+)", params_str)
                         path_params = re.findall(r"@Path\(\"(\w+)\"\)\s+(\w+):\s*(\w+)", params_str)
 
                         if body_params:
-                            request_params["body"] = {
-                                name: type_name for name, type_name in body_params
-                            }
+                            request_params["body"] = {name: type_name for name, type_name in body_params}
                         if query_params:
-                            request_params["query"] = {
-                                param: type_name for param, _, type_name in query_params
-                            }
+                            request_params["query"] = {param: type_name for param, _, type_name in query_params}
                         if path_params:
-                            request_params["path"] = {
-                                param: type_name for param, _, type_name in path_params
-                            }
+                            request_params["path"] = {param: type_name for param, _, type_name in path_params}
 
                     # Extract authentication info
                     auth = None
@@ -1118,8 +1096,7 @@ class BusinessLogicAnalyzer:
                     error_codes = re.findall(r"(4\d{2}|5\d{2})", content)
                     if error_codes:
                         contract.error_responses = [
-                            {"code": code, "description": "Error response"}
-                            for code in set(error_codes)
+                            {"code": code, "description": "Error response"} for code in set(error_codes)
                         ]
 
                     self.analysis.api_contracts.append(contract)
@@ -1137,9 +1114,7 @@ class BusinessLogicAnalyzer:
                 url_patterns = re.findall(r'URL\(string:\s*"([^"]+)"\)', content)
 
                 # Look for HTTP method definitions
-                method_patterns = re.findall(
-                    r'httpMethod\s*=\s*"(GET|POST|PUT|DELETE|PATCH)"', content
-                )
+                method_patterns = re.findall(r'httpMethod\s*=\s*"(GET|POST|PUT|DELETE|PATCH)"', content)
 
                 # Combine to create contracts
                 for i, url in enumerate(url_patterns):
