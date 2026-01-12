@@ -45,6 +45,7 @@ Mobile Test Recorder follows a **multi-layer, multi-language architecture**:
 ### 1. **Rust Core First**
 
 **All critical operations in Rust:**
+
 - ✅ AST Analysis
 - ✅ Event Correlation
 - ✅ Business Logic Analysis
@@ -55,6 +56,7 @@ Mobile Test Recorder follows a **multi-layer, multi-language architecture**:
 - ✅ Device Communication
 
 **Benefits:**
+
 - **Performance:** 10-20x faster than interpreted languages
 - **Memory Safety:** No segfaults, no data races
 - **Concurrency:** Native async/await, rayon parallelism
@@ -63,6 +65,7 @@ Mobile Test Recorder follows a **multi-layer, multi-language architecture**:
 ### 2. **Thin Language Wrappers**
 
 **Python Wrapper:**
+
 ```
 ┌──────────────────────────────────────┐
 │       Python Wrapper (10%)           │
@@ -79,6 +82,7 @@ Mobile Test Recorder follows a **multi-layer, multi-language architecture**:
 ```
 
 **Other Language Wrappers:**
+
 - JavaScript/TypeScript (via NAPI-RS)
 - Go (via CGO)
 - Ruby (via FFI)
@@ -88,12 +92,14 @@ Mobile Test Recorder follows a **multi-layer, multi-language architecture**:
 ### 3. **ML Stays in Python**
 
 **Rationale:**
+
 - Python has the best ML ecosystem (scikit-learn, TensorFlow, PyTorch)
 - No need to port ML to Rust (not performance-critical)
 - Easy integration with existing models
 - Flexibility to use any Python ML library
 
 **ML Components (Python-only):**
+
 - Element Classification (Random Forest)
 - Confidence Scoring
 - Model Training & Evaluation
@@ -121,6 +127,7 @@ pub mod performance;          // Performance profiling
 ### Language-Agnostic API
 
 **C ABI Export:**
+
 ```rust
 // rust_core/src/c_api.rs
 use std::os::raw::{c_char, c_int};
@@ -507,12 +514,14 @@ pip install target/wheels/mobile_test_recorder-*.whl
 ### Phase 1: Core Operations → Rust
 
 **Already Migrated:**
+
 - ✅ AST Analysis
 - ✅ Event Correlation
 - ✅ Business Logic Analysis
 - ✅ File I/O
 
 **To Migrate:**
+
 - 🔄 Selector Generation (partially in Rust)
 - 🔄 Test Execution Engine
 - 🔄 Device Manager (Appium communication)
@@ -520,22 +529,26 @@ pip install target/wheels/mobile_test_recorder-*.whl
 ### Phase 2: Keep in Python
 
 **ML Components:**
+
 - Element Classification
 - Self-Learning System
 - Model Training
 
 **Integrations:**
+
 - Slack, Teams, Email
 - CI/CD platforms
 - Observability (Prometheus, OpenTelemetry)
 
 **CLI:**
+
 - Click-based commands
 - Rich terminal output
 
 ### Phase 3: Multi-Language Support
 
 **Priority Order:**
+
 1. ✅ Python (Done)
 2. 🔄 JavaScript/TypeScript (via NAPI-RS)
 3. 🔄 Go (via CGO)
@@ -588,6 +601,7 @@ for pattern in patterns:
 ✅ **Extensibility**: Easy to add new language wrappers
 
 **Current Status:**
+
 - **Rust Core:** Production-ready (90% of codebase)
 - **Python Wrapper:** Complete with ML
 - **Other Languages:** Planned for Phase 6+

@@ -16,16 +16,19 @@
 ## 🎯 What Makes Us Different
 
 ### Performance First
+
 - 🦀 **Rust Core** - 16x faster than pure Python
 - ⚡ **Parallel Everything** - Tests, file I/O, analysis
 - 🚀 **Sub-second Analysis** - 1000 files in 2.5 seconds
 
 ### Intelligence Built-In
+
 - 🤖 **Self-Learning ML** - 94% accuracy, improves daily
 - 🔧 **Self-Healing Tests** - 92% auto-fix success rate
 - 🧠 **Universal Model** - Works across all mobile frameworks
 
 ### Enterprise Ready
+
 - 📊 **Full Observability** - Prometheus, OpenTelemetry
 - 🔒 **Security Scanning** - OWASP Mobile Top 10
 - ♿ **Accessibility** - WCAG 2.1 compliance checks
@@ -125,6 +128,7 @@ observe ml info
 ```
 
 **Privacy Guarantee:**
+
 - ✅ No screenshots collected
 - ✅ No text content sent
 - ✅ No package names shared
@@ -186,6 +190,7 @@ observe observe trace --session-id abc123
 ```
 
 **Metrics Exported:**
+
 - Test execution time (P50, P95, P99)
 - Healing success rate
 - ML prediction accuracy
@@ -268,6 +273,7 @@ observe security compare \
 ```
 
 **Checks:**
+
 - Certificate Pinning
 - Root/Jailbreak Detection
 - Debug Mode
@@ -292,6 +298,7 @@ observe a11y report results.json
 ```
 
 **Checks:**
+
 - Contrast Ratio (7:1 for AAA)
 - Touch Target Size (48x48 dp)
 - Text Size (12sp minimum)
@@ -385,6 +392,7 @@ observe load compare baseline.json current.json
 ```
 
 **Key Design Principles:**
+
 - 🦀 **Rust Core** - 90% of logic, 16x speedup, multi-language support
 - 🤖 **Python ML** - Best ML ecosystem, not performance-critical
 - 🔌 **Multi-Language** - Bindings for Python, JS, Go, Ruby, etc.
@@ -393,6 +401,7 @@ observe load compare baseline.json current.json
 - 📦 **Binary Distribution** - Single executable, no runtime
 
 **Supported Languages:**
+
 - ✅ Python (PyO3) - Production ready
 - 🔄 JavaScript/TypeScript (NAPI-RS) - Planned Phase 6
 - 🔄 Go (CGO) - Planned Phase 6
@@ -402,6 +411,7 @@ observe load compare baseline.json current.json
 See [Multi-Language Architecture](docs/MULTI_LANGUAGE_ARCHITECTURE.md) for details.
 
 ---
+
 - 📦 **Modular** - Independent components
 
 ---
@@ -528,7 +538,9 @@ refactor: Code refactoring
 **Core is FREE forever (MIT). Buy once, use forever:**
 
 #### 🧑‍💻 Individual License - $49
+
 **Perfect for freelancers & solo developers:**
+
 - ✅ All premium features unlocked
 - ✅ AI Test Generator (BYO OpenAI key)
 - ✅ Visual Regression Suite
@@ -539,7 +551,9 @@ refactor: Code refactoring
 - ✅ Community support (GitHub Discussions)
 
 #### 👥 Team License - $499 (up to 5 devs)
+
 **For small teams:**
+
 - ✅ Everything in Individual
 - ✅ 5 developer seats
 - ✅ Slack community access
@@ -548,7 +562,9 @@ refactor: Code refactoring
 - ✅ Priority bug fixes
 
 #### 🏢 Enterprise License - $1,999 (unlimited devs)
+
 **For companies:**
+
 - ✅ Everything in Team
 - ✅ Unlimited seats
 - ✅ Remove attribution (optional)
@@ -581,12 +597,14 @@ refactor: Code refactoring
 ### 🎯 Pricing Philosophy
 
 **Why one-time?**
+
 - ✅ **No recurring costs** - Buy once, own forever
 - ✅ **No support burden** - Community-driven help
 - ✅ **No servers** - Everything runs locally
 - ✅ **Open Core** - Core always free (MIT)
 
 **Individual vs Team vs Enterprise?**
+
 - **Individual ($49)**: You, solo projects
 - **Team ($499)**: 2-5 devs, small teams
 - **Enterprise ($1,999)**: 5+ devs, companies
@@ -596,12 +614,14 @@ refactor: Code refactoring
 ### 🚀 Getting Started
 
 **Step 1: Install (Free)**
+
 ```bash
 pip install mobile-test-recorder[rust]
 observe --version
 ```
 
 **Step 2: Try It (Free)**
+
 ```bash
 # All core features are free!
 observe record tests/test_login.py
@@ -610,6 +630,7 @@ observe analyze complexity framework/
 ```
 
 **Step 3: Upgrade (Optional)**
+
 ```bash
 # Purchase license from Gumroad/Lemon Squeezy
 # Activate with your key
@@ -648,11 +669,13 @@ observe visual compare --baseline screenshots/
 ### 💬 Support Options
 
 **Free Users:**
+
 - 📖 Documentation (comprehensive)
 - 💬 GitHub Discussions (community)
 - 🐛 GitHub Issues (bugs only)
 
 **Premium Users:**
+
 - 📖 Everything above, plus:
 - 💬 Slack community (faster responses)
 - 🎯 Priority bug fixes (best-effort)
@@ -701,7 +724,6 @@ If you find this project useful, please consider giving it a star! ⭐
 
 **Built with ❤️ and 🦀 by the Mobile Test Recorder team**
 
-
 ---
 
 ## Contributing
@@ -713,6 +735,7 @@ Contributions are welcome! Please read the [User Guide](USER_GUIDE.md) first.
 ## What's Actually Working Now?
 
 **✅ Fully Functional:**
+
 - Business logic analysis (Kotlin, Swift, Java)
 - User flow extraction
 - Edge case detection
@@ -722,6 +745,7 @@ Contributions are welcome! Please read the [User Guide](USER_GUIDE.md) first.
 - Rich CLI with beautiful output
 
 **🚧 In Development:**
+
 - Live session recording (SDK integration)
 - Self-healing tests (healing engine ready, needs recording)
 - ML element classification (model trained, needs integration)

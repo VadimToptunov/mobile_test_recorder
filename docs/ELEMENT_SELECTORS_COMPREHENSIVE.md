@@ -1,4 +1,4 @@
-#  Complete Guide to Mobile Element Selectors
+# Complete Guide to Mobile Element Selectors
 
 ## Overview
 
@@ -98,6 +98,7 @@ driver = webdriver.Remote('http://localhost:4723', capabilities)
 ### 1. Resource ID (Best Practice)
 
 **Appium 2 & 3:**
+
 ```python
 # By ID
 element = driver.find_element(AppiumBy.ID, "com.example:id/login_button")
@@ -107,6 +108,7 @@ element = driver.find_element(AppiumBy.ID, "login_button")
 ```
 
 **Page Object:**
+
 ```python
 class LoginScreen:
     login_button = (AppiumBy.ID, "com.example:id/login_button")
@@ -116,6 +118,7 @@ class LoginScreen:
 ```
 
 **Frameworks:**
+
 - **View:** `android:id="@+id/login_button"`
 - **Compose:** `Modifier.testTag("login_button")`
 - **Flutter:** `key: Key('login_button')`
@@ -126,11 +129,13 @@ class LoginScreen:
 ### 2. Accessibility ID
 
 **Appium 2 & 3:**
+
 ```python
 element = driver.find_element(AppiumBy.ACCESSIBILITY_ID, "Login Button")
 ```
 
 **Frameworks:**
+
 - **View:** `android:contentDescription="Login Button"`
 - **Compose:** `Modifier.semantics { contentDescription = "Login Button" }`
 - **Flutter:** `Semantics(label: "Login Button")`
@@ -141,6 +146,7 @@ element = driver.find_element(AppiumBy.ACCESSIBILITY_ID, "Login Button")
 ### 3. Class Name
 
 **Appium 2 & 3:**
+
 ```python
 # Find by class
 buttons = driver.find_elements(AppiumBy.CLASS_NAME, "android.widget.Button")
@@ -164,6 +170,7 @@ inputs = driver.find_elements(AppiumBy.CLASS_NAME, "android.widget.EditText")
 | `android.webkit.WebView` | WebView |
 
 **Jetpack Compose Classes:**
+
 ```python
 "androidx.compose.ui.platform.ComposeView"
 "androidx.compose.material.Button"
@@ -172,12 +179,14 @@ inputs = driver.find_elements(AppiumBy.CLASS_NAME, "android.widget.EditText")
 ```
 
 **Flutter Classes:**
+
 ```python
 "FlutterView"
 "io.flutter.view.FlutterView"
 ```
 
 **React Native Classes:**
+
 ```python
 "android.view.ViewGroup"  # RN components render as ViewGroups
 "android.widget.EditText"  # TextInput
@@ -189,6 +198,7 @@ inputs = driver.find_elements(AppiumBy.CLASS_NAME, "android.widget.EditText")
 ### 4. XPath (Fallback)
 
 **Appium 2 & 3:**
+
 ```python
 # By text
 element = driver.find_element(AppiumBy.XPATH, "//android.widget.Button[@text='Login']")
@@ -217,6 +227,7 @@ element = driver.find_element(AppiumBy.XPATH,
 ```
 
 **XPath Attributes (Android):**
+
 - `@resource-id` - Resource ID
 - `@text` - Visible text
 - `@content-desc` - Content description
@@ -240,6 +251,7 @@ element = driver.find_element(AppiumBy.XPATH,
 ### 5. UIAutomator Selector (Android Only)
 
 **Appium 2 & 3:**
+
 ```python
 # By text
 element = driver.find_element(AppiumBy.ANDROID_UIAUTOMATOR,
@@ -319,11 +331,13 @@ element = driver.find_element(AppiumBy.ANDROID_UIAUTOMATOR,
 ### 1. Accessibility ID (Best Practice)
 
 **Appium 2 & 3:**
+
 ```python
 element = driver.find_element(AppiumBy.ACCESSIBILITY_ID, "loginButton")
 ```
 
 **Frameworks:**
+
 - **UIKit:** `accessibilityIdentifier = "loginButton"`
 - **SwiftUI:** `.accessibilityIdentifier("loginButton")`
 - **Flutter:** `key: Key('loginButton')`
@@ -334,6 +348,7 @@ element = driver.find_element(AppiumBy.ACCESSIBILITY_ID, "loginButton")
 ### 2. Class Name
 
 **Appium 2 & 3:**
+
 ```python
 buttons = driver.find_elements(AppiumBy.CLASS_NAME, "XCUIElementTypeButton")
 inputs = driver.find_elements(AppiumBy.CLASS_NAME, "XCUIElementTypeTextField")
@@ -369,6 +384,7 @@ inputs = driver.find_elements(AppiumBy.CLASS_NAME, "XCUIElementTypeTextField")
 ### 3. XPath (Fallback)
 
 **Appium 2 & 3:**
+
 ```python
 # By name (label)
 element = driver.find_element(AppiumBy.XPATH, "//XCUIElementTypeButton[@name='Login']")
@@ -396,6 +412,7 @@ element = driver.find_element(AppiumBy.XPATH,
 ```
 
 **XPath Attributes (iOS):**
+
 - `@name` - Accessibility label or text
 - `@label` - Accessibility label
 - `@value` - Current value (for inputs, sliders, etc.)
@@ -410,6 +427,7 @@ element = driver.find_element(AppiumBy.XPATH,
 ### 4. iOS Predicate String (iOS Only)
 
 **Appium 2 & 3:**
+
 ```python
 # By label
 element = driver.find_element(AppiumBy.IOS_PREDICATE,
@@ -485,6 +503,7 @@ element = driver.find_element(AppiumBy.IOS_PREDICATE,
 ### 5. iOS Class Chain (iOS Only)
 
 **Appium 2 & 3:**
+
 ```python
 # Direct child
 element = driver.find_element(AppiumBy.IOS_CLASS_CHAIN,
@@ -567,6 +586,7 @@ class LoginScreen:
 ### 1. UIAutomator2 (Android Native)
 
 **Direct UIAutomator API (no Appium):**
+
 ```java
 // Java
 UiDevice device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation());
@@ -590,6 +610,7 @@ scrollable.scrollIntoView(new UiSelector().text("Item 50"));
 ### 2. XCUITest (iOS Native)
 
 **Direct XCUITest API (no Appium):**
+
 ```swift
 // Swift
 let app = XCUIApplication()
@@ -629,6 +650,7 @@ table.swipeUp()
 ### Jetpack Compose
 
 **Test Tags (Best Practice):**
+
 ```kotlin
 // Compose
 Button(
@@ -640,6 +662,7 @@ Button(
 ```
 
 **Appium Selector:**
+
 ```python
 element = driver.find_element(AppiumBy.ACCESSIBILITY_ID, "login_button")
 # Or
@@ -647,6 +670,7 @@ element = driver.find_element(AppiumBy.ID, "login_button")
 ```
 
 **Semantics:**
+
 ```kotlin
 Button(
     onClick = { /* ... */ },
@@ -664,6 +688,7 @@ Button(
 ### Flutter
 
 **Keys:**
+
 ```dart
 // Flutter
 ElevatedButton(
@@ -674,12 +699,14 @@ ElevatedButton(
 ```
 
 **Appium Selector (with Flutter Driver):**
+
 ```python
 # Via accessibility
 element = driver.find_element(AppiumBy.ACCESSIBILITY_ID, "login_button")
 ```
 
 **Flutter Driver (Alternative to Appium):**
+
 ```dart
 // Dart integration test
 await driver.tap(find.byValueKey('login_button'));
@@ -690,6 +717,7 @@ await driver.tap(find.byValueKey('login_button'));
 ### React Native
 
 **TestID:**
+
 ```javascript
 // React Native
 <Button
@@ -700,6 +728,7 @@ await driver.tap(find.byValueKey('login_button'));
 ```
 
 **Appium Selector:**
+
 ```python
 # Android
 element = driver.find_element(AppiumBy.ID, "login_button")
@@ -715,6 +744,7 @@ element = driver.find_element(AppiumBy.ACCESSIBILITY_ID, "login_button")
 ### Switching Context
 
 **Appium 2 & 3:**
+
 ```python
 # Get all contexts
 contexts = driver.contexts
@@ -735,6 +765,7 @@ driver.switch_to.context('NATIVE_APP')
 ### WebView Selectors
 
 **Standard Web Selectors (Selenium):**
+
 ```python
 from selenium.webdriver.common.by import By
 
@@ -771,21 +802,25 @@ element = driver.find_element(By.NAME, "username")
 ### Selector Priority (Android)
 
 1. **Resource ID** (if available, most stable)
+
    ```python
    (AppiumBy.ID, "com.example:id/login_button")
    ```
 
 2. **Test Tag / Accessibility ID** (Compose/modern apps)
+
    ```python
    (AppiumBy.ACCESSIBILITY_ID, "login_button")
    ```
 
 3. **UIAutomator** (powerful, Android-specific)
+
    ```python
    (AppiumBy.ANDROID_UIAUTOMATOR, 'new UiSelector().text("Login")')
    ```
 
 4. **XPath** (last resort, fragile)
+
    ```python
    (AppiumBy.XPATH, "//android.widget.Button[@text='Login']")
    ```
@@ -793,21 +828,25 @@ element = driver.find_element(By.NAME, "username")
 ### Selector Priority (iOS)
 
 1. **Accessibility Identifier** (best practice)
+
    ```python
    (AppiumBy.ACCESSIBILITY_ID, "loginButton")
    ```
 
 2. **iOS Predicate** (powerful, iOS-specific)
+
    ```python
    (AppiumBy.IOS_PREDICATE, 'label == "Login"')
    ```
 
 3. **iOS Class Chain** (efficient)
+
    ```python
    (AppiumBy.IOS_CLASS_CHAIN, '**/XCUIElementTypeButton[`label == "Login"`]')
    ```
 
 4. **XPath** (last resort, fragile)
+
    ```python
    (AppiumBy.XPATH, "//XCUIElementTypeButton[@name='Login']")
    ```
@@ -884,10 +923,11 @@ element.get_attribute('rect')             # Element rectangle
 | Image |  |  |  |  |  |
 
 Legend:
--  Fully supported
--  Limited support
--  Not supported
--  Stability rating (1-5 stars)
+
+- Fully supported
+- Limited support
+- Not supported
+- Stability rating (1-5 stars)
 
 ---
 
@@ -948,7 +988,6 @@ class LoginScreen(BasePage):
 
 ---
 
-**This document covers ALL selector strategies across all tools and frameworks!** 
+**This document covers ALL selector strategies across all tools and frameworks!**
 
 For framework-specific implementation, see the generated Page Objects in `generated/pages/`.
-

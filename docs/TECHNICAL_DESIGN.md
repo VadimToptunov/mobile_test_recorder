@@ -27,6 +27,7 @@
 ### High-Level Design
 
 Mobile Test Recorder is a **hybrid Python + Rust system** designed for:
+
 - **High Performance**: CPU-intensive operations in Rust (16x speedup)
 - **Flexibility**: Application logic, ML, integrations in Python
 - **Intelligence**: Self-learning ML system for element classification
@@ -35,6 +36,7 @@ Mobile Test Recorder is a **hybrid Python + Rust system** designed for:
 ### Technology Stack
 
 **Python Layer:**
+
 - Python 3.13+
 - Click 8.1+ (CLI)
 - Rich 14.0+ (Terminal UI)
@@ -43,6 +45,7 @@ Mobile Test Recorder is a **hybrid Python + Rust system** designed for:
 - Flask 3.0+ (Dashboard)
 
 **Rust Core:**
+
 - Rust 1.75+
 - PyO3 0.20 (Python bindings)
 - rayon 1.8 (Parallelism)
@@ -50,6 +53,7 @@ Mobile Test Recorder is a **hybrid Python + Rust system** designed for:
 - regex 1.10 (Pattern matching)
 
 **Infrastructure:**
+
 - SQLite (Data storage)
 - Git (Version control)
 - Prometheus (Metrics)
@@ -64,6 +68,7 @@ Mobile Test Recorder is a **hybrid Python + Rust system** designed for:
 **Framework:** Click
 
 **Structure:**
+
 ```
 observe
 ├── business         # Business logic analysis
@@ -84,6 +89,7 @@ observe
 ```
 
 **Command Registration:**
+
 ```python
 # framework/cli/main.py
 @click.group()
@@ -130,6 +136,7 @@ fn observe_core(_py: Python, m: &PyModule) -> PyResult<()> {
 **Modules:**
 
 #### AST Analyzer (`ast_analyzer.rs`)
+
 - **Purpose:** Parse Python code and extract complexity metrics
 - **Algorithm:** Keyword detection with word boundary checks
 - **Performance:** 18x faster than pure Python
@@ -139,6 +146,7 @@ fn observe_core(_py: Python, m: &PyModule) -> PyResult<()> {
   - Nesting Depth
 
 **Implementation:**
+
 ```rust
 pub struct RustAstAnalyzer;
 
@@ -180,12 +188,14 @@ impl RustAstAnalyzer {
 ```
 
 #### Event Correlator (`correlator.rs`)
+
 - **Purpose:** Correlate UI interactions with API calls and navigation
 - **Algorithm:** Time-based correlation with confidence scoring
 - **Performance:** 20x faster than Python
 - **Throughput:** 2M events/second
 
 **Data Structures:**
+
 ```rust
 #[pyclass]
 pub struct Event {
@@ -205,6 +215,7 @@ pub struct Correlation {
 ```
 
 **Correlation Algorithm:**
+
 ```rust
 pub fn find_correlations(&self) -> Vec<Correlation> {
     let mut correlations = Vec::new();
@@ -235,12 +246,14 @@ pub fn find_correlations(&self) -> Vec<Correlation> {
 ```
 
 #### Business Logic Analyzer (`business_logic.rs`)
+
 - **Purpose:** Extract business logic patterns from source code
 - **Algorithm:** Regex-based pattern matching with categorization
 - **Performance:** 11x faster than Python
 - **Categories:** 8 (Validation, Auth, State, Error Handling, etc.)
 
 **Pattern Detection:**
+
 ```rust
 fn analyze_line(&mut self, file_path: &str, line_num: usize, line: &str) {
     // Validation patterns
@@ -276,12 +289,14 @@ fn analyze_line(&mut self, file_path: &str, line_num: usize, line: &str) {
 ```
 
 #### File I/O (`io.rs`)
+
 - **Purpose:** High-performance file operations
 - **Performance:** 16x faster than Python
 - **Throughput:** 1.5 GB/s
 - **Functions:** 15 utility functions
 
 **Parallel File Reading:**
+
 ```rust
 #[pyfunction]
 pub fn read_files_parallel(py: Python, paths: Vec<String>) -> PyResult<PyObject> {
@@ -317,6 +332,7 @@ pub fn read_files_parallel(py: Python, paths: Vec<String>) -> PyResult<PyObject>
 #### Element Classifier
 
 **Features (12):**
+
 1. `resource_id_present` (bool)
 2. `text_present` (bool)
 3. `class_name` (categorical)
@@ -331,6 +347,7 @@ pub fn read_files_parallel(py: Python, paths: Vec<String>) -> PyResult<PyObject>
 12. `selected` (bool)
 
 **Classes (10):**
+
 - Button
 - Input
 - Text
@@ -343,6 +360,7 @@ pub fn read_files_parallel(py: Python, paths: Vec<String>) -> PyResult<PyObject>
 - Custom
 
 **Training:**
+
 ```python
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import LabelEncoder
@@ -380,6 +398,7 @@ class ElementClassifier:
 #### Self-Learning System
 
 **Architecture:**
+
 ```
 ┌────────────────────────────────────────┐
 │         Data Collection                 │
@@ -421,6 +440,7 @@ class ElementClassifier:
 ```
 
 **Privacy-First Implementation:**
+
 ```python
 def anonymize_element(element: ElementData) -> AnonymizedElement:
     """Remove all sensitive data before upload"""
@@ -453,6 +473,7 @@ def anonymize_element(element: ElementData) -> AnonymizedElement:
 ### 4. Self-Healing System
 
 **Components:**
+
 1. **Failure Detector** - Identifies test failures
 2. **Screenshot Analyzer** - Visual comparison
 3. **Selector Generator** - Multi-strategy repair
@@ -462,6 +483,7 @@ def anonymize_element(element: ElementData) -> AnonymizedElement:
 #### Healing Strategies
 
 **Strategy 1: Fuzzy Text Match**
+
 ```python
 def fuzzy_text_match(target_text: str, elements: List[Element]) -> Optional[Element]:
     """Find element by fuzzy text matching"""
@@ -482,6 +504,7 @@ def fuzzy_text_match(target_text: str, elements: List[Element]) -> Optional[Elem
 ```
 
 **Strategy 2: Sibling Navigation**
+
 ```python
 def find_by_sibling(target_selector: str, page_source: str) -> Optional[str]:
     """Find element by navigating from a stable sibling"""
@@ -504,6 +527,7 @@ def find_by_sibling(target_selector: str, page_source: str) -> Optional[str]:
 ```
 
 **Strategy 3: ML Element Classification**
+
 ```python
 def find_by_ml_classification(
     target_type: str,
@@ -594,6 +618,7 @@ class HealingOrchestrator:
 ### Core Models
 
 #### Element
+
 ```python
 @dataclass
 class Element:
@@ -620,6 +645,7 @@ class Element:
 ```
 
 #### Screen
+
 ```python
 @dataclass
 class Screen:
@@ -647,6 +673,7 @@ class Screen:
 ```
 
 #### TestFailure
+
 ```python
 @dataclass
 class TestFailure:
@@ -663,6 +690,7 @@ class TestFailure:
 ```
 
 #### HealingResult
+
 ```python
 @dataclass
 class HealingResult:
@@ -696,11 +724,13 @@ class HealingResult:
 **Purpose:** Automatically heal test failures
 
 **Signature:**
+
 ```bash
 observe heal auto [OPTIONS]
 ```
 
 **Options:**
+
 - `--test-results PATH` - Path to JUnit XML results
 - `--screenshots PATH` - Path to screenshots directory
 - `--confidence FLOAT` - Minimum confidence threshold (default: 0.7)
@@ -708,6 +738,7 @@ observe heal auto [OPTIONS]
 - `--dry-run` - Preview changes without applying
 
 **Example:**
+
 ```bash
 observe heal auto \
   --test-results results/junit.xml \
@@ -721,17 +752,20 @@ observe heal auto \
 **Purpose:** Train ML model
 
 **Signature:**
+
 ```bash
 observe ml train [OPTIONS]
 ```
 
 **Options:**
+
 - `--data PATH` - Path to training data
 - `--output PATH` - Model output path
 - `--test-size FLOAT` - Test set size (default: 0.2)
 - `--cv-folds INT` - Cross-validation folds (default: 5)
 
 **Example:**
+
 ```bash
 observe ml train \
   --data data/training_data.json \
@@ -807,6 +841,7 @@ files_content = observe_core.read_files_parallel(["file1.py", "file2.py"])
 **Impact:** 16x average speedup
 
 **Before (Python):**
+
 ```python
 def analyze_file(file_path: str) -> ComplexityMetrics:
     with open(file_path) as f:
@@ -823,6 +858,7 @@ def analyze_file(file_path: str) -> ComplexityMetrics:
 ```
 
 **After (Rust):**
+
 ```rust
 pub fn analyze_file(path: &str) -> ComplexityMetrics {
     let source = fs::read_to_string(path)?;
@@ -843,6 +879,7 @@ pub fn analyze_file(path: &str) -> ComplexityMetrics {
 **Tool:** rayon (Rust), multiprocessing (Python)
 
 **Parallel File Reading:**
+
 ```rust
 let results: Vec<_> = paths
     .par_iter()
@@ -851,6 +888,7 @@ let results: Vec<_> = paths
 ```
 
 **Parallel Test Execution:**
+
 ```python
 from multiprocessing import Pool
 
@@ -863,6 +901,7 @@ def run_tests_parallel(test_cases: List[TestCase], workers: int):
 ### 3. Caching
 
 **LRU Cache for ML Predictions:**
+
 ```python
 from functools import lru_cache
 
@@ -874,6 +913,7 @@ class ElementClassifier:
 ```
 
 **File Metadata Cache:**
+
 ```python
 class FileCache:
     def __init__(self, ttl: int = 60):
@@ -894,6 +934,7 @@ class FileCache:
 ### 4. Incremental Processing
 
 **Test Selection:**
+
 ```python
 def select_affected_tests(changed_files: List[str]) -> List[TestCase]:
     """Only run tests affected by changed files"""
@@ -917,6 +958,7 @@ def select_affected_tests(changed_files: List[str]) -> List[TestCase]:
 **Framework:** pytest
 
 **Structure:**
+
 ```
 tests/
 ├── unit/
@@ -935,6 +977,7 @@ tests/
 ```
 
 **Example:**
+
 ```python
 # tests/unit/test_element_classifier.py
 def test_element_classifier_accuracy():

@@ -1,20 +1,23 @@
-# Universal Pre-Trained ML Model 
+# Universal Pre-Trained ML Model
 
 ## Overview
 
 The **Universal Pre-Trained Model** is a machine learning classifier that works **out-of-the-box** for ANY mobile application, supporting **ALL mobile technologies**:
 
-### Supported Frameworks & Technologies 
+### Supported Frameworks & Technologies
 
 **Native Development:**
--  **Android**: View, Jetpack Compose, Material Design
--  **iOS**: UIKit, SwiftUI
+
+- **Android**: View, Jetpack Compose, Material Design
+- **iOS**: UIKit, SwiftUI
 
 **Cross-Platform Development:**
+
 - 🦋 **Flutter** (Dart)
--  **React Native** (JavaScript/TypeScript)
+- **React Native** (JavaScript/TypeScript)
 
 **Languages:**
+
 - Java, Kotlin, Swift, Objective-C, Dart, JavaScript, TypeScript
 
 ### Key Benefits
@@ -58,6 +61,7 @@ observe ml create-universal-model
 ```
 
 **Output:**
+
 ```
  Creating universal pre-trained model...
    This will generate 2000+ training samples and train a model
@@ -92,7 +96,7 @@ observe model build \
 # is used automatically!
 ```
 
-**That's it!** No training, no data collection, no setup. It just works! 
+**That's it!** No training, no data collection, no setup. It just works!
 
 ---
 
@@ -103,20 +107,24 @@ observe model build \
 The model is trained on **2500+ synthetic samples** covering:
 
 #### Native Android
+
 - **Android Views**: Button, TextView, EditText, ImageView, CheckBox, Switch, etc.
 - **Jetpack Compose**: Button, Text, TextField, Image, LazyColumn, Checkbox, etc.
 - **Material Design**: MaterialButton, TextInputEditText, etc.
 
 #### Native iOS
+
 - **UIKit**: UIButton, UILabel, UITextField, UIImageView, UISwitch, etc.
 - **SwiftUI**: Button, Text, TextField, Image, List, Toggle, etc.
 
 #### Flutter (Cross-Platform)
+
 - **Widgets**: ElevatedButton, TextField, Text, Image, ListView, Checkbox, Switch, etc.
 - **Material**: MaterialButton, TextField, etc.
 - **Cupertino**: CupertinoButton, CupertinoTextField, CupertinoSwitch, etc.
 
 #### React Native (Cross-Platform)
+
 - **Components**: Button, TextInput, Text, Image, ScrollView, FlatList, etc.
 - **RCT Classes**: RCTButton, RCTTextField, RCTText, RCTImageView, RCTScrollView, etc.
 - **Community**: CheckBox (@react-native-community/checkbox)
@@ -126,18 +134,22 @@ The model is trained on **2500+ synthetic samples** covering:
 The classifier analyzes multiple element attributes:
 
 **Class-based:**
+
 - Android: `android.widget.Button`, `androidx.compose.material.Button`
 - iOS: `UIButton`, `SwiftUI.Button`
 
 **Behavioral:**
+
 - `clickable`, `focusable`, `checkable`, `scrollable`
 - `enabled`, `password`, `selected`
 
 **Content:**
+
 - `text`, `content_desc` (Android)
 - `label`, `accessibilityLabel` (iOS)
 
 **Structural:**
+
 - `bounds` (width, height)
 - `depth` (hierarchy level)
 - `children_count`
@@ -156,7 +168,7 @@ The classifier analyzes multiple element attributes:
 
 ## Workflow Comparison
 
-###  Old Way (App-Specific Training)
+### Old Way (App-Specific Training)
 
 ```bash
 # 1. Record session
@@ -175,11 +187,12 @@ observe model build --session-id session_123 --use-ml
 ```
 
 **Problems:**
-- ⏰ Time-consuming setup
--  Requires data collection
--  Must repeat for each app
 
-###  New Way (Universal Model)
+- ⏰ Time-consuming setup
+- Requires data collection
+- Must repeat for each app
+
+### New Way (Universal Model)
 
 ```bash
 # One-time setup (framework maintainer does this)
@@ -190,9 +203,10 @@ observe model build --session-id session_123 --use-ml
 ```
 
 **Benefits:**
--  Instant usage
--  Works for any app
--  No setup required
+
+- Instant usage
+- Works for any app
+- No setup required
 
 ---
 
@@ -223,6 +237,7 @@ observe model build \
 ```
 
 This combines the best of both worlds:
+
 - Start with universal knowledge
 - Enhance with app-specific patterns
 
@@ -237,12 +252,13 @@ Your colleagues don't need to understand ML! They just:
 3. **Use `--use-ml` flag** when building models
 
 That's it! The ML model automatically:
--  Classifies element types
--  Generates better selectors
--  Improves Page Object quality
--  Reduces manual editing
 
-**No training, no data science, no headaches!** 
+- Classifies element types
+- Generates better selectors
+- Improves Page Object quality
+- Reduces manual editing
+
+**No training, no data science, no headaches!**
 
 ---
 
@@ -253,6 +269,7 @@ That's it! The ML model automatically:
 Each element type has 15-25 templates covering all frameworks:
 
 **Button Templates:**
+
 ```python
 # Native Android
 {'class': 'android.widget.Button', 'clickable': True, 'text': 'Submit'}
@@ -272,6 +289,7 @@ Each element type has 15-25 templates covering all frameworks:
 ```
 
 **Input Templates:**
+
 ```python
 # Native Android
 {'class': 'android.widget.EditText', 'focusable': True, 'text': ''}
@@ -293,6 +311,7 @@ Each element type has 15-25 templates covering all frameworks:
 ### Sample Variations
 
 Each template generates multiple variations:
+
 - Random bounds (50-800px width, 30-300px height)
 - Random hierarchy depth (0-12 levels)
 - Random children count (0-10 children)
@@ -305,12 +324,14 @@ This ensures the model generalizes well to real applications.
 
 ## Limitations
 
-### What It Can Do 
+### What It Can Do
+
 - Classify standard UI elements
 - Work with common frameworks
 - Handle typical patterns
 
-### What It Can't Do 
+### What It Can't Do
+
 - Recognize custom widgets without training
 - Understand app-specific semantics
 - Achieve 100% accuracy on first try
@@ -351,5 +372,4 @@ ml_models/
  **Just Works** = No training, no data, no ML expertise needed  
  **For Teams** = QA engineers can use ML without understanding it  
 
-**Your colleagues will thank you!** 
-
+**Your colleagues will thank you!**

@@ -458,10 +458,12 @@ def weekly_retrain():
 Users exchange training samples directly through a torrent-like system.
 
 **Pros:**
+
 - No central server needed
 - Decentralized
 
 **Cons:**
+
 - More complex to implement
 - No quality control
 
@@ -476,11 +478,13 @@ curl -L https://github.com/yourusername/mobile-observe/releases/latest/download/
 ```
 
 **Pros:**
+
 - Free
 - Simple integration
 - Version control
 
 **Cons:**
+
 - No automatic data aggregation
 - Manual model retraining needed
 
@@ -489,10 +493,12 @@ curl -L https://github.com/yourusername/mobile-observe/releases/latest/download/
 Model trains locally on each user's machine, only weights are updated.
 
 **Pros:**
+
 - Maximum privacy
 - No data transmission needed
 
 **Cons:**
+
 - Very complex implementation
 - Requires significant client resources
 
@@ -501,11 +507,13 @@ Model trains locally on each user's machine, only weights are updated.
 ## 🚀 Roadmap
 
 ### Phase 1: Foundation (Done ✅)
+
 - [x] Universal pre-trained model
 - [x] Synthetic dataset generation
 - [x] Basic ML classification
 
 ### Phase 2: Self-Learning (Current)
+
 - [x] SelfLearningCollector implementation
 - [x] ModelUpdater implementation
 - [x] FeedbackCollector implementation
@@ -515,6 +523,7 @@ Model trains locally on each user's machine, only weights are updated.
 - [ ] Automated training pipeline
 
 ### Phase 3: Infrastructure (Future)
+
 - [ ] Model versioning and rollback
 - [ ] A/B testing for model updates
 - [ ] User dashboard (contribution stats)
@@ -522,6 +531,7 @@ Model trains locally on each user's machine, only weights are updated.
 - [ ] Federated learning support
 
 ### Phase 4: Advanced Features (Future)
+
 - [ ] Multi-language model (Rust core?)
 - [ ] Custom model fine-tuning UI
 - [ ] Model marketplace (community models)
@@ -532,10 +542,10 @@ Model trains locally on each user's machine, only weights are updated.
 
 ## 📚 References
 
-- **Privacy by Design**: https://www.privacybydesign.foundation/
-- **Federated Learning**: https://federated.withgoogle.com/
-- **GDPR Compliance**: https://gdpr.eu/
-- **ML Model Versioning**: https://dvc.org/
+- **Privacy by Design**: <https://www.privacybydesign.foundation/>
+- **Federated Learning**: <https://federated.withgoogle.com/>
+- **GDPR Compliance**: <https://gdpr.eu/>
+- **ML Model Versioning**: <https://dvc.org/>
 
 ---
 

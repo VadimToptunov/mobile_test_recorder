@@ -186,28 +186,33 @@ See [Multi-Language Architecture](MULTI_LANGUAGE_ARCHITECTURE.md) for details.
 **Modules:**
 
 #### AST Analyzer
+
 - **Performance:** 18x faster than Python
 - **Complexity Metrics:** Cyclomatic, Cognitive, Nesting Depth
 - **File Processing:** 250 MB/s
 
 #### Event Correlator
+
 - **Performance:** 20x faster than Python
 - **Correlations:** UI ↔ API ↔ Navigation
 - **Throughput:** 2M events/second
 - **Algorithm:** O(n log n) with confidence scoring
 
 #### Business Logic Analyzer
+
 - **Performance:** 11x faster than Python
 - **Pattern Categories:** 8 (Validation, Auth, State, etc.)
 - **Detection:** Regex-based with confidence scoring
 
 #### File I/O Utilities
+
 - **Performance:** 16x faster than Python
 - **Parallel Reading:** Rayon-powered
 - **Functions:** 15 utility functions
 - **Throughput:** 1.5 GB/s
 
 **Technology:**
+
 - Language: Rust 1.75+
 - Python Bindings: PyO3 0.20
 - Parallel: rayon 1.8
@@ -237,18 +242,21 @@ See [Multi-Language Architecture](MULTI_LANGUAGE_ARCHITECTURE.md) for details.
 **Components:**
 
 #### Element Classifier
+
 - **Algorithm:** Random Forest (100 estimators)
 - **Accuracy:** 94%
 - **Features:** 12 (resource_id, class, text, bounds, etc.)
 - **Classes:** Button, Input, Text, Image, Link, Icon, Toggle, Dropdown, Checkbox, Custom
 
 #### Universal Model
+
 - **Training Data:** 10,000+ anonymized elements
 - **Platforms:** Android Native/Compose, iOS UIKit/SwiftUI, Flutter, React Native
 - **Size:** 2.5 MB
 - **Inference Time:** <5ms per element
 
 #### Self-Learning System
+
 - **Privacy-First:** No sensitive data collection
 - **Auto-Updates:** Daily model improvements
 - **Contribution:** Optional user data sharing
@@ -280,12 +288,14 @@ See [Multi-Language Architecture](MULTI_LANGUAGE_ARCHITECTURE.md) for details.
 **Components:**
 
 #### Healing Orchestrator
+
 - **Success Rate:** 92%
 - **Strategies:** 8 (Fuzzy Match, Sibling, Parent, Position, etc.)
 - **Confidence Threshold:** 0.7
 - **Git Integration:** Automatic commits
 
 #### Selector Repair
+
 - **Algorithm:** Multi-strategy with fallback
 - **ML-Enhanced:** Element classification for smart repair
 - **Visual Analysis:** Screenshot comparison
@@ -317,17 +327,20 @@ See [Multi-Language Architecture](MULTI_LANGUAGE_ARCHITECTURE.md) for details.
 **Components:**
 
 #### Metrics Collector
+
 - **Format:** Prometheus
 - **Metrics:** Test duration, pass rate, healing rate, etc.
 - **Cardinality:** ~50 metrics
 - **Export:** HTTP endpoint `/metrics`
 
 #### Structured Logger
+
 - **Format:** JSON
 - **Fields:** Timestamp, level, message, context
 - **Levels:** DEBUG, INFO, WARNING, ERROR, CRITICAL
 
 #### Tracing
+
 - **Protocol:** OpenTelemetry
 - **Spans:** Test execution, healing, ML inference
 - **Sampling:** 10% (configurable)
@@ -362,12 +375,14 @@ See [Multi-Language Architecture](MULTI_LANGUAGE_ARCHITECTURE.md) for details.
 **Components:**
 
 #### Load Tester
+
 - **Virtual Users:** Up to 1000
 - **Ramp-up:** Configurable
 - **Profiles:** 6 predefined (smoke, light, medium, heavy, stress, spike)
 - **Metrics:** Response time (P50, P95, P99), throughput, error rate
 
 #### Performance Profiler
+
 - **CPU Profiling:** cProfile integration
 - **Memory Profiling:** tracemalloc
 - **Top Functions:** Configurable count
@@ -396,6 +411,7 @@ See [Multi-Language Architecture](MULTI_LANGUAGE_ARCHITECTURE.md) for details.
 ```
 
 **Security Checks:**
+
 - Certificate Pinning
 - Root Detection
 - Debug Mode
@@ -405,6 +421,7 @@ See [Multi-Language Architecture](MULTI_LANGUAGE_ARCHITECTURE.md) for details.
 - Weak Crypto
 
 **Accessibility Checks:**
+
 - Contrast Ratio (WCAG AAA: 7:1)
 - Touch Target Size (48x48 dp)
 - Text Size (12sp minimum)
@@ -473,6 +490,7 @@ See [Multi-Language Architecture](MULTI_LANGUAGE_ARCHITECTURE.md) for details.
 **Strategy:** Move CPU-intensive operations to Rust
 
 **Results:**
+
 - AST Analysis: 18x faster
 - Event Correlation: 20x faster
 - File I/O: 16x faster
@@ -481,10 +499,12 @@ See [Multi-Language Architecture](MULTI_LANGUAGE_ARCHITECTURE.md) for details.
 #### 2. Parallel Processing
 
 **Tools:**
+
 - Rust: `rayon` for data parallelism
 - Python: `multiprocessing` for test execution
 
 **Use Cases:**
+
 - Parallel test execution
 - Parallel file reading
 - Parallel model training
@@ -494,6 +514,7 @@ See [Multi-Language Architecture](MULTI_LANGUAGE_ARCHITECTURE.md) for details.
 **Strategy:** Cache expensive operations
 
 **Implementations:**
+
 - ML model predictions (LRU cache)
 - File metadata (in-memory)
 - Git status (TTL: 60s)
@@ -502,6 +523,7 @@ See [Multi-Language Architecture](MULTI_LANGUAGE_ARCHITECTURE.md) for details.
 #### 4. Incremental Processing
 
 **Examples:**
+
 - Test selection based on changed files
 - Incremental model updates
 - Diff-based healing
@@ -659,6 +681,7 @@ See [Multi-Language Architecture](MULTI_LANGUAGE_ARCHITECTURE.md) for details.
 ### CI/CD Integration
 
 **Supported Platforms:**
+
 - GitHub Actions
 - GitLab CI
 - Jenkins
@@ -707,11 +730,13 @@ jobs:
 ### Notification Integration
 
 **Channels:**
+
 - Slack
 - Microsoft Teams
 - Email
 
 **Triggers:**
+
 - Test failures
 - Healing events
 - Security findings
@@ -770,12 +795,14 @@ jobs:
 ### Horizontal Scaling
 
 **Parallel Test Execution:**
+
 - Device Pool Management
 - Test Sharding (4 strategies)
 - Load Balancing
 - Dynamic Worker Allocation
 
 **Capacity:**
+
 - Devices: Unlimited (pool-based)
 - Workers: Up to 100 concurrent
 - Tests: 10,000+ per run
@@ -783,6 +810,7 @@ jobs:
 ### Vertical Scaling
 
 **Resource Optimization:**
+
 - Rust core for CPU-intensive tasks
 - Memory-mapped file I/O
 - Incremental processing

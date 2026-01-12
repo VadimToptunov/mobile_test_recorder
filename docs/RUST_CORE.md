@@ -38,16 +38,19 @@ Rewrite CPU-intensive components in Rust for **10-100x** performance improvement
 ### Priority 1: AST Analysis (Biggest Bottleneck)
 
 **Current:** `framework/analyzers/ast_analyzer.py` (241 lines)
+
 - Parses Python AST for complexity metrics
 - Calculates cyclomatic complexity, cognitive complexity
 - Single-threaded, slow for large codebases
 
 **Rust Replacement:** `rust_core/src/ast_analyzer.rs`
+
 - Use `syn` crate for parsing
 - Parallel file processing with `rayon`
 - **Expected speedup:** 50-100x
 
 **Python Interface:**
+
 ```python
 from observe_core import RustAstAnalyzer
 
@@ -60,16 +63,19 @@ results = analyzer.analyze_directory("./src")  # 100x faster!
 ### Priority 2: Event Correlation
 
 **Current:** `framework/correlation/correlator.py` (400+ lines)
+
 - Correlates UI events with API calls
 - Complex nested loops
 - O(n²) complexity
 
 **Rust Replacement:** `rust_core/src/correlator.rs`
+
 - Optimized correlation algorithms
 - Concurrent processing
 - **Expected speedup:** 10-20x
 
 **Python Interface:**
+
 ```python
 from observe_core import RustCorrelator
 
@@ -82,11 +88,13 @@ result = correlator.correlate_events(ui_events, api_events)
 ### Priority 3: Business Logic Analysis
 
 **Current:** `framework/analyzers/business_logic_analyzer.py` (1000+ lines)
+
 - Regex-heavy pattern matching
 - Multiple file reads
 - Sequential processing
 
 **Rust Replacement:** `rust_core/src/business_logic.rs`
+
 - Compiled regex (faster)
 - Memory-mapped file I/O
 - Parallel file processing
@@ -97,11 +105,13 @@ result = correlator.correlate_events(ui_events, api_events)
 ### Priority 4: File I/O & Data Processing
 
 **Current:** Multiple Python modules
+
 - JSON parsing
 - File reading/writing
 - Data serialization
 
 **Rust Replacement:** `rust_core/src/io.rs`
+
 - `serde_json` for fast JSON
 - `memmap2` for large files
 - Zero-copy deserialization
@@ -181,6 +191,7 @@ mobile_test_recorder/
 ### Phase 1: Setup & Infrastructure (Day 1)
 
 1. **Initialize Rust project**
+
    ```bash
    cargo new --lib rust_core
    cd rust_core
@@ -188,6 +199,7 @@ mobile_test_recorder/
    ```
 
 2. **Configure PyO3 bindings**
+
    ```rust
    use pyo3::prelude::*;
 
@@ -200,6 +212,7 @@ mobile_test_recorder/
    ```
 
 3. **Setup build system (maturin)**
+
    ```bash
    pip install maturin
    maturin develop  # Build and install locally
@@ -210,6 +223,7 @@ mobile_test_recorder/
 ### Phase 2: AST Analyzer (Day 2-3)
 
 1. **Implement basic AST parsing**
+
    ```rust
    #[pyclass]
    pub struct RustAstAnalyzer {
@@ -236,6 +250,7 @@ mobile_test_recorder/
    - Nesting depth
 
 3. **Parallel directory processing**
+
    ```rust
    use rayon::prelude::*;
 
@@ -257,6 +272,7 @@ mobile_test_recorder/
 ### Phase 4: Integration & Testing (Day 6-7)
 
 1. **Python wrapper classes**
+
    ```python
    # framework/analyzers/ast_analyzer.py
    try:
@@ -274,6 +290,7 @@ mobile_test_recorder/
    ```
 
 2. **Benchmarks**
+
    ```bash
    cd rust_core
    cargo bench
@@ -297,6 +314,7 @@ mobile_test_recorder/
 ## 🧪 Benchmarking Strategy
 
 ### 1. Create Test Dataset
+
 ```python
 # benchmark/generate_test_data.py
 def generate_large_codebase():
@@ -306,17 +324,20 @@ def generate_large_codebase():
 ```
 
 ### 2. Benchmark Python Implementation
+
 ```bash
 time python -m framework.analyzers.ast_analyzer ./test_data/
 ```
 
 ### 3. Benchmark Rust Implementation
+
 ```bash
 cd rust_core
 cargo bench -- ast_analyzer
 ```
 
 ### 4. Compare Results
+
 ```
 Benchmark Results:
 ==================
@@ -338,17 +359,20 @@ Memory Usage:
 ### Gradual Migration (Safe)
 
 **Week 1: AST Analyzer**
+
 - Implement Rust version
 - Keep Python fallback
 - A/B test both versions
 - Roll out gradually
 
 **Week 2: Event Correlator**
+
 - Port to Rust
 - Validate correctness
 - Enable by default
 
 **Week 3: Business Logic**
+
 - Migrate pattern matching
 - Optimize regex
 - Full Rust backend
@@ -391,6 +415,7 @@ maturin publish
 ```
 
 Users install with:
+
 ```bash
 pip install mobile-observe-test  # Includes Rust core!
 ```
@@ -398,6 +423,7 @@ pip install mobile-observe-test  # Includes Rust core!
 ### Option 2: Source Distribution
 
 Users with Rust installed can compile:
+
 ```bash
 pip install mobile-observe-test --no-binary :all:
 ```
@@ -405,6 +431,7 @@ pip install mobile-observe-test --no-binary :all:
 ### Option 3: Docker Images
 
 Pre-built images with Rust core:
+
 ```bash
 docker pull mobile-observe:latest-rust
 ```
@@ -434,16 +461,19 @@ fn analyze_file(path: String) -> PyResult<ComplexityMetrics> {
 ## 🎯 Success Criteria
 
 ✅ **Performance:**
+
 - 10x faster minimum
 - 50x faster target
 - No performance regression
 
 ✅ **Compatibility:**
+
 - 100% API compatibility
 - All existing tests pass
 - Graceful fallback to Python
 
 ✅ **Quality:**
+
 - Zero memory leaks
 - Zero data races (Rust guarantees)
 - Comprehensive test coverage

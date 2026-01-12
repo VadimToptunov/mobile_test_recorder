@@ -16,6 +16,7 @@ Universal enhanced selector generation has been implemented for **ALL** element 
 Each element is identified using **6-7 different strategies**, ranked by stability:
 
 **Android Native:**
+
 1. Resource ID (95 pts)
 2. Test Tag (95 pts)
 3. Content Description (85 pts)
@@ -25,6 +26,7 @@ Each element is identified using **6-7 different strategies**, ranked by stabili
 7. Indexed Path (40 pts)
 
 **iOS Native:**
+
 1. Accessibility Identifier (95 pts)
 2. Accessibility Label (85 pts)
 3. Text Content (80 pts)
@@ -35,6 +37,7 @@ Each element is identified using **6-7 different strategies**, ranked by stabili
 **WebView (Both Platforms):**
 
 XPath:
+
 1. ID-based (95 pts)
 2. Name attribute (75 pts)
 3. Text content (75 pts)
@@ -43,6 +46,7 @@ XPath:
 6. Indexed path (40 pts)
 
 CSS:
+
 1. ID (90 pts)
 2. Name attribute (75 pts)
 3. Tag + classes (65 pts)
@@ -54,7 +58,7 @@ CSS:
 Each strategy **validates** that it uniquely identifies the element:
 
 - **Android/iOS Native:** `isSelectorUnique(selector, rootView)`
-- **WebView JavaScript:** 
+- **WebView JavaScript:**
   - `document.querySelectorAll(cssSelector).length === 1`
   - `document.evaluate(xpath, ...).snapshotLength === 1`
 
@@ -123,21 +127,27 @@ All strategies are exported as JSON in the `allSelectors` field:
 ## Benefits
 
 ### 1. Maximum Stability
+
 Tests survive UI changes because of multiple fallback strategies:
+
 - Developer removes test tag → falls back to resource ID
 - Text changes → falls back to content description
 - DOM restructure → falls back to text-based XPath
 
 ### 2. Uniqueness Guaranteed
+
 No more "clicked wrong button" issues - each selector is validated to match exactly one element.
 
 ### 3. Self-Healing Tests
+
 The `SelectorHealer` can automatically try all strategies and update Page Objects when selectors break.
 
 ### 4. Cross-Platform Consistency
+
 Same approach on Android and iOS makes maintenance easier.
 
 ### 5. Zero Manual Work
+
 Framework automatically selects the best strategy - QA engineers just run tests.
 
 ## Real-World Example
@@ -145,6 +155,7 @@ Framework automatically selects the best strategy - QA engineers just run tests.
 ### Scenario: "Submit Payment" button
 
 **Android Native:**
+
 ```
 Primary:   id:submit_button
 Fallback1: content_desc:Submit button
@@ -153,6 +164,7 @@ Fallback3: /LinearLayout[@id='root']/Button[@id='submit']
 ```
 
 **iOS Native:**
+
 ```
 Primary:   accessibility_id:submit_button
 Fallback1: accessibility_label:Submit button
@@ -161,6 +173,7 @@ Fallback3: /UIButton[@id='submit']
 ```
 
 **WebView (Both):**
+
 ```
 Primary:   #submit-button (CSS)
 Fallback1: //button[text()='Submit Payment'] (XPath)
@@ -248,11 +261,12 @@ class LoginScreen(BasePage):
 - [x] CLI commands - fallback-stats command added
 - [ ] End-to-end testing
 
-## Implementation Complete!
+## Implementation Complete
 
-### What's Implemented:
+### What's Implemented
 
 **SDK Level (Android + iOS):**
+
 - ✅ Multi-strategy selector generation (6-7 strategies per element)
 - ✅ Uniqueness validation for each selector
 - ✅ Priority-based selector ranking
@@ -261,6 +275,7 @@ class LoginScreen(BasePage):
 - ✅ WebView elements (enhanced JavaScript injection)
 
 **Framework Level (Python):**
+
 - ✅ `ModelBuilder._build_selector_from_enhanced()` - Parses allSelectors JSON
 - ✅ Intelligent fallback chain construction
 - ✅ Stability assessment (HIGH/MEDIUM/LOW)
@@ -271,7 +286,7 @@ class LoginScreen(BasePage):
 - ✅ SelectorHealer - Auto-updates Page Objects after 3 failures
 - ✅ CLI command `observe ml fallback-stats` - View statistics
 
-### How It Works:
+### How It Works
 
 1. **Recording Phase:**
    - SDK captures element interaction
@@ -314,7 +329,7 @@ class LoginScreen(BasePage):
      - Logs auto-update
    - QA reviews and commits changes
 
-### Auto-Healing Example:
+### Auto-Healing Example
 
 ```python
 # Initial Page Object (generated)
@@ -341,7 +356,7 @@ LOGIN_BUTTON_SELECTOR = {
 # QA reviews change and commits
 ```
 
-### CLI Commands:
+### CLI Commands
 
 ```bash
 # View fallback statistics
@@ -377,6 +392,7 @@ observe ml fallback-stats
 ### Selector Evaluation Time
 
 Each strategy is tried in priority order until a unique one is found. Expected times:
+
 - ID-based: < 1ms (fastest)
 - Text-based: 1-5ms (depends on DOM size)
 - Indexed path: 5-10ms (most complex)
@@ -399,4 +415,3 @@ Enhanced selector generation is now **fully implemented** for all element types 
 4. Production-grade reliability
 
 Next phase is Python framework integration to leverage these enhanced selectors in automated test generation.
-
