@@ -236,7 +236,7 @@ def compliance(source_path: str, standard: str) -> None:
         if standard in compliance_checks:
             categories = compliance_checks[standard]
 
-            print_success(f"\n✅ Compliance Report:")
+            print_success(f"\n✅ Compliance Report:") # noqa: F541
 
             for category, cwes in categories.items():
                 category_issues = [i for i in issues if i.cwe_id in cwes]
