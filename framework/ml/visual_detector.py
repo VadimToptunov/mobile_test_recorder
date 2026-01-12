@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 
 try:
     import pytesseract
+
     TESSERACT_AVAILABLE = True
 except ImportError:
     TESSERACT_AVAILABLE = False
@@ -44,11 +45,7 @@ class VisualDetector:
         if TESSERACT_AVAILABLE and tesseract_path:
             pytesseract.pytesseract.tesseract_cmd = tesseract_path
 
-    def extract_text_from_image(
-        self,
-        image_path: Path,
-        region: Optional[Tuple[int, int, int, int]] = None
-    ) -> str:
+    def extract_text_from_image(self, image_path: Path, region: Optional[Tuple[int, int, int, int]] = None) -> str:
         """
         Extract text from image using OCR.
 
@@ -76,10 +73,7 @@ class VisualDetector:
         return text.strip()
 
     def find_element_by_image(
-        self,
-        screenshot_path: Path,
-        template_path: Path,
-        threshold: float = 0.8
+        self, screenshot_path: Path, template_path: Path, threshold: float = 0.8
     ) -> Optional[Tuple[int, int, int, int]]:
         """
         Find element in screenshot by template matching.
@@ -108,7 +102,7 @@ class VisualDetector:
         result = cv2.matchTemplate(screenshot_gray, template_gray, cv2.TM_CCOEFF_NORMED)
 
         # Find best match
-        min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
+        _, max_val, _, max_loc = cv2.minMaxLoc(result)  # Unused: min_val, min_loc
 
         if max_val < threshold:
             logger.debug(f"No match found (max confidence: {max_val:.2f})")
@@ -121,12 +115,7 @@ class VisualDetector:
         x, y = max_loc
         return (x, y, w, h)
 
-    def calculate_image_similarity(
-        self,
-        image1_path: Path,
-        image2_path: Path,
-        method: str = 'ssim'
-    ) -> float:
+    def calculate_image_similarity(self, image1_path: Path, image2_path: Path, method: str = "ssim") -> float:
         """
         Calculate similarity between two images.
 
@@ -149,15 +138,15 @@ class VisualDetector:
         if img1.shape != img2.shape:
             img2 = cv2.resize(img2, (img1.shape[1], img1.shape[0]))
 
-        if method == 'mse':
+        if method == "mse":
             # Mean Squared Error (lower is better)
-            mse = np.mean((img1 - img2) ** 2)
+            mse = np.mean((img1 - img2) ** 2)  # type: ignore[call-overload]
             # Normalize to 0-1 (1 = identical)
-            max_mse = 255.0 ** 2
+            max_mse = 255.0**2
             similarity = 1.0 - (mse / max_mse)
             return float(similarity)
 
-        elif method == 'histogram':
+        elif method == "histogram":
             # Histogram comparison
             hist1 = cv2.calcHist([img1], [0, 1, 2], None, [256, 256, 256], [0, 256, 0, 256, 0, 256])
             hist2 = cv2.calcHist([img2], [0, 1, 2], None, [256, 256, 256], [0, 256, 0, 256, 0, 256])
@@ -168,10 +157,10 @@ class VisualDetector:
             similarity = cv2.compareHist(hist1, hist2, cv2.HISTCMP_CORREL)
             return float(similarity)
 
-        elif method == 'ssim':
+        elif method == "ssim":
             # Structural Similarity Index
             try:
-                from skimage.metrics import structural_similarity as ssim
+                from skimage.metrics import structural_similarity as ssim  # type: ignore[import-not-found]
 
                 # Convert to grayscale
                 gray1 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
@@ -181,16 +170,13 @@ class VisualDetector:
                 return float(similarity)
             except ImportError:
                 logger.warning("scikit-image not available, falling back to MSE")
-                return self.calculate_image_similarity(image1_path, image2_path, method='mse')
+                return self.calculate_image_similarity(image1_path, image2_path, method="mse")
 
         else:
             raise ValueError(f"Unknown method: {method}")
 
     def detect_visual_changes(
-        self,
-        baseline_path: Path,
-        current_path: Path,
-        threshold: float = 0.95
+        self, baseline_path: Path, current_path: Path, threshold: float = 0.95
     ) -> Tuple[bool, float, Optional[np.ndarray]]:
         """
         Detect visual regression between baseline and current screenshot.
@@ -204,7 +190,7 @@ class VisualDetector:
             (has_changes, similarity_score, diff_image)
         """
         # Calculate similarity
-        similarity = self.calculate_image_similarity(baseline_path, current_path, method='ssim')
+        similarity = self.calculate_image_similarity(baseline_path, current_path, method="ssim")
 
         has_changes = similarity < threshold
 
@@ -214,37 +200,29 @@ class VisualDetector:
             img1 = cv2.imread(str(baseline_path))
             img2 = cv2.imread(str(current_path))
 
-            if img1.shape != img2.shape:
-                img2 = cv2.resize(img2, (img1.shape[1], img1.shape[0]))
+            if img1 is not None and img2 is not None:
+                if img1.shape != img2.shape:
+                    img2 = cv2.resize(img2, (img1.shape[1], img1.shape[0]))  # type: ignore[call-overload]
 
-            # Compute absolute difference
-            diff_image = cv2.absdiff(img1, img2)
+                # Compute absolute difference
+                diff_image = cv2.absdiff(img1, img2)  # type: ignore[call-overload]
 
-            # Threshold to highlight differences
-            gray_diff = cv2.cvtColor(diff_image, cv2.COLOR_BGR2GRAY)
-            _, thresh = cv2.threshold(gray_diff, 30, 255, cv2.THRESH_BINARY)
+                # Threshold to highlight differences
+                gray_diff = cv2.cvtColor(diff_image, cv2.COLOR_BGR2GRAY)
+                _, thresh = cv2.threshold(gray_diff, 30, 255, cv2.THRESH_BINARY)
 
-            # Highlight differences in red
-            diff_image[thresh > 0] = [0, 0, 255]
+                # Highlight differences in red
+                diff_image[thresh > 0] = [0, 0, 255]
 
         return has_changes, similarity, diff_image
 
-    def save_visual_diff(
-        self,
-        diff_image: np.ndarray,
-        output_path: Path
-    ):
+    def save_visual_diff(self, diff_image: np.ndarray, output_path: Path):
         """Save visual diff image to disk."""
         output_path.parent.mkdir(parents=True, exist_ok=True)
         cv2.imwrite(str(output_path), diff_image)
         logger.info(f"Visual diff saved to {output_path}")
 
-    def extract_element_screenshot(
-        self,
-        screenshot_path: Path,
-        bounds: Tuple[int, int, int, int],
-        output_path: Path
-    ):
+    def extract_element_screenshot(self, screenshot_path: Path, bounds: Tuple[int, int, int, int], output_path: Path):
         """
         Extract element region from screenshot.
 
