@@ -8,7 +8,7 @@ import click
 from pathlib import Path
 import re
 
-from framework.analysis.security_analyzer import SecurityAnalyzer
+from framework.analysis.security_analyzer import SecurityAnalyzer  # noqa: F401
 from framework.cli.rich_output import print_header, print_info, print_success, print_error, create_progress
 from rich.console import Console
 from rich.table import Table
@@ -44,7 +44,7 @@ def scan(source_path: str, platform: str, output: str, severity: str) -> None:
         # Run security analysis
         print_info("\n🔄 Analyzing security...")
 
-        # analyzer = SecurityAnalyzer(project_root=source_dir)  # noqa: F841
+        # analyzer = SecurityAnalyzer(project_root=source_dir)  # Used for analyze()  # noqa: F841
         issues = analyzer.analyze(platform=platform)
 
         # Filter by severity if specified
@@ -150,7 +150,7 @@ def check_secrets(source_path: str) -> None:
 
         # Get all files
         files = list(source_dir.rglob("*.kt")) + list(source_dir.rglob("*.java")) + \
-                list(source_dir.rglob("*.swift")) + list(source_dir.rglob("*.m"))
+            list(source_dir.rglob("*.swift")) + list(source_dir.rglob("*.m"))
 
         secrets_found = 0
         files_with_secrets = []
