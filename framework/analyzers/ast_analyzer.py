@@ -8,7 +8,7 @@ Future: Kotlin/Java AST parsing, Swift AST parsing.
 
 import ast
 from pathlib import Path
-from typing import List, Dict, Optional, Any
+from typing import List, Dict, Optional, Any, Union
 from dataclasses import dataclass, field
 
 
@@ -92,13 +92,9 @@ class ASTAnalyzer:
             "control_flows": [self._controlflow_to_dict(cf) for cf in self.control_flows],
             "summary": {
                 "total_functions": len(self.functions),
-                "high_complexity_functions": len(
-                    [f for f in self.functions if f.cyclomatic_complexity > 10]
-                ),
+                "high_complexity_functions": len([f for f in self.functions if f.cyclomatic_complexity > 10]),
                 "average_complexity": (
-                    sum(f.cyclomatic_complexity for f in self.functions) / len(self.functions)
-                    if self.functions
-                    else 0
+                    sum(f.cyclomatic_complexity for f in self.functions) / len(self.functions) if self.functions else 0
                 ),
             },
         }
@@ -109,7 +105,7 @@ class ASTAnalyzer:
             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
                 self._analyze_function(node, file_path)
 
-    def _analyze_function(self, node: ast.FunctionDef, file_path: Path) -> None:
+    def _analyze_function(self, node: Union[ast.FunctionDef, ast.AsyncFunctionDef], file_path: Path) -> None:
         """Analyze a function node for complexity metrics"""
         # Calculate cyclomatic complexity
         complexity = self._calculate_complexity(node)
@@ -119,18 +115,18 @@ class ASTAnalyzer:
 
         # Count various metrics
         num_returns = sum(1 for n in ast.walk(node) if isinstance(n, ast.Return))
-        num_branches = sum(
-            1 for n in ast.walk(node) if isinstance(n, (ast.If, ast.IfExp, ast.Match))
-        )
-        num_loops = sum(
-            1 for n in ast.walk(node) if isinstance(n, (ast.For, ast.While, ast.AsyncFor))
-        )
+        # Check if ast.Match exists (Python 3.10+)
+        match_types = (ast.If, ast.IfExp)
+        if hasattr(ast, 'Match'):
+            match_types = (ast.If, ast.IfExp, ast.Match)  # type: ignore
+        num_branches = sum(1 for n in ast.walk(node) if isinstance(n, match_types))
+        num_loops = sum(1 for n in ast.walk(node) if isinstance(n, (ast.For, ast.While, ast.AsyncFor)))
 
         # Calculate nested depth
         nested_depth = self._calculate_nested_depth(node)
 
         # Count lines
-        if hasattr(node, "end_lineno") and hasattr(node, "lineno"):
+        if hasattr(node, "end_lineno") and hasattr(node, "lineno") and node.end_lineno is not None and node.lineno is not None:
             loc = node.end_lineno - node.lineno + 1
         else:
             loc = 0
