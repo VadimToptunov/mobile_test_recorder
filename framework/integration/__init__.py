@@ -1,10 +1,11 @@
 """
-Integration with existing test frameworks
+Integration module for existing test frameworks
 """
 
-from .project_detector import ProjectDetector
+from .model_enricher import ModelEnricher, ProjectIntegrator, EnrichmentResult
 
 __all__ = [
-    'ProjectDetector',
+    "ModelEnricher",
+    "ProjectIntegrator",
+    "EnrichmentResult",
 ]
-

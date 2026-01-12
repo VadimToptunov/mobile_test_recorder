@@ -17,25 +17,25 @@ class AllureGenerator:
     """
     Generator for Allure report format
     """
-    
+
     def generate(self, suites: List[TestSuite], output_dir: Path):
         """
         Generate Allure JSON results
-        
+
         Args:
             suites: List of test suites
             output_dir: Output directory for Allure results
         """
         output_dir.mkdir(parents=True, exist_ok=True)
-        
+
         for suite in suites:
             for test in suite.tests:
                 self._generate_test_result(test, suite, output_dir)
-    
+
     def _generate_test_result(self, test: TestResult, suite: TestSuite, output_dir: Path):
         """Generate Allure result for single test"""
         test_uuid = str(uuid.uuid4())
-        
+
         # Map status
         status_map = {
             'passed': 'passed',
@@ -43,7 +43,7 @@ class AllureGenerator:
             'skipped': 'skipped'
         }
         status = status_map.get(test.status, 'unknown')
-        
+
         # Create Allure result
         result = {
             'uuid': test_uuid,
@@ -62,13 +62,13 @@ class AllureGenerator:
             ],
             'links': []
         }
-        
+
         # Add platform labels if available
         if test.platform:
             result['labels'].append({'name': 'platform', 'value': test.platform})
         if test.device:
             result['labels'].append({'name': 'device', 'value': test.device})
-        
+
         # Add error details if failed
         if status == 'failed' and test.error_message:
             result['statusDetails'] = {
@@ -79,7 +79,7 @@ class AllureGenerator:
             result['statusDetails'] = {
                 'message': test.error_message
             }
-        
+
         # Add screenshots as attachments
         if test.screenshots:
             result['attachments'] = [
@@ -90,16 +90,16 @@ class AllureGenerator:
                 }
                 for screenshot in test.screenshots
             ]
-        
+
         # Write result file
         result_file = output_dir / f'{test_uuid}-result.json'
         result_file.write_text(json.dumps(result, indent=2))
-    
+
     def _get_history_id(self, test_name: str) -> str:
         """Generate consistent history ID for test"""
         import hashlib
         return hashlib.md5(test_name.encode()).hexdigest()
-    
+
     def _get_timestamp(self, timestamp_str: str) -> int:
         """Convert timestamp string to milliseconds"""
         try:
@@ -109,4 +109,3 @@ class AllureGenerator:
         except Exception:
             pass
         return int(datetime.now().timestamp() * 1000)
-

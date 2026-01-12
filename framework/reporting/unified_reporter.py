@@ -4,16 +4,17 @@ Unified test reporter
 Aggregates test results from multiple sources and generates comprehensive reports.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import List, Optional
 import json
 from datetime import datetime
 
 
 class ReportFormat(Enum):
     """Supported report formats"""
+
     HTML = "html"
     ALLURE = "allure"
     JUNIT = "junit"
@@ -23,6 +24,7 @@ class ReportFormat(Enum):
 @dataclass
 class TestResult:
     """Individual test result"""
+
     name: str
     status: str  # passed, failed, skipped
     duration: float
@@ -30,9 +32,9 @@ class TestResult:
     stack_trace: Optional[str] = None
     platform: Optional[str] = None
     device: Optional[str] = None
-    screenshots: List[str] = None
-    
-    def __post_init__(self):
+    screenshots: List[str] = field(default_factory=list)
+
+    def __post_init__(self) -> None:
         if self.screenshots is None:
             self.screenshots = []
 
@@ -40,28 +42,29 @@ class TestResult:
 @dataclass
 class TestSuite:
     """Test suite results"""
+
     name: str
     tests: List[TestResult]
     timestamp: str
     duration: float
     platform: Optional[str] = None
-    
+
     @property
     def passed(self) -> int:
-        return sum(1 for t in self.tests if t.status == 'passed')
-    
+        return sum(1 for t in self.tests if t.status == "passed")
+
     @property
     def failed(self) -> int:
-        return sum(1 for t in self.tests if t.status == 'failed')
-    
+        return sum(1 for t in self.tests if t.status == "failed")
+
     @property
     def skipped(self) -> int:
-        return sum(1 for t in self.tests if t.status == 'skipped')
-    
+        return sum(1 for t in self.tests if t.status == "skipped")
+
     @property
     def total(self) -> int:
         return len(self.tests)
-    
+
     @property
     def pass_rate(self) -> float:
         if self.total == 0:
@@ -73,38 +76,36 @@ class UnifiedReporter:
     """
     Unified test reporter supporting multiple formats
     """
-    
-    def __init__(self):
+
+    def __init__(self) -> None:
         self.suites: List[TestSuite] = []
-    
-    def add_suite(self, suite: TestSuite):
+
+    def add_suite(self, suite: TestSuite) -> None:
         """Add a test suite to the report"""
         self.suites.append(suite)
-    
-    def load_from_junit(self, junit_path: Path):
+
+    def load_from_junit(self, junit_path: Path) -> None:
         """Load test results from JUnit XML"""
         from .junit_parser import JUnitParser
+
         parser = JUnitParser()
         suite = parser.parse(junit_path)
         self.add_suite(suite)
-    
-    def load_from_directory(self, directory: Path):
+
+    def load_from_directory(self, directory: Path) -> None:
         """Load all JUnit XML files from directory"""
-        for junit_file in directory.rglob('junit*.xml'):
+        for junit_file in directory.rglob("junit*.xml"):
             try:
                 self.load_from_junit(junit_file)
             except Exception as e:
                 print(f"Warning: Failed to parse {junit_file}: {e}")
-    
+
     def generate_report(
-        self,
-        output_path: Path,
-        format: ReportFormat = ReportFormat.HTML,
-        title: str = "Test Report"
-    ):
+        self, output_path: Path, format: ReportFormat = ReportFormat.HTML, title: str = "Test Report"
+    ) -> None:
         """
         Generate test report
-        
+
         Args:
             output_path: Output file path
             format: Report format
@@ -118,17 +119,17 @@ class UnifiedReporter:
             self._generate_allure_report(output_path)
         else:
             raise ValueError(f"Unsupported format: {format}")
-    
-    def _generate_html_report(self, output_path: Path, title: str):
+
+    def _generate_html_report(self, output_path: Path, title: str) -> None:
         """Generate HTML report"""
         total_tests = sum(suite.total for suite in self.suites)
         total_passed = sum(suite.passed for suite in self.suites)
         total_failed = sum(suite.failed for suite in self.suites)
         total_skipped = sum(suite.skipped for suite in self.suites)
         total_duration = sum(suite.duration for suite in self.suites)
-        
+
         pass_rate = (total_passed / total_tests * 100) if total_tests > 0 else 0
-        
+
         html_content = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -306,7 +307,7 @@ class UnifiedReporter:
             <h1>{title}</h1>
             <div class="timestamp">Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</div>
         </div>
-        
+
         <div class="summary">
             <div class="summary-card">
                 <div class="label">Total Tests</div>
@@ -333,17 +334,17 @@ class UnifiedReporter:
                 <div class="value" style="color: {'#48bb78' if pass_rate >= 80 else '#f56565'}">{pass_rate:.1f}%</div>
             </div>
         </div>
-        
+
         <div class="progress-bar">
             <div class="progress-fill" style="width: {pass_rate}%"></div>
         </div>
-        
+
         <div class="suites">
 """
-        
+
         # Add each test suite
         for suite in self.suites:
-            html_content += f"""
+            html_content += """
             <div class="suite">
                 <div class="suite-header" onclick="toggleSuite(this)">
                     <div class="suite-title">{suite.name}</div>
@@ -356,10 +357,10 @@ class UnifiedReporter:
                 </div>
                 <div class="tests">
 """
-            
+
             # Add tests
             for test in suite.tests:
-                html_content += f"""
+                html_content += """
                     <div class="test">
                         <div class="test-name">{test.name}</div>
                         <div class="test-duration">{test.duration:.2f}s</div>
@@ -367,19 +368,19 @@ class UnifiedReporter:
                     </div>
 """
                 if test.error_message:
-                    html_content += f"""
+                    html_content += """
                     <div class="error-message">{test.error_message}</div>
 """
-            
+
             html_content += """
                 </div>
             </div>
 """
-        
+
         html_content += """
         </div>
     </div>
-    
+
     <script>
         function toggleSuite(header) {
             const tests = header.nextElementSibling;
@@ -389,52 +390,52 @@ class UnifiedReporter:
 </body>
 </html>
 """
-        
+
         output_path.parent.mkdir(parents=True, exist_ok=True)
         output_path.write_text(html_content)
         print(f"✓ HTML report generated: {output_path}")
-    
-    def _generate_json_report(self, output_path: Path):
+
+    def _generate_json_report(self, output_path: Path) -> None:
         """Generate JSON report"""
         report_data = {
-            'generated': datetime.now().isoformat(),
-            'summary': {
-                'total': sum(s.total for s in self.suites),
-                'passed': sum(s.passed for s in self.suites),
-                'failed': sum(s.failed for s in self.suites),
-                'skipped': sum(s.skipped for s in self.suites),
-                'duration': sum(s.duration for s in self.suites),
+            "generated": datetime.now().isoformat(),
+            "summary": {
+                "total": sum(s.total for s in self.suites),
+                "passed": sum(s.passed for s in self.suites),
+                "failed": sum(s.failed for s in self.suites),
+                "skipped": sum(s.skipped for s in self.suites),
+                "duration": sum(s.duration for s in self.suites),
             },
-            'suites': [
+            "suites": [
                 {
-                    'name': suite.name,
-                    'platform': suite.platform,
-                    'timestamp': suite.timestamp,
-                    'duration': suite.duration,
-                    'tests': [
+                    "name": suite.name,
+                    "platform": suite.platform,
+                    "timestamp": suite.timestamp,
+                    "duration": suite.duration,
+                    "tests": [
                         {
-                            'name': test.name,
-                            'status': test.status,
-                            'duration': test.duration,
-                            'platform': test.platform,
-                            'device': test.device,
-                            'error_message': test.error_message,
+                            "name": test.name,
+                            "status": test.status,
+                            "duration": test.duration,
+                            "platform": test.platform,
+                            "device": test.device,
+                            "error_message": test.error_message,
                         }
                         for test in suite.tests
-                    ]
+                    ],
                 }
                 for suite in self.suites
-            ]
+            ],
         }
-        
+
         output_path.parent.mkdir(parents=True, exist_ok=True)
         output_path.write_text(json.dumps(report_data, indent=2))
         print(f"✓ JSON report generated: {output_path}")
-    
-    def _generate_allure_report(self, output_path: Path):
+
+    def _generate_allure_report(self, output_path: Path) -> None:
         """Generate Allure-compatible results"""
         from .allure_generator import AllureGenerator
+
         generator = AllureGenerator()
         generator.generate(self.suites, output_path)
         print(f"✓ Allure results generated: {output_path}")
-

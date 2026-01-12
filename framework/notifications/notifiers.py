@@ -7,7 +7,7 @@ Send test result notifications via various channels.
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Dict, List, Optional
-import json
+
 import requests
 import smtplib
 from email.mime.text import MIMEText
@@ -30,16 +30,16 @@ class TestSummary:
 
 class Notifier(ABC):
     """Base class for notifiers"""
-    
+
     @abstractmethod
     def send(self, summary: TestSummary, title: str = "Test Results") -> bool:
         """
         Send notification
-        
+
         Args:
             summary: Test execution summary
             title: Notification title
-        
+
         Returns:
             True if successful, False otherwise
         """
@@ -50,27 +50,27 @@ class SlackNotifier(Notifier):
     """
     Slack webhook notifier
     """
-    
+
     def __init__(self, webhook_url: str):
         """
         Initialize Slack notifier
-        
+
         Args:
             webhook_url: Slack incoming webhook URL
         """
         self.webhook_url = webhook_url
-    
+
     def send(self, summary: TestSummary, title: str = "Test Results") -> bool:
         """Send notification to Slack"""
         try:
             # Determine color based on pass rate
             if summary.pass_rate >= 95:
-                color = "#36a64f"  # Green
+                color = "#36a64"  # Green
             elif summary.pass_rate >= 80:
                 color = "#ff9900"  # Orange
             else:
                 color = "#d00000"  # Red
-            
+
             # Build message
             message = {
                 "text": f"*{title}*",
@@ -112,7 +112,7 @@ class SlackNotifier(Notifier):
                     }
                 ]
             }
-            
+
             # Add platform if available
             if summary.platform:
                 message["attachments"][0]["fields"].insert(0, {
@@ -120,7 +120,7 @@ class SlackNotifier(Notifier):
                     "value": summary.platform,
                     "short": True
                 })
-            
+
             # Add report link if available
             if summary.report_url:
                 message["attachments"][0]["actions"] = [
@@ -130,17 +130,16 @@ class SlackNotifier(Notifier):
                         "url": summary.report_url
                     }
                 ]
-            
+
             # Send to Slack
             response = requests.post(
                 self.webhook_url,
-                json=message,
                 headers={'Content-Type': 'application/json'}
             )
             response.raise_for_status()
-            
+
             return True
-        
+
         except Exception as e:
             print(f"Error sending Slack notification: {e}")
             return False
@@ -150,16 +149,16 @@ class TeamsNotifier(Notifier):
     """
     Microsoft Teams webhook notifier
     """
-    
+
     def __init__(self, webhook_url: str):
         """
         Initialize Teams notifier
-        
+
         Args:
             webhook_url: Teams incoming webhook URL
         """
         self.webhook_url = webhook_url
-    
+
     def send(self, summary: TestSummary, title: str = "Test Results") -> bool:
         """Send notification to Microsoft Teams"""
         try:
@@ -170,7 +169,7 @@ class TeamsNotifier(Notifier):
                 theme_color = "ffc107"  # Yellow
             else:
                 theme_color = "dc3545"  # Red
-            
+
             # Build message card
             message = {
                 "@type": "MessageCard",
@@ -180,7 +179,7 @@ class TeamsNotifier(Notifier):
                 "title": title,
                 "sections": [
                     {
-                        "activityTitle": f"Test Execution Summary",
+                        "activityTitle": "Test Execution Summary",
                         "facts": [
                             {"name": "Total Tests", "value": str(summary.total)},
                             {"name": "Passed", "value": f"{summary.passed}"},
@@ -192,42 +191,41 @@ class TeamsNotifier(Notifier):
                     }
                 ]
             }
-            
+
             # Add platform if available
             if summary.platform:
                 message["sections"][0]["facts"].insert(0, {
                     "name": "Platform",
                     "value": summary.platform
                 })
-            
+
             # Add potential actions
             if summary.report_url or summary.build_url:
                 message["potentialAction"] = []
-                
+
                 if summary.report_url:
                     message["potentialAction"].append({
                         "@type": "OpenUri",
                         "name": "View Report",
                         "targets": [{"os": "default", "uri": summary.report_url}]
                     })
-                
+
                 if summary.build_url:
                     message["potentialAction"].append({
                         "@type": "OpenUri",
                         "name": "View Build",
                         "targets": [{"os": "default", "uri": summary.build_url}]
                     })
-            
+
             # Send to Teams
             response = requests.post(
                 self.webhook_url,
-                json=message,
                 headers={'Content-Type': 'application/json'}
             )
             response.raise_for_status()
-            
+
             return True
-        
+
         except Exception as e:
             print(f"Error sending Teams notification: {e}")
             return False
@@ -237,7 +235,7 @@ class EmailNotifier(Notifier):
     """
     Email notifier
     """
-    
+
     def __init__(
         self,
         smtp_host: str,
@@ -250,7 +248,7 @@ class EmailNotifier(Notifier):
     ):
         """
         Initialize email notifier
-        
+
         Args:
             smtp_host: SMTP server host
             smtp_port: SMTP server port
@@ -267,7 +265,7 @@ class EmailNotifier(Notifier):
         self.username = username or sender_email
         self.password = password
         self.use_tls = use_tls
-    
+
     def send(self, summary: TestSummary, title: str = "Test Results") -> bool:
         """Send email notification"""
         try:
@@ -276,11 +274,11 @@ class EmailNotifier(Notifier):
             msg['Subject'] = title
             msg['From'] = self.sender_email
             msg['To'] = ', '.join(self.recipients)
-            
+
             # Build HTML body
-            status_color = "#28a745" if summary.pass_rate >= 80 else "#dc3545"
-            
-            html_body = f"""
+            # status_color =  # Unused "#28a745" if summary.pass_rate >= 80 else "#dc3545"
+
+            html_body = """
             <html>
             <head>
                 <style>
@@ -326,21 +324,21 @@ class EmailNotifier(Notifier):
                         </div>
                     </div>
 """
-            
+
             if summary.report_url:
-                html_body += f"""
+                html_body += """
                     <a href="{summary.report_url}" class="button">View Full Report</a>
 """
-            
+
             html_body += """
                 </div>
             </body>
             </html>
             """
-            
+
             # Attach HTML body
             msg.attach(MIMEText(html_body, 'html'))
-            
+
             # Send email
             with smtplib.SMTP(self.smtp_host, self.smtp_port) as server:
                 if self.use_tls:
@@ -348,9 +346,9 @@ class EmailNotifier(Notifier):
                 if self.password:
                     server.login(self.username, self.password)
                 server.send_message(msg)
-            
+
             return True
-        
+
         except Exception as e:
             print(f"Error sending email notification: {e}")
             return False
@@ -360,18 +358,18 @@ class NotificationManager:
     """
     Manages multiple notification channels
     """
-    
+
     def __init__(self):
         self.notifiers: List[Notifier] = []
-    
+
     def add_notifier(self, notifier: Notifier):
         """Add a notifier"""
         self.notifiers.append(notifier)
-    
+
     def send_all(self, summary: TestSummary, title: str = "Test Results") -> Dict[str, bool]:
         """
         Send notifications to all configured channels
-        
+
         Returns:
             Dictionary mapping notifier type to success status
         """
@@ -380,4 +378,3 @@ class NotificationManager:
             notifier_type = type(notifier).__name__
             results[notifier_type] = notifier.send(summary, title)
         return results
-

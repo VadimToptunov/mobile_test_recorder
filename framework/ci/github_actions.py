@@ -13,10 +13,10 @@ class GitHubActionsGenerator:
     """
     Generates GitHub Actions workflows for mobile test automation
     """
-    
+
     def __init__(self, project_name: str = "Mobile Tests"):
         self.project_name = project_name
-    
+
     def generate_basic_workflow(
         self,
         platforms: List[str] = ['android'],
@@ -25,31 +25,31 @@ class GitHubActionsGenerator:
     ) -> str:
         """
         Generate basic test workflow
-        
+
         Args:
             platforms: List of platforms ('android', 'ios')
             python_version: Python version
             triggers: List of triggers ('push', 'pull_request', 'schedule')
-        
+
         Returns:
             YAML workflow content
         """
         if triggers is None:
             triggers = ['push', 'pull_request']
-        
+
         workflow = {
             'name': self.project_name,
             'on': self._generate_triggers(triggers),
             'jobs': {}
         }
-        
+
         # Add test job for each platform
         for platform in platforms:
             job_name = f'test-{platform}'
             workflow['jobs'][job_name] = self._generate_test_job(platform, python_version)
-        
+
         return yaml.dump(workflow, sort_keys=False, default_flow_style=False)
-    
+
     def generate_advanced_workflow(
         self,
         platforms: List[str] = ['android', 'ios'],
@@ -61,7 +61,7 @@ class GitHubActionsGenerator:
     ) -> str:
         """
         Generate advanced workflow with parallel execution, cloud devices, notifications
-        
+
         Args:
             platforms: List of platforms
             python_version: Python version
@@ -69,7 +69,7 @@ class GitHubActionsGenerator:
             use_browserstack: Use BrowserStack for testing
             upload_artifacts: Upload test reports
             notify_slack: Send Slack notifications
-        
+
         Returns:
             YAML workflow content
         """
@@ -81,17 +81,17 @@ class GitHubActionsGenerator:
             },
             'jobs': {}
         }
-        
+
         # Add BrowserStack env vars if needed
         if use_browserstack:
             workflow['env'].update({
                 'BROWSERSTACK_USERNAME': '${{ secrets.BROWSERSTACK_USERNAME }}',
                 'BROWSERSTACK_ACCESS_KEY': '${{ secrets.BROWSERSTACK_ACCESS_KEY }}'
             })
-        
+
         # Lint job
         workflow['jobs']['lint'] = self._generate_lint_job(python_version)
-        
+
         # Test jobs for each platform
         # Track job names for dependency resolution
         test_job_names = []
@@ -107,35 +107,35 @@ class GitHubActionsGenerator:
                     platform, python_version, parallel_count
                 )
             test_job_names.append(job_name)
-        
+
         # Report job
         if upload_artifacts:
             workflow['jobs']['report'] = self._generate_report_job(test_job_names)
-        
+
         # Notify job
         if notify_slack:
             workflow['jobs']['notify'] = self._generate_notify_job(test_job_names)
-        
+
         return yaml.dump(workflow, sort_keys=False, default_flow_style=False)
-    
+
     def _generate_triggers(self, triggers: List[str]) -> Dict:
         """Generate workflow triggers"""
         result = {}
-        
+
         if 'push' in triggers:
             result['push'] = {'branches': ['main', 'develop']}
-        
+
         if 'pull_request' in triggers:
             result['pull_request'] = {'branches': ['main', 'develop']}
-        
+
         if 'schedule' in triggers:
             result['schedule'] = [{'cron': '0 2 * * *'}]  # Daily at 2 AM
-        
+
         if 'workflow_dispatch' in triggers or len(triggers) == 0:
             result['workflow_dispatch'] = {}
-        
+
         return result
-    
+
     def _generate_test_job(
         self,
         platform: str,
@@ -145,7 +145,7 @@ class GitHubActionsGenerator:
         """Generate test job for platform"""
         # Choose runner based on platform
         runner = 'macos-latest' if platform == 'ios' else 'ubuntu-latest'
-        
+
         job = {
             'name': f'Test {platform.capitalize()}',
             'runs-on': runner,
@@ -180,7 +180,7 @@ class GitHubActionsGenerator:
                 }
             ]
         }
-        
+
         # Platform-specific setup
         if platform == 'android':
             job['steps'].extend([
@@ -216,12 +216,12 @@ class GitHubActionsGenerator:
                     ])
                 }
             ])
-        
+
         # Test execution
         test_cmd = 'pytest tests/ --verbose --junit-xml=reports/junit.xml --html=reports/report.html'
         if parallel_count > 1:
             test_cmd += ' --shard-id=${{ matrix.shard }} --num-shards=' + str(parallel_count)
-        
+
         job['steps'].extend([
             {
                 'name': 'Run tests',
@@ -229,7 +229,7 @@ class GitHubActionsGenerator:
             },
             {
                 'name': 'Upload test results',
-                'if': 'always()',
+                'i': 'always()',
                 'uses': 'actions/upload-artifact@v4',
                 'with': {
                     'name': f'test-results-{platform}-${{{{ matrix.shard }}}}' if parallel_count > 1 else f'test-results-{platform}',
@@ -237,9 +237,9 @@ class GitHubActionsGenerator:
                 }
             }
         ])
-        
+
         return job
-    
+
     def _generate_browserstack_job(
         self,
         platform: str,
@@ -274,7 +274,7 @@ class GitHubActionsGenerator:
                 },
                 {
                     'name': 'Upload test results',
-                    'if': 'always()',
+                    'i': 'always()',
                     'uses': 'actions/upload-artifact@v4',
                     'with': {
                         'name': 'test-results-${{ matrix.device }}',
@@ -283,16 +283,16 @@ class GitHubActionsGenerator:
                 }
             ]
         }
-        
+
         return job
-    
+
     def _get_browserstack_devices(self, platform: str) -> List[str]:
         """Get list of BrowserStack devices for testing"""
         if platform == 'android':
             return ['Google Pixel 7', 'Samsung Galaxy S23']
         else:  # ios
             return ['iPhone 15', 'iPhone 14 Pro']
-    
+
     def _generate_lint_job(self, python_version: str) -> Dict:
         """Generate linting job"""
         return {
@@ -311,14 +311,14 @@ class GitHubActionsGenerator:
                 {'name': 'Run mypy', 'run': 'mypy tests/ --ignore-missing-imports'}
             ]
         }
-    
+
     def _generate_report_job(self, test_job_names: List[str]) -> Dict:
         """Generate report aggregation job"""
         return {
             'name': 'Generate Report',
             'runs-on': 'ubuntu-latest',
             'needs': test_job_names,  # Dynamic dependencies based on actual test jobs
-            'if': 'always()',
+            'i': 'always()',
             'steps': [
                 {
                     'name': 'Download all artifacts',
@@ -339,19 +339,19 @@ class GitHubActionsGenerator:
                 },
                 {
                     'name': 'Comment on PR',
-                    'if': "github.event_name == 'pull_request'",
+                    'i': "github.event_name == 'pull_request'",
                     'run': 'observe ci comment --report final-report.html'
                 }
             ]
         }
-    
+
     def _generate_notify_job(self, test_job_names: List[str]) -> Dict:
         """Generate notification job"""
         return {
             'name': 'Notify',
             'runs-on': 'ubuntu-latest',
             'needs': test_job_names,  # Dynamic dependencies based on actual test jobs
-            'if': 'always()',
+            'i': 'always()',
             'steps': [
                 {
                     'name': 'Send Slack notification',
@@ -365,11 +365,11 @@ class GitHubActionsGenerator:
                 }
             ]
         }
-    
+
     def save_workflow(self, content: str, output_dir: Path, filename: str = 'tests.yml'):
         """
         Save workflow to file
-        
+
         Args:
             content: Workflow YAML content
             output_dir: Output directory (will create .github/workflows/)
@@ -377,9 +377,8 @@ class GitHubActionsGenerator:
         """
         workflow_dir = output_dir / '.github' / 'workflows'
         workflow_dir.mkdir(parents=True, exist_ok=True)
-        
+
         workflow_path = workflow_dir / filename
         workflow_path.write_text(content)
-        
-        print(f"✓ Workflow saved to: {workflow_path}")
 
+        print(f"✓ Workflow saved to: {workflow_path}")

@@ -47,24 +47,24 @@ class Device:
     status: DeviceStatus
     platform: str  # "android" or "ios"
     platform_version: str  # OS version (e.g., "13.0", "iOS 16.0")
-    
+
     # Hardware specs
     model: Optional[str] = None  # Device model (e.g., "Pixel 7", "iPhone 15")
     manufacturer: Optional[str] = None
     screen_size: Optional[str] = None  # e.g., "1080x2400"
     ram: Optional[int] = None  # MB
-    
+
     # Capabilities
     capabilities: Dict[str, Any] = field(default_factory=dict)
-    
+
     # Connection info
     provider: Optional[str] = None  # "adb", "instruments", "browserstack"
     host: Optional[str] = None  # For cloud devices
-    
+
     # State
     last_seen: datetime = field(default_factory=datetime.now)
     current_app: Optional[str] = None
-    
+
     def to_dict(self) -> Dict:
         """Convert to dictionary for JSON serialization"""
         return {
@@ -84,19 +84,19 @@ class Device:
             "last_seen": self.last_seen.isoformat(),
             "current_app": self.current_app,
         }
-    
+
     def is_android(self) -> bool:
         """Check if device is Android"""
         return self.platform == "android"
-    
+
     def is_ios(self) -> bool:
         """Check if device is iOS"""
         return self.platform == "ios"
-    
+
     def is_emulator(self) -> bool:
         """Check if device is emulator/simulator"""
         return self.type in [DeviceType.ANDROID_EMULATOR, DeviceType.IOS_SIMULATOR]
-    
+
     def is_cloud(self) -> bool:
         """Check if device is in cloud"""
         return self.type in [DeviceType.BROWSERSTACK, DeviceType.SAUCELABS, DeviceType.AWS_DEVICE_FARM]
@@ -105,41 +105,41 @@ class Device:
 class DeviceManager:
     """
     Unified device management
-    
+
     Discovers, manages, and orchestrates devices across all providers.
     """
-    
+
     def __init__(self):
         self.devices: List[Device] = []
         self._providers = {}
-    
+
     def discover_all(self) -> List[Device]:
         """
         Discover all available devices from all providers
-        
+
         Returns:
             List of discovered devices
         """
         print("Discovering devices...")
         self.devices = []
-        
+
         # Discover Android devices via ADB
         android_devices = self._discover_android_devices()
         self.devices.extend(android_devices)
         print(f"  Found {len(android_devices)} Android device(s)")
-        
+
         # Discover iOS devices via instruments
         ios_devices = self._discover_ios_devices()
         self.devices.extend(ios_devices)
         print(f"  Found {len(ios_devices)} iOS device(s)")
-        
+
         print(f"\nTotal: {len(self.devices)} device(s) available")
         return self.devices
-    
+
     def _discover_android_devices(self) -> List[Device]:
         """Discover Android devices and emulators via ADB"""
         devices = []
-        
+
         try:
             # Check if adb is available
             result = subprocess.run(
@@ -148,36 +148,36 @@ class DeviceManager:
                 text=True,
                 timeout=10
             )
-            
+
             if result.returncode != 0:
                 print("  Warning: ADB not available")
                 return devices
-            
+
             # Parse adb devices output
             lines = result.stdout.strip().split('\n')[1:]  # Skip header
-            
+
             for line in lines:
                 if not line.strip():
                     continue
-                
+
                 parts = line.split()
                 if len(parts) < 2:
                     continue
-                
+
                 device_id = parts[0]
                 status_str = parts[1]
-                
+
                 # Parse device info
                 info = {}
                 for part in parts[2:]:
                     if ':' in part:
                         key, value = part.split(':', 1)
                         info[key] = value
-                
+
                 # Determine if emulator or real device
                 is_emulator = device_id.startswith('emulator-')
                 device_type = DeviceType.ANDROID_EMULATOR if is_emulator else DeviceType.ANDROID_REAL
-                
+
                 # Map ADB status to our status
                 status_map = {
                     'device': DeviceStatus.AVAILABLE,
@@ -185,13 +185,13 @@ class DeviceManager:
                     'unauthorized': DeviceStatus.ERROR,
                 }
                 status = status_map.get(status_str, DeviceStatus.UNKNOWN)
-                
+
                 # Get additional device info
                 model = info.get('model', 'Unknown')
-                
+
                 # Get Android version
                 version = self._get_android_version(device_id)
-                
+
                 device = Device(
                     id=device_id,
                     name=f"{model} ({device_id})",
@@ -206,16 +206,16 @@ class DeviceManager:
                         "adb_info": info
                     }
                 )
-                
+
                 devices.append(device)
-        
+
         except FileNotFoundError:
             print("  Warning: ADB not found in PATH")
         except Exception as e:
             print(f"  Error discovering Android devices: {e}")
-        
+
         return devices
-    
+
     def _get_android_version(self, device_id: str) -> str:
         """Get Android version for device"""
         try:
@@ -230,11 +230,11 @@ class DeviceManager:
         except Exception:
             pass
         return "Unknown"
-    
+
     def _discover_ios_devices(self) -> List[Device]:
         """Discover iOS devices and simulators via instruments/simctl"""
         devices = []
-        
+
         try:
             # Discover simulators via xcrun simctl
             result = subprocess.run(
@@ -243,25 +243,25 @@ class DeviceManager:
                 text=True,
                 timeout=10
             )
-            
+
             if result.returncode != 0:
                 print("  Warning: simctl not available (not on macOS?)")
                 return devices
-            
+
             data = json.loads(result.stdout)
-            
+
             for runtime, device_list in data.get('devices', {}).items():
                 # Extract iOS version from runtime string
                 # e.g., "com.apple.CoreSimulator.SimRuntime.iOS-16-0" -> "16.0"
                 version_match = runtime.split('iOS-')
                 version = version_match[1].replace('-', '.') if len(version_match) > 1 else "Unknown"
-                
+
                 for device_info in device_list:
                     if not device_info.get('isAvailable', False):
                         continue
-                    
+
                     status = DeviceStatus.AVAILABLE if device_info.get('state') == 'Booted' else DeviceStatus.OFFLINE
-                    
+
                     device = Device(
                         id=device_info['udid'],
                         name=device_info['name'],
@@ -275,45 +275,44 @@ class DeviceManager:
                             "simctl_info": device_info
                         }
                     )
-                    
+
                     devices.append(device)
-            
+
             # TODO: Discover real iOS devices via instruments
             # This requires more complex setup with libimobiledevice or idevice tools
-            
+
         except FileNotFoundError:
             print("  Warning: xcrun not found (not on macOS?)")
         except json.JSONDecodeError as e:
             print(f"  Error parsing simctl output: {e}")
         except Exception as e:
             print(f"  Error discovering iOS devices: {e}")
-        
+
         return devices
-    
+
     def get_device(self, device_id: str) -> Optional[Device]:
         """Get device by ID"""
         for device in self.devices:
             if device.id == device_id:
                 return device
         return None
-    
+
     def get_devices_by_platform(self, platform: str) -> List[Device]:
         """Get all devices for specific platform"""
         return [d for d in self.devices if d.platform == platform]
-    
+
     def get_available_devices(self) -> List[Device]:
         """Get all available (not busy/offline) devices"""
         return [d for d in self.devices if d.status == DeviceStatus.AVAILABLE]
-    
-    
+
     def _compare_versions(self, version1: str, version2: str) -> int:
         """
         Compare two version strings
-        
+
         Args:
             version1: First version string (e.g., "13.0", "10.5.2")
             version2: Second version string
-        
+
         Returns:
             -1 if version1 < version2
              0 if version1 == version2
@@ -323,12 +322,12 @@ class DeviceManager:
             # Split versions and convert to integers
             parts1 = [int(x) for x in version1.split('.')]
             parts2 = [int(x) for x in version2.split('.')]
-            
+
             # Pad shorter version with zeros
             max_len = max(len(parts1), len(parts2))
             parts1 += [0] * (max_len - len(parts1))
             parts2 += [0] * (max_len - len(parts2))
-            
+
             # Compare component by component
             for p1, p2 in zip(parts1, parts2):
                 if p1 < p2:
@@ -343,7 +342,7 @@ class DeviceManager:
             elif version1 > version2:
                 return 1
             return 0
-    
+
     def filter_devices(
         self,
         platform: Optional[str] = None,
@@ -353,51 +352,51 @@ class DeviceManager:
     ) -> List[Device]:
         """
         Filter devices by criteria
-        
+
         Args:
             platform: "android" or "ios"
             device_type: DeviceType enum
             min_version: Minimum OS version
             model: Device model name (partial match)
-        
+
         Returns:
             Filtered list of devices
         """
         filtered = self.devices
-        
+
         if platform:
             filtered = [d for d in filtered if d.platform == platform]
-        
+
         if device_type:
             filtered = [d for d in filtered if d.type == device_type]
-        
+
         if model:
             filtered = [d for d in filtered if model.lower() in (d.model or '').lower()]
-        
+
         if min_version:
             # Proper version comparison using tuple of integers
             # Handles cases like "10" > "9" correctly
             filtered = [
-                d for d in filtered 
+                d for d in filtered
                 if self._compare_versions(d.platform_version, min_version) >= 0
             ]
-        
+
         return filtered
-    
+
     def list_devices(self, verbose: bool = False) -> None:
         """Print device list"""
         if not self.devices:
             print("No devices found.")
             return
-        
+
         print(f"\n{'='*80}")
         print(f"Available Devices ({len(self.devices)})")
         print(f"{'='*80}\n")
-        
+
         # Group by platform
         android_devices = [d for d in self.devices if d.is_android()]
         ios_devices = [d for d in self.devices if d.is_ios()]
-        
+
         if android_devices:
             print("ANDROID:")
             for device in android_devices:
@@ -408,15 +407,15 @@ class DeviceManager:
                     DeviceStatus.ERROR: "✗",
                     DeviceStatus.UNKNOWN: "?"
                 }[device.status]
-                
+
                 type_label = "Emulator" if device.is_emulator() else "Device"
                 print(f"  {status_icon} [{device.id}] {device.name}")
                 print(f"      Type: {type_label} | Version: {device.platform_version} | Status: {device.status.value}")
-                
+
                 if verbose and device.capabilities:
                     print(f"      Capabilities: {device.capabilities}")
                 print()
-        
+
         if ios_devices:
             print("iOS:")
             for device in ios_devices:
@@ -427,27 +426,26 @@ class DeviceManager:
                     DeviceStatus.ERROR: "✗",
                     DeviceStatus.UNKNOWN: "?"
                 }[device.status]
-                
+
                 type_label = "Simulator" if device.is_emulator() else "Device"
                 print(f"  {status_icon} [{device.id}] {device.name}")
                 print(f"      Type: {type_label} | Version: {device.platform_version} | Status: {device.status.value}")
-                
+
                 if verbose and device.capabilities:
                     print(f"      Capabilities: {device.capabilities}")
                 print()
-    
+
     def save_devices(self, output_path: Path):
         """Save device list to JSON"""
         output_path.parent.mkdir(parents=True, exist_ok=True)
-        
+
         data = {
             "discovered_at": datetime.now().isoformat(),
             "total_devices": len(self.devices),
             "devices": [d.to_dict() for d in self.devices]
         }
-        
+
         with open(output_path, 'w') as f:
             json.dump(data, f, indent=2)
-        
-        print(f"\n✓ Device list saved to: {output_path}")
 
+        print(f"\n✓ Device list saved to: {output_path}")

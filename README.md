@@ -90,21 +90,34 @@ pip install -e .
 
 ### Basic Workflow
 
+**Option 1: Business Logic Analysis (Available Now)**
 ```bash
-# 1. Record user session (run observe build on device)
-# QA walks through app features
+# 1. Analyze your app source code
+observe business-logic analyze ./android/src/main --output analysis.json
 
-# 2. Import events
-observe import --session-file /path/to/events.json --platform android
+# 2. Generate human-readable report
+observe business-logic report analysis.json
 
-# 3. Build app model
-observe model build --session my-session --output ./app-model.json
+# 3. Use analysis for test planning
+observe project generate analysis.json --output ./tests/
+```
 
-# 4. Generate tests
-observe generate all --model ./app-model.json --output ./tests/
+**Option 2: Full Automation (Complete Pipeline)**
+```bash
+# One command to analyze & generate everything
+observe project fullcycle \
+  --android-source ./android/src/main \
+  --ios-source ./ios/MyApp \
+  --output ./tests/
+```
 
-# 5. Run tests
-pytest tests/
+**Option 3: Session Recording (SDK Required)**
+```bash
+# Record user session + generate tests
+observe record start --session-id my-session
+# (QA walks through app features)
+observe record stop
+observe generate all --session my-session --output ./tests/
 ```
 
 ### Self-Healing Tests
@@ -122,7 +135,8 @@ observe dashboard
 
 ## Documentation
 
-- **[User Guide](USER_GUIDE.md)** - Complete step-by-step guide
+- **[Quick Start](QUICKSTART.md)** - Get running in 10 minutes ⏱️
+- **[User Guide](USER_GUIDE.md)** - Complete reference & advanced features
 - **[Changelog](CHANGELOG.md)** - Version history and updates
 - **[Demo Apps](demo-app/README.md)** - Example Android & iOS applications
 
@@ -201,4 +215,25 @@ Contributions are welcome! Please read the [User Guide](USER_GUIDE.md) first.
 
 ---
 
-**Ready to transform your mobile testing?** Check out the [User Guide](USER_GUIDE.md) to get started. 🚀
+## What's Actually Working Now?
+
+**✅ Fully Functional:**
+- Business logic analysis (Kotlin, Swift, Java)
+- User flow extraction
+- Edge case detection
+- API contract generation
+- Negative test case generation
+- BDD scenario suggestions
+- Rich CLI with beautiful output
+
+**🚧 In Development:**
+- Live session recording (SDK integration)
+- Self-healing tests (healing engine ready, needs recording)
+- ML element classification (model trained, needs integration)
+- Dashboard (UI ready, needs backend connection)
+
+**See [QUICKSTART.md](QUICKSTART.md) for what you can use today!**
+
+---
+
+**Ready to start?** Check out the [Quick Start Guide](QUICKSTART.md) for a 10-minute walkthrough. 🚀

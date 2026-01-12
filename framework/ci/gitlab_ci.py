@@ -5,7 +5,7 @@ Creates comprehensive GitLab CI pipelines for mobile testing.
 """
 
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List
 import yaml
 
 
@@ -13,10 +13,10 @@ class GitLabCIGenerator:
     """
     Generates GitLab CI pipelines for mobile test automation
     """
-    
+
     def __init__(self, project_name: str = "Mobile Tests"):
         self.project_name = project_name
-    
+
     def generate_basic_pipeline(
         self,
         platforms: List[str] = ['android'],
@@ -24,11 +24,11 @@ class GitLabCIGenerator:
     ) -> str:
         """
         Generate basic CI pipeline
-        
+
         Args:
             platforms: List of platforms ('android', 'ios')
             python_version: Python version
-        
+
         Returns:
             YAML pipeline content
         """
@@ -40,14 +40,14 @@ class GitLabCIGenerator:
                 'pip install -r requirements.txt'
             ]
         }
-        
+
         # Add test jobs for each platform
         for platform in platforms:
             job_name = f'test:{platform}'
             pipeline[job_name] = self._generate_test_job(platform)
-        
+
         return yaml.dump(pipeline, sort_keys=False, default_flow_style=False)
-    
+
     def generate_advanced_pipeline(
         self,
         platforms: List[str] = ['android', 'ios'],
@@ -57,13 +57,13 @@ class GitLabCIGenerator:
     ) -> str:
         """
         Generate advanced pipeline with parallel execution and Docker
-        
+
         Args:
             platforms: List of platforms
             python_version: Python version
             parallel_count: Number of parallel executions
             use_docker: Use Docker for execution
-        
+
         Returns:
             YAML pipeline content
         """
@@ -83,10 +83,10 @@ class GitLabCIGenerator:
                 'pip install -r requirements.txt'
             ]
         }
-        
+
         # Lint stage
         pipeline['lint'] = self._generate_lint_job()
-        
+
         # Test jobs for each platform
         # Track job names for dependency resolution
         test_job_names = []
@@ -96,12 +96,12 @@ class GitLabCIGenerator:
                 platform, parallel_count
             )
             test_job_names.append(job_name)
-        
+
         # Report job
         pipeline['report'] = self._generate_report_job(test_job_names)
-        
+
         return yaml.dump(pipeline, sort_keys=False, default_flow_style=False)
-    
+
     def _generate_test_job(self, platform: str) -> Dict:
         """Generate basic test job"""
         # Use appropriate Docker image
@@ -109,7 +109,7 @@ class GitLabCIGenerator:
             image = 'androidsdk/android-30'
         else:
             image = 'macos-latest'  # GitLab doesn't have iOS images, need runners
-        
+
         job = {
             'stage': 'test',
             'script': [
@@ -124,27 +124,27 @@ class GitLabCIGenerator:
                 }
             }
         }
-        
+
         if platform == 'android':
             job['image'] = image
         else:
             job['tags'] = ['macos']  # Requires macOS runner
-        
+
         return job
-    
+
     def _generate_test_job_advanced(self, platform: str, parallel_count: int) -> Dict:
         """Generate advanced test job with parallelization"""
         job = self._generate_test_job(platform)
-        
+
         if parallel_count > 1:
             job['parallel'] = parallel_count
             job['script'] = [
                 f'echo "Running {platform} tests (shard $CI_NODE_INDEX/$CI_NODE_TOTAL)"',
                 'pytest tests/ --verbose --junit-xml=reports/junit-$CI_NODE_INDEX.xml --shard-id=$CI_NODE_INDEX --num-shards=$CI_NODE_TOTAL'
             ]
-        
+
         return job
-    
+
     def _generate_lint_job(self) -> Dict:
         """Generate linting job"""
         return {
@@ -157,7 +157,7 @@ class GitLabCIGenerator:
             ],
             'allow_failure': True
         }
-    
+
     def _generate_report_job(self, test_job_names: List[str]) -> Dict:
         """Generate report aggregation job"""
         return {
@@ -172,11 +172,11 @@ class GitLabCIGenerator:
             },
             'when': 'always'
         }
-    
+
     def save_pipeline(self, content: str, output_dir: Path, filename: str = '.gitlab-ci.yml'):
         """
         Save pipeline to file
-        
+
         Args:
             content: Pipeline YAML content
             output_dir: Output directory
@@ -184,6 +184,5 @@ class GitLabCIGenerator:
         """
         pipeline_path = output_dir / filename
         pipeline_path.write_text(content)
-        
-        print(f"✓ Pipeline saved to: {pipeline_path}")
 
+        print(f"✓ Pipeline saved to: {pipeline_path}")
