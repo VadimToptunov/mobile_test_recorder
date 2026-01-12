@@ -15,6 +15,10 @@ from framework.cli.generate_commands import generate
 from framework.cli.dashboard_commands import dashboard
 from framework.cli.healing_commands import heal
 from framework.cli.device_commands import devices
+from framework.cli.ml_commands import ml
+from framework.cli.security_commands import security
+from framework.cli.perf_commands import perf
+from framework.cli.selection_commands import select
 from framework.cli.rich_output import print_banner
 
 
@@ -38,6 +42,10 @@ cli.add_command(generate)
 cli.add_command(dashboard)
 cli.add_command(heal)
 cli.add_command(devices)
+cli.add_command(ml)
+cli.add_command(security)
+cli.add_command(perf)
+cli.add_command(select)
 
 
 @cli.command()
