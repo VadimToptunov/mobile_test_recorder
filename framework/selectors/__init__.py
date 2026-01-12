@@ -6,11 +6,11 @@ Provides intelligent selector generation and optimization.
 
 from framework.selectors.selector_optimizer import SelectorOptimizer
 from framework.selectors.selector_scorer import SelectorScorer
-from framework.selectors.selector_builder import SelectorBuilder
+from framework.selectors.selector_builder import SelectorBuilder as LegacySelectorBuilder
 from framework.selectors.advanced_selector import (
     AdvancedSelector,
     AdvancedSelectorEngine,
-    SelectorBuilder as FluentSelectorBuilder,
+    SelectorBuilder,
     SelectorType,
     FilterOperator,
     SelectorFilter,
@@ -23,10 +23,10 @@ from framework.selectors.advanced_selector import (
 __all__ = [
     "SelectorOptimizer",
     "SelectorScorer",
+    "LegacySelectorBuilder",
     "SelectorBuilder",
     "AdvancedSelector",
     "AdvancedSelectorEngine",
-    "FluentSelectorBuilder",
     "SelectorType",
     "FilterOperator",
     "SelectorFilter",

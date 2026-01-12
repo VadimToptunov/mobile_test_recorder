@@ -9,15 +9,10 @@ from rich.table import Table
 from rich.panel import Panel
 from rich.progress import track
 
-from framework.ml.self_learning import (
-    SelfLearningCollector,
-    ModelUpdater,
-    FeedbackCollector
-)
-from framework.config.settings import Settings
+from framework.ml.self_learning import SelfLearningCollector, ModelUpdater, FeedbackCollector
+from framework.config import ConfigManager
 
 console = Console()
-settings = Settings()
 
 
 # Individual command functions (not a group)
@@ -31,17 +26,19 @@ def check_updates():
         update = updater.check_for_updates()
 
         if update:
-            console.print(Panel(
-                f"[green]✅ New model available![/green]\n\n"
-                f"Current version: {updater._get_current_version()}\n"
-                f"Latest version: {update['version']}\n"
-                f"Release date: {update['release_date']}\n"
-                f"Size: {update['size_mb']} MB\n\n"
-                f"[bold]Improvements:[/bold]\n{update['changelog']}\n\n"
-                f"Run [cyan]observe ml update-model[/cyan] to install",
-                title="Model Update Available",
-                border_style="green"
-            ))
+            console.print(
+                Panel(
+                    f"[green]✅ New model available![/green]\n\n"
+                    f"Current version: {updater._get_current_version()}\n"
+                    f"Latest version: {update['version']}\n"
+                    f"Release date: {update['release_date']}\n"
+                    f"Size: {update['size_mb']} MB\n\n"
+                    f"[bold]Improvements:[/bold]\n{update['changelog']}\n\n"
+                    f"Run [cyan]observe ml update-model[/cyan] to install",
+                    title="Model Update Available",
+                    border_style="green",
+                )
+            )
         else:
             console.print("✅ Your model is up to date!", style="green")
 
@@ -50,7 +47,7 @@ def check_updates():
 
 
 @click.command()
-@click.option('--auto', is_flag=True, help='Check and install automatically')
+@click.option("--auto", is_flag=True, help="Check and install automatically")
 def update_model(auto: bool):
     """Update ML model to latest version."""
     updater = ModelUpdater()
@@ -78,14 +75,16 @@ def update_model(auto: bool):
     console.print(f"\n📥 Downloading model v{update['version']}...", style="cyan")
 
     if updater.download_update(update):
-        console.print(Panel(
-            f"[green]✅ Model updated successfully![/green]\n\n"
-            f"Version: {update['version']}\n"
-            f"Accuracy: {update.get('accuracy', 'N/A')}\n\n"
-            f"[dim]Location: ml_models/universal_element_classifier.pkl[/dim]",
-            title="Update Complete",
-            border_style="green"
-        ))
+        console.print(
+            Panel(
+                f"[green]✅ Model updated successfully![/green]\n\n"
+                f"Version: {update['version']}\n"
+                f"Accuracy: {update.get('accuracy', 'N/A')}\n\n"
+                f"[dim]Location: ml_models/universal_element_classifier.pkl[/dim]",
+                title="Update Complete",
+                border_style="green",
+            )
+        )
     else:
         console.print("❌ Update failed", style="red")
 
@@ -104,17 +103,18 @@ def stats():
     element_type_counts = {}
 
     import json
+
     for batch_file in batch_files:
-        with open(batch_file, 'r') as f:
+        with open(batch_file, "r") as f:
             batch = json.load(f)
 
             # Platform distribution
-            for platform, count in batch.get('platform_distribution', {}).items():
+            for platform, count in batch.get("platform_distribution", {}).items():
                 platform_counts[platform] = platform_counts.get(platform, 0) + count
 
             # Element type distribution
-            for sample in batch.get('samples', []):
-                elem_type = sample.get('element_type', 'unknown')
+            for sample in batch.get("samples", []):
+                elem_type = sample.get("element_type", "unknown")
                 element_type_counts[elem_type] = element_type_counts.get(elem_type, 0) + 1
 
     # Create table
@@ -145,66 +145,75 @@ def stats():
 
     # Contribution message
     if total_samples > 0:
-        console.print(Panel(
-            f"[green]Thank you for contributing {total_samples} samples! 🎉[/green]\n\n"
-            "Your data helps improve the ML model for everyone.\n"
-            "Together we're building the best mobile testing tool!",
-            border_style="green"
-        ))
+        console.print(
+            Panel(
+                f"[green]Thank you for contributing {total_samples} samples! 🎉[/green]\n\n"
+                "Your data helps improve the ML model for everyone.\n"
+                "Together we're building the best mobile testing tool!",
+                border_style="green",
+            )
+        )
     else:
-        console.print(Panel(
-            f"[yellow]No contributions yet[/yellow]\n\n"
-            f"Use the framework to analyze apps, and training data will be\n"
-            f"collected automatically (if enabled).\n\n"
-            f"To enable: [cyan]observe config set ml.contribute true[/cyan]",
-            border_style="yellow"
-        ))
+        console.print(
+            Panel(
+                "[yellow]No contributions yet[/yellow]\n\n"
+                "Use the framework to analyze apps, and training data will be\n"
+                "collected automatically (if enabled).\n\n"
+                "To enable: [cyan]observe config set ml.contribute true[/cyan]",
+                border_style="yellow",
+            )
+        )
 
 
 @click.command()
-@click.option('--enable/--disable', default=True, help='Enable or disable data collection')
+@click.option("--enable/--disable", default=True, help="Enable or disable data collection")
 def contribute(enable: bool):
     """Enable or disable ML data contribution."""
-    from framework.config.settings import Settings
-
-    settings = Settings()
-
     if enable:
-        console.print(Panel(
-            "[bold]ML Data Contribution[/bold]\n\n"
-            "[green]You are enabling automatic data collection.[/green]\n\n"
-            "[bold]What is collected:[/bold]\n"
-            "• Element attributes (class, clickable, focusable, etc.)\n"
-            "• Bounds (width, height)\n"
-            "• Platform (android, ios, flutter, react-native)\n\n"
-            "[bold]What is NOT collected:[/bold]\n"
-            "❌ App names or package IDs\n"
-            "❌ Actual text content (only length)\n"
-            "❌ Screenshots\n"
-            "❌ User data or identifiers\n"
-            "❌ API calls\n\n"
-            "[dim]Data is anonymized and helps improve the model for everyone.[/dim]\n"
-            "[dim]You can disable this at any time with:[/dim]\n"
-            "[cyan]observe ml contribute --disable[/cyan]",
-            title="Privacy Notice",
-            border_style="cyan"
-        ))
+        console.print(
+            Panel(
+                "[bold]ML Data Contribution[/bold]\n\n"
+                "[green]You are enabling automatic data collection.[/green]\n\n"
+                "[bold]What is collected:[/bold]\n"
+                "• Element attributes (class, clickable, focusable, etc.)\n"
+                "• Bounds (width, height)\n"
+                "• Platform (android, ios, flutter, react-native)\n\n"
+                "[bold]What is NOT collected:[/bold]\n"
+                "❌ App names or package IDs\n"
+                "❌ Actual text content (only length)\n"
+                "❌ Screenshots\n"
+                "❌ User data or identifiers\n"
+                "❌ API calls\n\n"
+                "[dim]Data is anonymized and helps improve the model for everyone.[/dim]\n"
+                "[dim]You can disable this at any time with:[/dim]\n"
+                "[cyan]observe ml contribute --disable[/cyan]",
+                title="Privacy Notice",
+                border_style="cyan",
+            )
+        )
 
         if not click.confirm("\nDo you agree to contribute anonymized data?"):
             console.print("Contribution not enabled", style="yellow")
             return
 
-        settings.set("ml.contribute", True)
+        # Enable contribution in config
+        config_manager = ConfigManager()
+        config_manager.set("ml.contribute", True)
+
+        collector = SelfLearningCollector()
         console.print("✅ ML contribution enabled! Thank you! 🎉", style="green")
+        console.print(f"[dim]Data will be collected to {collector.local_cache_dir}[/dim]")
 
     else:
-        settings.set("ml.contribute", False)
+        # Disable contribution
+        config_manager = ConfigManager()
+        config_manager.set("ml.contribute", False)
         console.print("✅ ML contribution disabled", style="green")
         console.print("[dim]Existing cached data will not be deleted[/dim]")
 
 
 @click.command()
-@click.option('--output', '-o', type=Path, help='Output directory')
+@click.option("--output", "-o", type=Path, help="Output directory")
 def export_cache(output: Path):
     """Export cached training data."""
     if not output:
@@ -220,6 +229,7 @@ def export_cache(output: Path):
     output.mkdir(parents=True, exist_ok=True)
 
     import shutil
+
     for batch_file in track(batch_files, description="Exporting batches..."):
         shutil.copy(batch_file, output / batch_file.name)
 
@@ -227,7 +237,7 @@ def export_cache(output: Path):
 
 
 @click.command()
-@click.confirmation_option(prompt='Are you sure you want to clear all cached data?')
+@click.confirmation_option(prompt="Are you sure you want to clear all cached data?")
 def clear_cache():
     """Clear local training data cache."""
     collector = SelfLearningCollector()
@@ -244,10 +254,10 @@ def clear_cache():
 
 
 @click.command()
-@click.argument('element_id')
-@click.option('--predicted', required=True, help='What ML predicted')
-@click.option('--actual', required=True, help='What it actually is')
-@click.option('--platform', required=True, type=click.Choice(['android', 'ios', 'flutter', 'react-native']))
+@click.argument("element_id")
+@click.option("--predicted", required=True, help="What ML predicted")
+@click.option("--actual", required=True, help="What it actually is")
+@click.option("--platform", required=True, type=click.Choice(["android", "ios", "flutter", "react-native"]))
 def correct(element_id: str, predicted: str, actual: str, platform: str):
     """Record a correction for ML misclassification."""
     feedback = FeedbackCollector()
@@ -259,22 +269,19 @@ def correct(element_id: str, predicted: str, actual: str, platform: str):
         "class": "unknown",  # Would be filled from actual element
     }
 
-    feedback.record_correction(
-        element=element,
-        predicted_type=predicted,
-        actual_type=actual,
-        platform=platform
-    )
+    feedback.record_correction(element=element, predicted_type=predicted, actual_type=actual, platform=platform)
 
-    console.print(Panel(
-        f"[green]✅ Correction recorded![/green]\n\n"
-        f"Predicted: {predicted}\n"
-        f"Actual: {actual}\n"
-        f"Platform: {platform}\n\n"
-        f"[dim]This will help improve the model in the next update.[/dim]",
-        title="Feedback Submitted",
-        border_style="green"
-    ))
+    console.print(
+        Panel(
+            f"[green]✅ Correction recorded![/green]\n\n"
+            f"Predicted: {predicted}\n"
+            f"Actual: {actual}\n"
+            f"Platform: {platform}\n\n"
+            f"[dim]This will help improve the model in the next update.[/dim]",
+            title="Feedback Submitted",
+            border_style="green",
+        )
+    )
 
 
 @click.command()
@@ -291,7 +298,8 @@ def info():
     current_version = updater._get_current_version()
 
     # Contribution status
-    is_contributing = getattr(settings, 'ml', {}).get('contribute', True)
+    config_manager = ConfigManager()
+    is_contributing = config_manager.get("ml.contribute", True)
 
     # Cache info
     total_samples = collector.get_local_samples_count()
@@ -319,12 +327,9 @@ def info():
 • Enable contribution: [cyan]observe ml contribute --enable[/cyan]
 """
 
-    console.print(Panel(
-        info_text,
-        title="ML System Information",
-        border_style="cyan"
-    ))
+    console.print(Panel(info_text, title="ML System Information", border_style="cyan"))
 
 
-if __name__ == '__main__':
-# Commands are registered in main.py
+if __name__ == "__main__":
+    # Commands are registered in main.py
+    pass

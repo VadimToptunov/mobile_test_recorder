@@ -257,12 +257,16 @@ class AdvancedSelectorEngine:
         if selector.type == SelectorType.CLASS:
             class_name = element.get("class") or element.get("type")
             if selector.fuzzy:
+                if class_name is None:
+                    return False
                 return selector.value.lower() in str(class_name).lower()
             return class_name == selector.value
 
         if selector.type == SelectorType.TEXT:
             text = element.get("text") or element.get("label")
             if selector.fuzzy:
+                if text is None:
+                    return False
                 return selector.value.lower() in str(text).lower()
             return text == selector.value
 

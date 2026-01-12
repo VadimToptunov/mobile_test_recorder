@@ -20,7 +20,8 @@ export CARGO_HOME="$VENV_PATH/cargo"
 export PATH="$CARGO_HOME/bin:$PATH"
 
 echo "✅ Virtual environment activated!"
-echo "🦀 Rust toolchain activated (rustc $(rustc --version 2>/dev/null | awk '{print $2}' || echo 'not found'))"
+RUST_VERSION=$(rustc --version 2>/dev/null | awk '{print $2}' || echo 'not found')
+echo "🦀 Rust toolchain activated (version: $RUST_VERSION)"
 echo ""
 echo " Available commands:"
 echo "  observe --help              # Show CLI help"
