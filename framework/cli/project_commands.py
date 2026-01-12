@@ -248,7 +248,7 @@ def analyze(
 
     # Validation: At least one source required
     validate_and_raise(
-        android_source or ios_source,
+        android_source is not None or ios_source is not None,
         "At least one source (--android-source or --ios-source) must be provided"
     )
 
