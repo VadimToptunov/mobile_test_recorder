@@ -18,6 +18,7 @@ class Selector(BaseModel):
     - test_id: Universal test identifier
     - xpath: XPath locator (fragile)
     """
+
     android: Optional[str] = None
     ios: Optional[str] = None
     test_id: Optional[str] = None
@@ -26,9 +27,9 @@ class Selector(BaseModel):
     ios_fallback: List[str] = Field(default_factory=list)
     stability: SelectorStability = SelectorStability.UNKNOWN
 
-    @field_validator('android', 'ios', 'test_id', 'xpath')
+    @field_validator("android", "ios", "test_id", "xpath")
     @classmethod
-    def validate_locators(cls, v):
+    def validate_locators(cls, v: Optional[str]) -> Optional[str]:
         """At least one locator must be provided"""
         return v
 
@@ -38,7 +39,7 @@ class Selector(BaseModel):
                 "android": "id:com.app:id/login_button",
                 "ios": "accessibility:login_button",
                 "test_id": "login_button",
-                "stability": "high"
+                "stability": "high",
             }
         }
     }
