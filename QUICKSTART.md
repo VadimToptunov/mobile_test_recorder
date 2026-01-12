@@ -27,14 +27,14 @@ observe info
 
 ## Available Commands
 
-The framework provides four main command groups:
+The framework provides seven main command groups:
 
 ### 1. Business Logic Analysis
 ```bash
 # Analyze Android/iOS source code for business rules, edge cases, and patterns
-observe business-logic analyze <source_path> --output analysis.json
-observe business-logic report analysis.json     # Human-readable report
-observe business-logic stats analysis.json      # Statistics summary
+observe business analyze <source_path> --output analysis.json
+observe business report analysis.json     # Human-readable report
+observe business stats analysis.json      # Statistics summary
 ```
 
 ### 2. Project Integration
@@ -51,7 +51,52 @@ observe project integrate analysis.json --framework-path ./my-tests/
 observe project generate analysis.json --output ./tests/
 ```
 
-### 3. Session Recording
+### 3. Dashboard & Analytics
+```bash
+# Start local web dashboard for test results visualization
+observe dashboard start --port 8080
+
+# Import test results
+observe dashboard import-results --junit-xml results/junit.xml
+
+# View statistics
+observe dashboard stats --days 30
+
+# Export metrics for monitoring
+observe dashboard export --format prometheus --output metrics.txt
+```
+
+### 4. Self-Healing Tests
+```bash
+# Analyze test failures and suggest fixes
+observe heal analyze --test-results results/junit.xml
+
+# Automatically fix broken selectors
+observe heal auto --test-results results/junit.xml --commit
+
+# View healing history
+observe heal history --limit 10
+
+# Show healing statistics
+observe heal stats
+```
+
+### 5. Device Management
+```bash
+# List available devices
+observe devices list --platform android
+
+# Check device health
+observe devices health
+
+# Create device pool
+observe devices pool create --name android-pool --devices emulator-5554,emulator-5556
+
+# List pools
+observe devices pool list
+```
+
+### 6. Session Recording
 ```bash
 # (Coming soon - SDK integration required)
 observe record start --session-id my-session
@@ -59,7 +104,7 @@ observe record stop
 observe record correlate <session_id>
 ```
 
-### 4. Test Generation
+### 7. Test Generation
 ```bash
 # (Coming soon - generates from recorded sessions)
 observe generate pages --model app-model.json --output tests/pages/
@@ -79,13 +124,13 @@ observe generate api --model app-model.json --output tests/api/
 cd /path/to/your/mobile/app
 
 # 2. Analyze source code
-observe business-logic analyze ./src/main --output analysis.json
+observe business analyze ./src/main --output analysis.json
 
 # 3. View results
-observe business-logic report analysis.json
+observe business report analysis.json
 
 # 4. See statistics
-observe business-logic stats analysis.json
+observe business stats analysis.json
 ```
 
 **Output:**
@@ -121,7 +166,93 @@ pytest tests/ -v
 
 ---
 
-### Scenario 3: Full Automation (Android + iOS)
+### Scenario 3: Dashboard for Test Results
+
+**Goal:** Visualize test results and track test health
+
+```bash
+# 1. Import test results
+observe dashboard import-results --junit-xml test-results/junit.xml
+
+# 2. Start dashboard
+observe dashboard start --port 8080
+# Opens browser at http://localhost:8080
+
+# 3. View statistics in terminal
+observe dashboard stats --days 30
+```
+
+**Dashboard Features:**
+- 📊 Test health tracking
+- ⚡ Pass rate trends
+- 🔄 Flaky test detection
+- 🔧 Self-healing status
+
+---
+
+### Scenario 4: Auto-Healing Broken Tests
+
+**Goal:** Automatically fix broken element selectors
+
+```bash
+# 1. Run tests and capture failures
+pytest tests/ --junit-xml=results/junit.xml
+
+# 2. Analyze failures
+observe heal analyze --test-results results/junit.xml
+
+# 3. Auto-fix selectors (dry-run first)
+observe heal auto --test-results results/junit.xml --dry-run
+
+# 4. Apply fixes and commit
+observe heal auto --test-results results/junit.xml --commit
+
+# 5. Check what was healed
+observe heal history
+observe heal stats
+```
+
+**Healing Process:**
+1. ✅ Detects broken selectors from test failures
+2. ✅ Finds alternative selectors using ML
+3. ✅ Updates test files automatically
+4. ✅ Commits changes to git (optional)
+5. ✅ Tracks healing success rate
+
+---
+
+### Scenario 5: Device Management
+
+**Goal:** Manage Android/iOS devices and device pools
+
+```bash
+# 1. List available devices
+observe devices list --platform android
+
+# 2. Check device health
+observe devices health
+
+# 3. Create device pool for parallel execution
+observe devices pool create \
+  --name android-test-pool \
+  --devices emulator-5554,emulator-5556,emulator-5558 \
+  --strategy round-robin
+
+# 4. View pool info
+observe devices pool info android-test-pool
+
+# 5. Run tests on device pool (coming soon)
+# pytest tests/ --pool android-test-pool
+```
+
+**Device Strategies:**
+- `round-robin` - Distribute tests evenly
+- `least-busy` - Use least busy device
+- `random` - Random device selection
+
+---
+
+### Scenario 6: Full Automation (Android + iOS)
 
 **Goal:** One command to analyze and generate everything
 
@@ -185,9 +316,9 @@ observe project fullcycle \
 
 | Command | Description | Example |
 |---------|-------------|---------|
-| `analyze` | Analyze source code | `observe business-logic analyze ./src --output result.json` |
-| `report` | Generate human-readable report | `observe business-logic report result.json` |
-| `stats` | Show statistics summary | `observe business-logic stats result.json` |
+| `analyze` | Analyze source code | `observe business analyze ./src --output result.json` |
+| `report` | Generate human-readable report | `observe business report result.json` |
+| `stats` | Show statistics summary | `observe business stats result.json` |
 
 ### Project Commands
 
@@ -205,8 +336,8 @@ observe project fullcycle \
 ### 1. Audit Existing App
 ```bash
 # Quick analysis to understand app structure
-observe business-logic analyze ./src --output audit.json
-observe business-logic report audit.json > audit-report.txt
+observe business analyze ./src --output audit.json
+observe business report audit.json > audit-report.txt
 
 # Share report with team
 cat audit-report.txt
@@ -226,10 +357,10 @@ ls -la tests/generated/
 ### 3. API Contract Extraction
 ```bash
 # Extract all API endpoints
-observe business-logic analyze ./src --output api-analysis.json
+observe business analyze ./src --output api-analysis.json
 
 # View API contracts
-observe business-logic report api-analysis.json | grep -A 10 "API Contracts"
+observe business report api-analysis.json | grep -A 10 "API Contracts"
 ```
 
 ---
@@ -255,8 +386,8 @@ observe business-logic report api-analysis.json | grep -A 10 "API Contracts"
 find ./src -name "*.kt" -o -name "*.swift" -o -name "*.java"
 
 # Use correct source path
-observe business-logic analyze ./app/src/main  # Android
-observe business-logic analyze ./MyApp/MyApp   # iOS
+observe business analyze ./app/src/main  # Android
+observe business analyze ./MyApp/MyApp   # iOS
 ```
 
 ### Issue: "Command not found: observe"
@@ -283,7 +414,7 @@ observe info
 ```bash
 # Enable debug logging
 export OBSERVE_LOG_LEVEL=DEBUG
-observe business-logic analyze ./src --output result.json
+observe business analyze ./src --output result.json
 
 # Check logs
 cat ~/.observe/logs/observe.log
@@ -312,7 +443,7 @@ cat ~/.observe/logs/observe.log
 ### Quick Help
 ```bash
 observe --help                    # All commands
-observe business-logic --help     # Business logic commands
+observe business --help     # Business logic commands
 observe project --help            # Project commands
 ```
 

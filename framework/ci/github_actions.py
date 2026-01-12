@@ -229,7 +229,7 @@ class GitHubActionsGenerator:
             },
             {
                 'name': 'Upload test results',
-                'i': 'always()',
+                'if': 'always()',
                 'uses': 'actions/upload-artifact@v4',
                 'with': {
                     'name': f'test-results-{platform}-${{{{ matrix.shard }}}}' if parallel_count > 1 else f'test-results-{platform}',
@@ -274,7 +274,7 @@ class GitHubActionsGenerator:
                 },
                 {
                     'name': 'Upload test results',
-                    'i': 'always()',
+                    'if': 'always()',
                     'uses': 'actions/upload-artifact@v4',
                     'with': {
                         'name': 'test-results-${{ matrix.device }}',
@@ -318,7 +318,7 @@ class GitHubActionsGenerator:
             'name': 'Generate Report',
             'runs-on': 'ubuntu-latest',
             'needs': test_job_names,  # Dynamic dependencies based on actual test jobs
-            'i': 'always()',
+            'if': 'always()',
             'steps': [
                 {
                     'name': 'Download all artifacts',

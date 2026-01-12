@@ -28,7 +28,7 @@ class AndroidAnalyzer:
     Does NOT execute code - only reads and analyzes text.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         # Patterns for detection
         self.composable_pattern = re.compile(r'@Composable\s+fun\s+(\w+)', re.MULTILINE)
         self.screen_pattern = re.compile(r'(?:Screen|Page|View)\w*', re.IGNORECASE)
@@ -87,7 +87,7 @@ class AndroidAnalyzer:
         """Find all .kt files in directory"""
         return list(source_dir.rglob("*.kt"))
 
-    def _analyze_file(self, file_path: Path, result: AnalysisResult):
+    def _analyze_file(self, file_path: Path, result: AnalysisResult) -> None:
         """Analyze single Kotlin file"""
         try:
             content = file_path.read_text(encoding='utf-8')
@@ -116,7 +116,7 @@ class AndroidAnalyzer:
         file_path: Path,
         lines: List[str],
         result: AnalysisResult
-    ):
+    ) -> None:
         """Detect Composable screen functions"""
         for match in self.composable_pattern.finditer(content):
             func_name = match.group(1)
@@ -150,7 +150,7 @@ class AndroidAnalyzer:
         file_path: Path,
         lines: List[str],
         result: AnalysisResult
-    ):
+    ) -> None:
         """Detect UI elements with test tags or content descriptions"""
 
         # Find test tags
@@ -200,7 +200,7 @@ class AndroidAnalyzer:
         file_path: Path,
         lines: List[str],
         result: AnalysisResult
-    ):
+    ) -> None:
         """Detect navigation routes and transitions"""
 
         # Look for navigation calls: navController.navigate("route")
@@ -250,7 +250,7 @@ class AndroidAnalyzer:
         file_path: Path,
         lines: List[str],
         result: AnalysisResult
-    ):
+    ) -> None:
         """Detect Retrofit API endpoints"""
 
         # Extract interface name
@@ -377,7 +377,7 @@ class AndroidAnalyzer:
 
         return request_type, response_type
 
-    def _link_elements_to_screens(self, result: AnalysisResult):
+    def _link_elements_to_screens(self, result: AnalysisResult) -> None:
         """Post-process to link orphan elements to their screens"""
         # Build screen name index
         screen_names = {s.name for s in result.screens}

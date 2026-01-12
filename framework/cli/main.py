@@ -8,10 +8,23 @@ import click
 from framework import __version__
 
 # Import command groups
-from framework.cli.business_logic_commands import business_logic
+from framework.cli.business_logic_commands import business
 from framework.cli.project_commands import project
 from framework.cli.record_commands import record
 from framework.cli.generate_commands import generate
+from framework.cli.dashboard_commands import dashboard
+from framework.cli.healing_commands import heal
+from framework.cli.device_commands import devices
+from framework.cli.ml_commands import ml
+from framework.cli.ml_selflearn_commands import ml as ml_selflearn
+from framework.cli.security_commands import security
+from framework.cli.perf_commands import perf
+from framework.cli.selection_commands import select
+from framework.cli.config_commands import config
+from framework.cli.notify_commands import notify
+from framework.cli.visual_commands import visual
+from framework.cli.data_commands import data
+from framework.cli.execute_commands import execute
 from framework.cli.rich_output import print_banner
 
 
@@ -28,10 +41,32 @@ def cli(ctx):
 
 
 # Register command groups
-cli.add_command(business_logic)
+cli.add_command(business)
 cli.add_command(project)
 cli.add_command(record)
 cli.add_command(generate)
+cli.add_command(dashboard)
+cli.add_command(heal)
+cli.add_command(devices)
+cli.add_command(ml)
+cli.add_command(security)
+cli.add_command(perf)
+cli.add_command(select)
+cli.add_command(config)
+cli.add_command(notify)
+cli.add_command(visual)
+cli.add_command(data)
+cli.add_command(execute)
+
+# Add self-learning ML commands as subgroup
+ml.add_command(ml_selflearn.check_updates)
+ml.add_command(ml_selflearn.update_model)
+ml.add_command(ml_selflearn.stats)
+ml.add_command(ml_selflearn.contribute)
+ml.add_command(ml_selflearn.export_cache)
+ml.add_command(ml_selflearn.clear_cache)
+ml.add_command(ml_selflearn.correct)
+ml.add_command(ml_selflearn.info)
 
 
 @cli.command()
@@ -46,6 +81,9 @@ def info():
     click.echo("   • Project Integration")
     click.echo("   • Session Recording")
     click.echo("   • Test Generation")
+    click.echo("   • Self-Healing Tests")
+    click.echo("   • Device Management")
+    click.echo("   • Dashboard & Analytics")
     click.echo("   • Rich CLI Interface")
     click.echo("\n📚 Documentation: See README.md")
     click.echo("🐛 Issues: https://github.com/VadimToptunov/mobile_test_recorder/issues")

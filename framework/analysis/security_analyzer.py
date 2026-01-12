@@ -6,7 +6,7 @@ Analyzes apps for common security issues and vulnerabilities.
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import List
+from typing import List, Dict
 from pathlib import Path
 import re
 
@@ -66,7 +66,7 @@ class SecurityAnalyzer:
 
         return sorted(self.issues, key=lambda i: (i.severity.value, i.title))
 
-    def _analyze_android(self):
+    def _analyze_android(self) -> None:
         """Android-specific security checks"""
         # Check hardcoded secrets
         self._check_hardcoded_secrets("kotlin")
@@ -84,7 +84,7 @@ class SecurityAnalyzer:
         # Check debug flags
         self._check_debug_flags()
 
-    def _analyze_ios(self):
+    def _analyze_ios(self) -> None:
         """iOS-specific security checks"""
         # Check hardcoded secrets
         self._check_hardcoded_secrets("swift")
@@ -98,7 +98,7 @@ class SecurityAnalyzer:
         # Check weak crypto
         self._check_weak_cryptography()
 
-    def _check_hardcoded_secrets(self, language: str):
+    def _check_hardcoded_secrets(self, language: str) -> None:
         """Check for hardcoded API keys, passwords, etc."""
         patterns = {
             'api_key': r'api[_-]?key\s*=\s*["\']([^"\']+)["\']',
@@ -137,7 +137,7 @@ class SecurityAnalyzer:
                 except Exception:
                     pass
 
-    def _check_network_security_config(self):
+    def _check_network_security_config(self) -> None:
         """Check Android network security configuration"""
         config_file = self.project_root / "app" / "src" / "main" / "res" / "xml" / "network_security_config.xml"
 
@@ -167,7 +167,7 @@ class SecurityAnalyzer:
         except Exception:
             pass
 
-    def _check_exported_components(self):
+    def _check_exported_components(self) -> None:
         """Check for exported Android components"""
         manifest = self.project_root / "app" / "src" / "main" / "AndroidManifest.xml"
 
@@ -188,7 +188,7 @@ class SecurityAnalyzer:
         except Exception:
             pass
 
-    def _check_weak_cryptography(self):
+    def _check_weak_cryptography(self) -> None:
         """Check for weak cryptographic algorithms"""
         weak_algorithms = ['MD5', 'SHA1', 'DES', 'RC4']
 
@@ -215,7 +215,7 @@ class SecurityAnalyzer:
             except Exception:
                 pass
 
-    def _check_debug_flags(self):
+    def _check_debug_flags(self) -> None:
         """Check for debug flags in production builds"""
         gradle_file = self.project_root / "app" / "build.gradle.kts"
 
@@ -239,7 +239,7 @@ class SecurityAnalyzer:
         except Exception:
             pass
 
-    def _check_info_plist(self):
+    def _check_info_plist(self) -> None:
         """Check iOS Info.plist security settings"""
         info_plist = self.project_root / "Info.plist"
 
@@ -261,7 +261,7 @@ class SecurityAnalyzer:
         except Exception:
             pass
 
-    def _check_keychain_usage(self):
+    def _check_keychain_usage(self) -> None:
         """Check iOS Keychain usage"""
         for file in self.project_root.rglob('*.swift'):
             if not file.is_file():
@@ -291,7 +291,7 @@ class SecurityAnalyzer:
         report += "=" * 80 + "\n\n"
 
         # Group by severity
-        by_severity = {}
+        by_severity: Dict[str, List[SecurityIssue]] = {}
         for issue in self.issues:
             severity = issue.severity.value
             if severity not in by_severity:
