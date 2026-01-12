@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Optional
 import shutil
 
-from framework.analysis.visual_analyzer import VisualAnalyzer, VisualDiff
+from framework.analysis.visual_analyzer import VisualAnalyzer
 from framework.cli.rich_output import print_header, print_info, print_success, print_error
 from rich.console import Console
 from rich.table import Table
@@ -207,7 +207,7 @@ def list_baselines(baseline_dir: str) -> None:
 
     if not baseline_path.exists():
         print_info("No baselines directory found")
-        print_info(f"\nCreate with: observe visual capture --screenshots-dir ./screenshots")
+        print_info("\nCreate with: observe visual capture --screenshots-dir ./screenshots")
         return
 
     baselines = list(baseline_path.glob('*.png'))
