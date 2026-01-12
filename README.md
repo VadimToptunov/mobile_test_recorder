@@ -348,6 +348,7 @@ observe load compare baseline.json current.json
 ### Quick References
 
 - **[Quick Start](QUICKSTART.md)** - 10-minute setup
+- **[User Guide](USER_GUIDE.md)** - Complete use cases & workflows ⭐
 - **[CLI Reference](docs/CLI_REFERENCE.md)** - All commands
 - **[Configuration](docs/CONFIGURATION.md)** - Setup guide
 
@@ -355,38 +356,50 @@ observe load compare baseline.json current.json
 
 ## 🏗️ Architecture
 
+### Multi-Language Core
+
 ```
-┌──────────────────────────────────────────────────────────┐
-│                    CLI Layer (Click + Rich)              │
-└────────────────────────┬─────────────────────────────────┘
+┌───────────────────────────────────────────────────────────┐
+│         Language Bindings (Wrappers)                      │
+│  Python | JavaScript | Go | Ruby | Java | C# | ...       │
+└────────────────────────┬──────────────────────────────────┘
                          │
-┌────────────────────────▼─────────────────────────────────┐
-│               Python Application Layer                    │
-│  • ML Models (scikit-learn)                               │
-│  • Integrations (Appium, Git, CI/CD)                      │
-│  • Business Logic & Test Generation                       │
-└────────────────────────┬─────────────────────────────────┘
-                         │ PyO3 Bindings
-┌────────────────────────▼─────────────────────────────────┐
-│                  Rust Core (observe_core)                 │
-│  • AST Analyzer (18x faster)                              │
-│  • Event Correlator (20x faster)                          │
-│  • Business Logic Analyzer (11x faster)                   │
-│  • File I/O (16x faster)                                  │
-└────────────────────────┬─────────────────────────────────┘
+┌────────────────────────▼──────────────────────────────────┐
+│              Rust Core (90% of logic)                     │
+│  • AST Analysis        • Event Correlation                │
+│  • Business Logic      • File I/O (Parallel)              │
+│  • Selector Generation • Performance Profiling            │
+│  • Test Execution      • Device Manager                   │
+│                                                            │
+│  Performance: 16x faster | Memory safe | Concurrent       │
+└────────────────────────┬──────────────────────────────────┘
                          │
-┌────────────────────────▼─────────────────────────────────┐
-│              External Integrations                        │
-│  Appium | Git | CI/CD | Slack | Prometheus                │
-└──────────────────────────────────────────────────────────┘
+┌────────────────────────▼──────────────────────────────────┐
+│          Python ML Layer (Python-only)                    │
+│  • Element Classifier (Random Forest, 94%)                │
+│  • Self-Learning System (Privacy-first)                   │
+│  • Model Training & Evaluation                            │
+│                                                            │
+│  Why Python? Best ML ecosystem (scikit-learn, PyTorch)    │
+└───────────────────────────────────────────────────────────┘
 ```
 
 **Key Design Principles:**
-- 🦀 **Hybrid Architecture** - Python for flexibility, Rust for speed
-- 🔌 **Plugin System** - Extensible architecture
+- 🦀 **Rust Core** - 90% of logic, 16x speedup, multi-language support
+- 🤖 **Python ML** - Best ML ecosystem, not performance-critical
+- 🔌 **Multi-Language** - Bindings for Python, JS, Go, Ruby, etc.
 - 📊 **Observable** - Full metrics & tracing
 - 🔒 **Secure** - Privacy-first design
-- 📦 **Modular** - Independent components
+- 📦 **Binary Distribution** - Single executable, no runtime
+
+**Supported Languages:**
+- ✅ Python (PyO3) - Production ready
+- 🔄 JavaScript/TypeScript (NAPI-RS) - Planned Phase 6
+- 🔄 Go (CGO) - Planned Phase 6
+- 🔄 Ruby (FFI) - Planned Phase 6
+- 🔄 Java/Kotlin (JNI) - Planned Phase 7
+
+See [Multi-Language Architecture](docs/MULTI_LANGUAGE_ARCHITECTURE.md) for details.
 
 ---
 - 📦 **Modular** - Independent components
@@ -492,7 +505,8 @@ refactor: Code refactoring
 
 ## 🛣️ Roadmap
 
-### ✅ Completed (Phases 1-5)
+### ✅ Completed (Open Source - MIT License)
+
 - ✅ Business logic analysis
 - ✅ Self-healing tests
 - ✅ ML element classification
@@ -509,15 +523,147 @@ refactor: Code refactoring
 - ✅ Load testing & profiling
 - ✅ Documentation generator
 
-### 🔜 Upcoming (Phase 6+)
-- 🔄 Distributed execution (Kubernetes)
-- 🔄 Cloud device farms (AWS Device Farm, BrowserStack)
-- 🔄 AI-powered test generation (GPT)
-- 🔄 WebAssembly support
-- 🔄 GPU acceleration for ML
-- 🔄 Real-time collaboration
-- 🔄 Visual regression testing
-- 🔄 Code coverage integration
+### 💰 Premium Licenses (One-Time Purchase)
+
+**Core is FREE forever (MIT). Buy once, use forever:**
+
+#### 🧑‍💻 Individual License - $49
+**Perfect for freelancers & solo developers:**
+- ✅ All premium features unlocked
+- ✅ AI Test Generator (BYO OpenAI key)
+- ✅ Visual Regression Suite
+- ✅ Advanced Analytics Dashboard
+- ✅ Cloud Integrations (AWS, BrowserStack, Firebase)
+- ✅ Lifetime updates
+- ✅ 1 developer seat
+- ✅ Community support (GitHub Discussions)
+
+#### 👥 Team License - $499 (up to 5 devs)
+**For small teams:**
+- ✅ Everything in Individual
+- ✅ 5 developer seats
+- ✅ Slack community access
+- ✅ Team dashboard
+- ✅ Shared test baselines
+- ✅ Priority bug fixes
+
+#### 🏢 Enterprise License - $1,999 (unlimited devs)
+**For companies:**
+- ✅ Everything in Team
+- ✅ Unlimited seats
+- ✅ Remove attribution (optional)
+- ✅ Private modifications allowed
+- ✅ Email support (best-effort, 48h)
+- ✅ Volume discounts available (10+ licenses)
+
+---
+
+### 📚 Self-Paced Courses (Optional)
+
+**Learn at your own pace, no support needed:**
+
+- **"Mobile Testing Masterclass"** - $79 one-time
+  - 10 hours of video content
+  - 30+ real-world examples
+  - Downloadable resources
+  - Lifetime access
+  
+- **"Building Rust Extensions"** - $99 one-time
+  - Extend the framework
+  - Custom analyzers
+  - Performance tips
+  - Source code included
+
+**Bundle:** Both courses for $149 (save $29!)
+
+---
+
+### 🎯 Pricing Philosophy
+
+**Why one-time?**
+- ✅ **No recurring costs** - Buy once, own forever
+- ✅ **No support burden** - Community-driven help
+- ✅ **No servers** - Everything runs locally
+- ✅ **Open Core** - Core always free (MIT)
+
+**Individual vs Team vs Enterprise?**
+- **Individual ($49)**: You, solo projects
+- **Team ($499)**: 2-5 devs, small teams
+- **Enterprise ($1,999)**: 5+ devs, companies
+
+---
+
+### 🚀 Getting Started
+
+**Step 1: Install (Free)**
+```bash
+pip install mobile-test-recorder[rust]
+observe --version
+```
+
+**Step 2: Try It (Free)**
+```bash
+# All core features are free!
+observe record tests/test_login.py
+observe heal auto --dry-run
+observe analyze complexity framework/
+```
+
+**Step 3: Upgrade (Optional)**
+```bash
+# Purchase license from Gumroad/Lemon Squeezy
+# Activate with your key
+observe license activate YOUR-LICENSE-KEY
+
+# Unlock premium features
+observe ai generate tests/
+observe visual compare --baseline screenshots/
+```
+
+---
+
+### 🤝 Free vs Premium
+
+| Feature | Free (MIT) | Premium ($49+) |
+|---------|-----------|----------------|
+| **Core Framework** | ✅ Full access | ✅ |
+| **Rust Core (16x speedup)** | ✅ | ✅ |
+| **ML System (94% accuracy)** | ✅ | ✅ |
+| **Self-Healing (92% success)** | ✅ | ✅ |
+| **Security Scanning** | ✅ | ✅ |
+| **Accessibility Testing** | ✅ | ✅ |
+| **Load Testing** | ✅ | ✅ |
+| **Updates** | ✅ Forever | ✅ Forever |
+| **AI Test Generation** | ❌ | ✅ |
+| **Visual Regression** | ❌ | ✅ |
+| **Analytics Dashboard** | ❌ | ✅ |
+| **Cloud Integrations** | ❌ | ✅ |
+| **Support** | Community (GitHub) | Community + Slack |
+| **Commercial Use** | ✅ Allowed | ✅ Allowed |
+| **Seats** | Unlimited | 1 / 5 / Unlimited |
+| **Price** | **$0** | **$49-1,999** |
+
+---
+
+### 💬 Support Options
+
+**Free Users:**
+- 📖 Documentation (comprehensive)
+- 💬 GitHub Discussions (community)
+- 🐛 GitHub Issues (bugs only)
+
+**Premium Users:**
+- 📖 Everything above, plus:
+- 💬 Slack community (faster responses)
+- 🎯 Priority bug fixes (best-effort)
+
+**No Email Support:** Keep it simple, community-driven!
+
+---
+
+**🛒 Buy License:** [gumroad.com/mobile-test-recorder](https://gumroad.com/mobile-test-recorder)  
+**💬 Community:** [github.com/yourname/mobile-test-recorder/discussions](https://github.com/discussions)  
+**📚 Courses:** [mobile-test-recorder.teachable.com](https://teachable.com)
 
 ---
 

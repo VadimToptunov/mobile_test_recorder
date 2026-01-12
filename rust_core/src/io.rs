@@ -65,10 +65,10 @@ pub fn find_files(py: Python, root_dir: &str, pattern: &str) -> PyResult<PyObjec
     {
         let path = entry.path();
         if path.is_file() {
-            if let Some(file_name) = path.file_name() {
-                if file_name.to_string_lossy().contains(pattern) {
-                    matching_files.push(path.to_string_lossy().to_string());
-                }
+            // Match pattern against full path, not just filename
+            let path_str = path.to_string_lossy();
+            if path_str.contains(pattern) {
+                matching_files.push(path_str.to_string());
             }
         }
     }

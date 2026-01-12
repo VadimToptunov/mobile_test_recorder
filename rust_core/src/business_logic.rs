@@ -105,8 +105,9 @@ impl RustBusinessLogicAnalyzer {
 
     /// Analyze a source file for business logic
     fn analyze_file(&mut self, file_path: String, source: String) -> PyResult<()> {
-        self.patterns.clear();
-
+        // Don't clear patterns - accumulate across multiple files
+        // Users can call clear() explicitly if needed
+        
         // Split into lines for analysis
         for (line_num, line) in source.lines().enumerate() {
             self.analyze_line(&file_path, line_num + 1, line);
@@ -302,5 +303,37 @@ mod tests {
         
         assert!(analyzer.len() > 0);
         assert!(analyzer.patterns.iter().any(|p| p.category == "ErrorHandling"));
+    }
+
+    #[test]
+    fn test_multiple_files_accumulation() {
+        // Bug fix test: patterns should accumulate across multiple files
+        let mut analyzer = RustBusinessLogicAnalyzer::new();
+        
+        // Analyze first file with validation
+        let source1 = "def validateEmail(email): return '@' in email";
+        analyzer.analyze_file("file1.py".to_string(), source1.to_string()).unwrap();
+        
+        let count_after_first = analyzer.len();
+        assert!(count_after_first > 0, "Should detect patterns in first file");
+        
+        // Analyze second file with authentication
+        let source2 = "await login(username, password)";
+        analyzer.analyze_file("file2.py".to_string(), source2.to_string()).unwrap();
+        
+        let count_after_second = analyzer.len();
+        assert!(count_after_second > count_after_first, 
+            "Patterns should accumulate, not be cleared. Got {} after second file, expected more than {}",
+            count_after_second, count_after_first);
+        
+        // Verify both pattern types are present
+        assert!(analyzer.patterns.iter().any(|p| p.category == "Validation"),
+            "Validation patterns from first file should still be present");
+        assert!(analyzer.patterns.iter().any(|p| p.category == "Authentication"),
+            "Authentication patterns from second file should be present");
+        
+        // Verify explicit clear works
+        analyzer.clear();
+        assert_eq!(analyzer.len(), 0, "Clear should remove all patterns");
     }
 }

@@ -48,42 +48,89 @@ Mobile Test Recorder is a **next-generation intelligent mobile testing framework
 
 ## System Architecture
 
-### High-Level Architecture
+### High-Level Architecture (Multi-Language)
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                          CLI Layer                                    │
-│  ┌──────────┬──────────┬──────────┬──────────┬──────────┬─────────┐ │
-│  │ observe  │ observe  │ observe  │ observe  │ observe  │ observe │ │
-│  │ business │ heal     │ ml       │ load     │ security │ a11y    │ │
-│  └──────────┴──────────┴──────────┴──────────┴──────────┴─────────┘ │
-└────────────────────────────┬────────────────────────────────────────┘
-                              │
-┌─────────────────────────────▼────────────────────────────────────────┐
-│                      Python Application Layer                         │
-│  ┌─────────────────┬─────────────────┬─────────────────────────┐   │
-│  │ ML Models       │ Integrations    │ Business Logic          │   │
-│  │ (scikit-learn)  │ (Appium, etc)   │ Test Generation         │   │
-│  └─────────────────┴─────────────────┴─────────────────────────┘   │
-└────────────────────────────┬─────────────────────────────────────────┘
-                              │ PyO3 Bindings
-┌─────────────────────────────▼─────────────────────────────────────────┐
-│                        Rust Core (observe_core)                        │
-│  ┌──────────────┬──────────────┬──────────────┬──────────────────┐  │
-│  │ AST Analyzer │ Event        │ Business     │ File I/O         │  │
-│  │ (18x faster) │ Correlator   │ Logic        │ (16x faster)     │  │
-│  │              │ (20x faster) │ (11x faster) │                  │  │
-│  └──────────────┴──────────────┴──────────────┴──────────────────┘  │
-└───────────────────────────────────────────────────────────────────────┘
-                              │
-┌─────────────────────────────▼─────────────────────────────────────────┐
-│                       External Integrations                            │
-│  ┌──────────┬──────────┬──────────┬──────────┬──────────┬─────────┐ │
-│  │ Appium   │ Selenium │ Git      │ CI/CD    │ Slack    │ Metrics │ │
-│  │ (Mobile) │ (Web)    │          │ Systems  │ Teams    │ (Prom.) │ │
-│  └──────────┴──────────┴──────────┴──────────┴──────────┴─────────┘ │
-└───────────────────────────────────────────────────────────────────────┘
+│                    Language Bindings Layer                           │
+│  ┌──────────────┬──────────────┬──────────────┬──────────────┐     │
+│  │   Python     │  JavaScript  │     Go       │    Ruby      │     │
+│  │   Wrapper    │   Wrapper    │   Wrapper    │   Wrapper    │     │
+│  │   + ML       │   (NAPI-RS)  │   (CGO)      │   (FFI)      │     │
+│  └──────┬───────┴──────┬───────┴──────┬───────┴──────┬───────┘     │
+└─────────┼──────────────┼──────────────┼──────────────┼─────────────┘
+          │              │              │              │
+          └──────────────┴──────────────┴──────────────┘
+                                │
+┌───────────────────────────────▼─────────────────────────────────────┐
+│                    Rust Core (observe_core)                          │
+│  ┌────────────────────────────────────────────────────────────────┐ │
+│  │ • AST Analysis (18x)      • Event Correlation (20x)           │ │
+│  │ • Business Logic (11x)    • File I/O Parallel (16x)           │ │
+│  │ • Selector Generation     • Performance Profiling             │ │
+│  │ • Test Execution Engine   • Device Manager                    │ │
+│  └────────────────────────────────────────────────────────────────┘ │
+│                                                                      │
+│  Language: Rust 1.75+                                                │
+│  Size: ~8,000 lines (90% of core logic)                             │
+│  Performance: 16x faster than Python                                 │
+└──────────────────────────────────────────────────────────────────────┘
+                                │
+┌───────────────────────────────▼─────────────────────────────────────┐
+│                    Python ML Layer (Python-only)                     │
+│  ┌────────────────────────────────────────────────────────────────┐ │
+│  │ • Element Classifier (Random Forest, 94% accuracy)             │ │
+│  │ • Self-Learning System (Privacy-first)                         │ │
+│  │ • Model Training & Evaluation                                  │ │
+│  │ • Feature Engineering                                          │ │
+│  └────────────────────────────────────────────────────────────────┘ │
+│                                                                      │
+│  Framework: scikit-learn 1.4+                                        │
+│  Size: ~2,000 lines (ML logic)                                       │
+│  Reason: Best ML ecosystem in Python                                 │
+└──────────────────────────────────────────────────────────────────────┘
+                                │
+┌───────────────────────────────▼─────────────────────────────────────┐
+│                       External Integrations                          │
+│  ┌──────────┬──────────┬──────────┬──────────┬──────────┬────────┐ │
+│  │ Appium   │ Selenium │ Git      │ CI/CD    │ Slack    │ Prom.  │ │
+│  │ (Mobile) │ (Web)    │          │ Systems  │ Teams    │        │ │
+│  └──────────┴──────────┴──────────┴──────────┴──────────┴────────┘ │
+└──────────────────────────────────────────────────────────────────────┘
 ```
+
+### Design Philosophy
+
+**Three-Layer Architecture:**
+
+1. **Rust Core (90%)** - All performance-critical operations
+   - AST parsing, event correlation, file I/O
+   - Compiled to native binary (no runtime)
+   - C ABI for multi-language support
+   - 16x faster than Python
+
+2. **Python ML Layer (5%)** - Machine learning only
+   - Element classification (scikit-learn)
+   - Self-learning system
+   - Best ML ecosystem
+   - Not performance-critical
+
+3. **Language Wrappers (5%)** - Thin bindings
+   - Python: PyO3 bindings
+   - JavaScript: NAPI-RS
+   - Go: CGO
+   - Ruby: FFI
+   - Minimal overhead (<5%)
+
+**Why This Approach?**
+
+✅ **Performance**: Rust core for 16x speedup  
+✅ **Flexibility**: Python for ML (best ecosystem)  
+✅ **Portability**: Multi-language bindings  
+✅ **Maintainability**: Clear separation  
+✅ **Binary Distribution**: Single executable
+
+See [Multi-Language Architecture](MULTI_LANGUAGE_ARCHITECTURE.md) for details.
 
 ### Layered Architecture
 
