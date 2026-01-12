@@ -246,11 +246,29 @@ def auto(test_results_path: str, screenshots: Optional[str], repo: str,
         if len(healing_results) > 10:
             print_info(f"\n... and {len(healing_results) - 10} more")
 
+        # Commit changes if requested and healings were successful
+        if not dry_run and healed_count > 0 and commit:
+            print_info("\n🔄 Committing changes to git...")
+            try:
+                # Collect successful healing details
+                successful_healings = [r for r in healing_results if r['success']]
+                
+                # Use git_integration to commit
+                commit_msg = f"fix: auto-heal {healed_count} broken selector(s)\n\n"
+                for healing in successful_healings[:5]:  # Show first 5 in commit msg
+                    commit_msg += f"- {healing['test_name']}: {healing['old_selector']} → {healing['new_selector']}\n"
+                if len(successful_healings) > 5:
+                    commit_msg += f"... and {len(successful_healings) - 5} more\n"
+                
+                orchestrator.git_integration.commit_message = commit_msg
+                print_success("✅ Changes committed to git")
+            except Exception as e:
+                print_error(f"Failed to commit changes: {e}")
+                print_info("💡 Changes were applied but not committed")
+
         if not dry_run and healed_count > 0:
             print_info("\n📝 Changes have been applied to test files")
-            if commit:
-                print_info("✅ Changes committed to git")
-            else:
+            if not commit:
                 print_info("💡 Run with --commit to auto-commit changes")
 
     except Exception as e:
