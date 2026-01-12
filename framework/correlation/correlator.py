@@ -6,17 +6,14 @@ Main correlation engine that analyzes events and builds correlations.
 
 from typing import List, Dict, Any, Optional
 from framework.correlation.types import (
-            CorrelationResult,
-            UIToAPICorrelation,
-            APIToNavigationCorrelation,
-            FullFlowCorrelation,
-            CorrelationStrength,
-            CorrelationMethod
+    CorrelationResult,
+    UIToAPICorrelation,
+    APIToNavigationCorrelation,
+    FullFlowCorrelation,
+    CorrelationStrength,
+    CorrelationMethod,
 )
-from framework.correlation.strategies import (
-            HybridCorrelationStrategy,
-            TemporalProximityStrategy
-)
+from framework.correlation.strategies import HybridCorrelationStrategy, TemporalProximityStrategy
 from framework.storage.event_store import EventStore
 
 
@@ -55,18 +52,9 @@ class EventCorrelator:
             raise ValueError("EventStore required for session correlation")
 
         # Load events from store
-        ui_events = self.event_store.query_events(
-            session_id=session_id,
-            event_type='UIEvent'
-        )
-        api_events = self.event_store.query_events(
-            session_id=session_id,
-            event_type='NetworkEvent'
-        )
-        nav_events = self.event_store.query_events(
-            session_id=session_id,
-            event_type='NavigationEvent'
-        )
+        ui_events = self.event_store.get_events(session_id=session_id, event_type="UIEvent")
+        api_events = self.event_store.get_events(session_id=session_id, event_type="NetworkEvent")
+        nav_events = self.event_store.get_events(session_id=session_id, event_type="NavigationEvent")
 
         # Convert to dicts for processing
         ui_dicts = [self._event_to_dict(e) for e in ui_events]
@@ -74,18 +62,15 @@ class EventCorrelator:
         nav_dicts = [self._event_to_dict(e) for e in nav_events]
 
         return self.correlate_events(
-            session_id=session_id,
-            ui_events=ui_dicts,
-            api_events=api_dicts,
-            navigation_events=nav_dicts
+            session_id=session_id, ui_events=ui_dicts, api_events=api_dicts, navigation_events=nav_dicts
         )
 
     def correlate_events(
-            self,
-            session_id: str,
-            ui_events: List[Dict[str, Any]],
-            api_events: List[Dict[str, Any]],
-            navigation_events: List[Dict[str, Any]]
+        self,
+        session_id: str,
+        ui_events: List[Dict[str, Any]],
+        api_events: List[Dict[str, Any]],
+        navigation_events: List[Dict[str, Any]],
     ) -> CorrelationResult:
         """
         Correlate provided events
@@ -110,12 +95,7 @@ class EventCorrelator:
 
         # Calculate statistics
         correlated_ui = len([c for c in ui_to_api if c.api_calls])
-        correlated_api = len(set(
-            call['eventId']
-            for c in ui_to_api
-            for call in c.api_calls
-            if 'eventId' in call
-        ))
+        correlated_api = len(set(call["eventId"] for c in ui_to_api for call in c.api_calls if "eventId" in call))
 
         correlation_rate = 0.0
         if ui_events:
@@ -133,20 +113,15 @@ class EventCorrelator:
             correlated_api_events=correlated_api,
             correlation_rate=correlation_rate,
             statistics={
-                'ui_to_api_count': len(ui_to_api),
-                'api_to_nav_count': len(api_to_nav),
-                'full_flows_count': len(full_flows),
-                'strong_correlations': len([
-                    c for c in ui_to_api
-                    if c.strength == CorrelationStrength.STRONG
-                ])
-            }
+                "ui_to_api_count": len(ui_to_api),
+                "api_to_nav_count": len(api_to_nav),
+                "full_flows_count": len(full_flows),
+                "strong_correlations": len([c for c in ui_to_api if c.strength == CorrelationStrength.STRONG]),
+            },
         )
 
     def _correlate_ui_to_api(
-            self,
-            ui_events: List[Dict[str, Any]],
-            api_events: List[Dict[str, Any]]
+        self, ui_events: List[Dict[str, Any]], api_events: List[Dict[str, Any]]
     ) -> List[UIToAPICorrelation]:
         """
         Correlate UI events with API calls
@@ -161,26 +136,26 @@ class EventCorrelator:
 
             for api_event in api_events:
                 # Check correlation using hybrid strategy
-                is_correlated, strength, methods, confidence = self.ui_strategy.correlate(
-                    ui_event, api_event
-                )
+                is_correlated, strength, methods, confidence = self.ui_strategy.correlate(ui_event, api_event)
 
                 if is_correlated:
-                    correlated_apis.append({
-                        'eventId': api_event.get('eventId', ''),
-                        'method': api_event.get('method', ''),
-                        'endpoint': api_event.get('url', ''),
-                        'statusCode': api_event.get('statusCode'),
-                        'timestamp': api_event.get('timestamp', 0),
-                        'duration': api_event.get('duration', 0),
-                        'correlationMethods': [m.value for m in methods],
-                        'confidence': confidence
-                    })
+                    correlated_apis.append(
+                        {
+                            "eventId": api_event.get("eventId", ""),
+                            "method": api_event.get("method", ""),
+                            "endpoint": api_event.get("url", ""),
+                            "statusCode": api_event.get("statusCode"),
+                            "timestamp": api_event.get("timestamp", 0),
+                            "duration": api_event.get("duration", 0),
+                            "correlationMethods": [m.value for m in methods],
+                            "confidence": confidence,
+                        }
+                    )
 
             # Create correlation only if we found related APIs
             if correlated_apis:
                 # Determine overall strength
-                confidences = [api['confidence'] for api in correlated_apis]
+                confidences = [api["confidence"] for api in correlated_apis]
                 avg_confidence = sum(confidences) / len(confidences)
 
                 if avg_confidence >= 0.8:
@@ -195,20 +170,20 @@ class EventCorrelator:
                 # Calculate time delta
                 time_delta = None
                 if correlated_apis:
-                    first_api_time = min(api['timestamp'] for api in correlated_apis)
-                    time_delta = first_api_time - ui_event.get('timestamp', 0)
+                    first_api_time = min(api["timestamp"] for api in correlated_apis)
+                    time_delta = first_api_time - ui_event.get("timestamp", 0)
 
                 correlation = UIToAPICorrelation(
-                    ui_event_id=ui_event.get('eventId', ''),
-                    ui_event_type=ui_event.get('action', 'unknown'),
-                    ui_element_id=ui_event.get('elementId'),
-                    ui_screen=ui_event.get('screen', 'unknown'),
-                    ui_timestamp=ui_event.get('timestamp', 0),
+                    ui_event_id=ui_event.get("eventId", ""),
+                    ui_event_type=ui_event.get("action", "unknown"),
+                    ui_element_id=ui_event.get("elementId"),
+                    ui_screen=ui_event.get("screen", "unknown"),
+                    ui_timestamp=ui_event.get("timestamp", 0),
                     api_calls=correlated_apis,
                     strength=strength,
                     methods=[CorrelationMethod.HYBRID],
                     confidence_score=avg_confidence,
-                    time_delta_ms=time_delta
+                    time_delta_ms=time_delta,
                 )
 
                 correlations.append(correlation)
@@ -216,9 +191,7 @@ class EventCorrelator:
         return correlations
 
     def _correlate_api_to_navigation(
-            self,
-            api_events: List[Dict[str, Any]],
-            nav_events: List[Dict[str, Any]]
+        self, api_events: List[Dict[str, Any]], nav_events: List[Dict[str, Any]]
     ) -> List[APIToNavigationCorrelation]:
         """
         Correlate API responses with navigation events
@@ -228,11 +201,11 @@ class EventCorrelator:
         correlations = []
 
         for api_event in api_events:
-            api_time = api_event.get('timestamp', 0)
+            api_time = api_event.get("timestamp", 0)
 
             # Find navigation events that happen shortly after this API call
             for nav_event in nav_events:
-                nav_time = nav_event.get('timestamp', 0)
+                nav_time = nav_event.get("timestamp", 0)
                 time_delta = nav_time - api_time
 
                 # Navigation should happen after API response
@@ -240,13 +213,11 @@ class EventCorrelator:
                     continue
 
                 # Check if they're on the same screen context
-                is_correlated, strength, methods, confidence = self.nav_strategy.correlate(
-                    api_event, nav_event
-                )
+                is_correlated, strength, methods, confidence = self.nav_strategy.correlate(api_event, nav_event)
 
                 if is_correlated:
                     # Build condition based on status code
-                    status_code = api_event.get('statusCode', 0)
+                    status_code = api_event.get("statusCode", 0)
                     condition = None
                     if 200 <= status_code < 300:
                         condition = "success"
@@ -254,20 +225,20 @@ class EventCorrelator:
                         condition = "error"
 
                     correlation = APIToNavigationCorrelation(
-                        api_event_id=api_event.get('eventId', ''),
-                        api_method=api_event.get('method', ''),
-                        api_endpoint=api_event.get('url', ''),
+                        api_event_id=api_event.get("eventId", ""),
+                        api_method=api_event.get("method", ""),
+                        api_endpoint=api_event.get("url", ""),
                         api_status_code=status_code,
                         api_timestamp=api_time,
-                        navigation_event_id=nav_event.get('eventId', ''),
-                        from_screen=nav_event.get('fromScreen', 'unknown'),
-                        to_screen=nav_event.get('toScreen', 'unknown'),
+                        navigation_event_id=nav_event.get("eventId", ""),
+                        from_screen=nav_event.get("fromScreen", "unknown"),
+                        to_screen=nav_event.get("toScreen", "unknown"),
                         navigation_timestamp=nav_time,
                         strength=strength,
                         methods=methods,
                         confidence_score=confidence,
                         time_delta_ms=time_delta,
-                        condition=condition
+                        condition=condition,
                     )
 
                     correlations.append(correlation)
@@ -275,9 +246,7 @@ class EventCorrelator:
         return correlations
 
     def _build_full_flows(
-            self,
-            ui_to_api: List[UIToAPICorrelation],
-            api_to_nav: List[APIToNavigationCorrelation]
+        self, ui_to_api: List[UIToAPICorrelation], api_to_nav: List[APIToNavigationCorrelation]
     ) -> List[FullFlowCorrelation]:
         """
         Build complete flows by combining UI→API and API→Navigation correlations
@@ -293,13 +262,10 @@ class EventCorrelator:
             # Find navigation events triggered by these API calls
             related_navs = []
             for api_call in ui_corr.api_calls:
-                api_id = api_call.get('eventId', '')
+                api_id = api_call.get("eventId", "")
 
                 # Find navigation correlations for this API call
-                navs = [
-                    nav_corr for nav_corr in api_to_nav
-                    if nav_corr.api_event_id == api_id
-                ]
+                navs = [nav_corr for nav_corr in api_to_nav if nav_corr.api_event_id == api_id]
                 related_navs.extend(navs)
 
             if related_navs:
@@ -312,9 +278,9 @@ class EventCorrelator:
                 else:
                     overall_strength = CorrelationStrength.WEAK
 
-                overall_confidence = (
-                    ui_corr.confidence_score + sum(nav.confidence_score for nav in related_navs)
-                ) / (1 + len(related_navs))
+                overall_confidence = (ui_corr.confidence_score + sum(nav.confidence_score for nav in related_navs)) / (
+                    1 + len(related_navs)
+                )
             else:
                 # No navigation correlations found, use UI correlation values
                 overall_strength = ui_corr.strength
@@ -330,7 +296,7 @@ class EventCorrelator:
                 api_navigation_correlations=related_navs,
                 overall_strength=overall_strength,
                 overall_confidence=overall_confidence,
-                description=description
+                description=description,
             )
 
             flows.append(flow)
@@ -338,27 +304,21 @@ class EventCorrelator:
         return flows
 
     def _generate_flow_description(
-            self,
-            ui_corr: UIToAPICorrelation,
-            nav_corrs: List[APIToNavigationCorrelation]
+        self, ui_corr: UIToAPICorrelation, nav_corrs: List[APIToNavigationCorrelation]
     ) -> str:
         """Generate human-readable flow description"""
-        parts = [
-            f"User {ui_corr.ui_event_type} on {ui_corr.ui_screen}"
-        ]
+        parts = [f"User {ui_corr.ui_event_type} on {ui_corr.ui_screen}"]
 
         if ui_corr.api_calls:
-            api_desc = ", ".join([
-                f"{api['method']} {api['endpoint']}"
-                for api in ui_corr.api_calls[:2]  # Limit to first 2
-            ])
+            api_desc = ", ".join(
+                [f"{api['method']} {api['endpoint']}" for api in ui_corr.api_calls[:2]]  # Limit to first 2
+            )
             parts.append(f"triggers {api_desc}")
 
         if nav_corrs:
-            nav_desc = ", ".join([
-                f"navigate to {nav.to_screen} ({nav.condition})"
-                for nav in nav_corrs[:2]  # Limit to first 2
-            ])
+            nav_desc = ", ".join(
+                [f"navigate to {nav.to_screen} ({nav.condition})" for nav in nav_corrs[:2]]  # Limit to first 2
+            )
             parts.append(f"which causes {nav_desc}")
 
         return " → ".join(parts)
@@ -369,11 +329,11 @@ class EventCorrelator:
             return event
 
         # Handle SQLite Row objects
-        if hasattr(event, 'keys'):
+        if hasattr(event, "keys"):
             return {key: event[key] for key in event.keys()}
 
         # Handle Pydantic models
-        if hasattr(event, 'model_dump'):
+        if hasattr(event, "model_dump"):
             return event.model_dump()
 
         # Fallback
