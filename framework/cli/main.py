@@ -8,7 +8,7 @@ import click
 from framework import __version__
 
 # Import command groups
-from framework.cli.business_logic_commands import business_logic
+from framework.cli.business_logic_commands import business
 from framework.cli.project_commands import project
 from framework.cli.record_commands import record
 from framework.cli.generate_commands import generate
@@ -31,7 +31,7 @@ def cli(ctx):
 
 
 # Register command groups
-cli.add_command(business_logic)
+cli.add_command(business)
 cli.add_command(project)
 cli.add_command(record)
 cli.add_command(generate)
