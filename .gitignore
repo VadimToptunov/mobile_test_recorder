@@ -155,3 +155,10 @@ screenshots/
 docs/_build/
 site/
 
+# Private business documents
+MONETIZATION_STRATEGY.md
+INDIE_MONETIZATION.md
+*MONETIZATION*.md
+BUSINESS_PLAN*.md
+PRICING*.md
+

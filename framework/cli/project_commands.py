@@ -7,7 +7,6 @@ test projects.
 
 import click
 import json
-import logging
 import re
 from pathlib import Path
 from typing import Optional, Dict, Any
@@ -20,56 +19,23 @@ from framework.analyzers.business_logic_analyzer import BusinessLogicAnalyzer
 from framework.integration.model_enricher import ProjectIntegrator
 from framework.generators import page_object_gen, api_client_gen, bdd_gen
 from framework.model.app_model import AppModel
+from framework.utils.logger import get_logger, setup_logging
+from framework.utils.validator import validate_path, ValidationError as ValidatorError
+from framework.utils.sanitizer import sanitize_identifier, sanitize_class_name
+from framework.cli.rich_output import (
+    print_header,
+    print_success,
+    print_error,
+    print_warning,
+    print_section,
+    print_summary,
+    print_table,
+    create_progress,
+)
 
 # Setup logging
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-logger = logging.getLogger(__name__)
-
-
-def sanitize_identifier(name: str) -> str:
-    """
-    Convert any string to valid Python identifier
-
-    Args:
-        name: Input string
-
-    Returns:
-        Valid Python identifier
-    """
-    # Replace invalid chars with underscore
-    name = re.sub(r"[^a-zA-Z0-9_]", "_", name)
-    # Remove consecutive underscores
-    name = re.sub(r"_+", "_", name)
-    # Ensure doesn't start with digit
-    if name and name[0].isdigit():
-        name = f"_{name}"
-    # Ensure not empty
-    if not name:
-        name = "unnamed"
-    return name.lower()
-
-
-def sanitize_class_name(name: str) -> str:
-    """
-    Convert any string to valid Python class name (PascalCase)
-
-    Args:
-        name: Input string
-
-    Returns:
-        Valid Python class name
-    """
-    # Split by non-alphanumeric
-    words = re.split(r"[^a-zA-Z0-9]+", name)
-    # Capitalize each word
-    class_name = "".join(word.capitalize() for word in words if word)
-    # Ensure doesn't start with digit
-    if class_name and class_name[0].isdigit():
-        class_name = f"Screen{class_name}"
-    # Ensure not empty
-    if not class_name:
-        class_name = "UnnamedScreen"
-    return class_name
+setup_logging(level="INFO")
+logger = get_logger(__name__)
 
 
 def transform_analysis_to_integration_format(analysis_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -151,16 +117,16 @@ def _analyze_platform(platform_name: str, source_path: Path, output_path: Path, 
     """
     try:
         logger.info(f"Starting {platform_name} analysis: {source_path}")
-        click.echo(f"\n{platform_name} Analyzing Source Code...")
+        print_section(f"🔍 {platform_name} Analysis")
 
-        with click.progressbar(
-            length=100, label=f"Analyzing {platform_name}", show_percent=True, show_eta=False
-        ) as bar:
+        with create_progress() as progress:
+            task = progress.add_task(f"[cyan]Analyzing {platform_name}...", total=100)
+            
             analyzer = BusinessLogicAnalyzer(source_path)
-            bar.update(20)
+            progress.update(task, advance=20)
 
             result = analyzer.analyze()
-            bar.update(60)
+            progress.update(task, advance=60)
 
             # Save results
             output_file = output_path / f"{platform_name.lower()}_analysis.{format}"
@@ -173,21 +139,25 @@ def _analyze_platform(platform_name: str, source_path: Path, output_path: Path, 
                 with open(output_file, "w", encoding="utf-8") as f:
                     json.dump(data, f, indent=2, ensure_ascii=False)
 
-            bar.update(20)
+            progress.update(task, advance=20)
 
-        click.echo(f"   ✅ Saved: {output_file}")
-        click.echo(f"   📊 User Flows: {len(result.user_flows)}")
-        click.echo(f"   📊 Business Rules: {len(result.business_rules)}")
-        click.echo(f"   📊 API Endpoints: {len(result.api_contracts)}")
-        click.echo(f"   📊 State Machines: {len(result.state_machines)}")
-        click.echo(f"   📊 Edge Cases: {len(result.edge_cases)}")
+        # Print beautiful summary
+        stats = {
+            "user_flows": len(result.user_flows),
+            "business_rules": len(result.business_rules),
+            "api_endpoints": len(result.api_contracts),
+            "state_machines": len(result.state_machines),
+            "edge_cases": len(result.edge_cases),
+        }
+        print_summary(f"{platform_name} Results", stats)
+        print_success(f"Saved to: {output_file}")
 
         logger.info(f"{platform_name} analysis completed: {output_file}")
         return output_file
 
     except Exception as e:
         logger.error(f"{platform_name} analysis failed: {e}", exc_info=True)
-        click.echo(f"   ❌ Error: {e}")
+        print_error(f"{platform_name} analysis failed: {e}")
         return None
 
 
@@ -274,9 +244,14 @@ def analyze(
             --ios-source ~/MobileProjects/new-flykk-ios/flykk \\
             --output-dir ~/flykk-test-automation/analysis
     """
+    print_header(
+        "📱 Comprehensive Project Analysis",
+        "Analyzing mobile application source code"
+    )
+    
     # Validation: At least one source required
     if not android_source and not ios_source:
-        click.echo("❌ Error: At least one source (--android-source or --ios-source) must be provided")
+        print_error("At least one source (--android-source or --ios-source) must be provided")
         logger.error("analyze command called without sources")
         return
 
@@ -284,9 +259,6 @@ def analyze(
     output_path.mkdir(parents=True, exist_ok=True)
 
     logger.info(f"Starting project analysis: android={android_source}, ios={ios_source}, output={output_dir}")
-
-    click.echo("🚀 Starting Comprehensive Project Analysis...")
-    click.echo("=" * 70)
 
     results: Dict[str, Path] = {}
 
@@ -302,20 +274,24 @@ def analyze(
         if result_file:
             results["ios"] = result_file
 
-    click.echo("\n" + "=" * 70)
-
     if results:
-        click.echo("✅ ANALYSIS COMPLETE")
-        click.echo("=" * 70)
-        click.echo(f"\n📁 Results saved in: {output_path}")
-        click.echo("\n🔄 Next step: Integrate results into test framework:")
-        for _, file in results.items():
-            click.echo(f"   observe project integrate --analysis {file} --project <test-project-path>")
+        print_success("Analysis complete!")
+        print_summary(
+            "Analysis Results",
+            {
+                "platforms_analyzed": len(results),
+                "output_directory": str(output_path),
+                "format": format.upper(),
+            }
+        )
+        print_section("Next Steps")
+        print_info("Integrate results into test framework:")
+        for platform, file in results.items():
+            print(f"   observe project integrate --analysis {file} --project <test-project-path>")
         logger.info(f"Analysis completed successfully: {len(results)} platforms")
     else:
-        click.echo("❌ ANALYSIS FAILED")
-        click.echo("=" * 70)
-        click.echo("\n⚠️  No analysis results were generated. Check logs for details.")
+        print_error("Analysis failed - no results generated")
+        print_warning("Check logs for details")
         logger.error("All platform analyses failed")
 
 
