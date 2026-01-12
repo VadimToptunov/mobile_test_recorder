@@ -12,6 +12,9 @@ from framework.cli.business_logic_commands import business_logic
 from framework.cli.project_commands import project
 from framework.cli.record_commands import record
 from framework.cli.generate_commands import generate
+from framework.cli.dashboard_commands import dashboard
+from framework.cli.healing_commands import heal
+from framework.cli.device_commands import devices
 from framework.cli.rich_output import print_banner
 
 
@@ -32,6 +35,9 @@ cli.add_command(business_logic)
 cli.add_command(project)
 cli.add_command(record)
 cli.add_command(generate)
+cli.add_command(dashboard)
+cli.add_command(heal)
+cli.add_command(devices)
 
 
 @cli.command()
@@ -46,6 +52,9 @@ def info():
     click.echo("   • Project Integration")
     click.echo("   • Session Recording")
     click.echo("   • Test Generation")
+    click.echo("   • Self-Healing Tests")
+    click.echo("   • Device Management")
+    click.echo("   • Dashboard & Analytics")
     click.echo("   • Rich CLI Interface")
     click.echo("\n📚 Documentation: See README.md")
     click.echo("🐛 Issues: https://github.com/VadimToptunov/mobile_test_recorder/issues")

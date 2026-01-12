@@ -27,7 +27,7 @@ observe info
 
 ## Available Commands
 
-The framework provides four main command groups:
+The framework provides seven main command groups:
 
 ### 1. Business Logic Analysis
 ```bash
@@ -51,7 +51,52 @@ observe project integrate analysis.json --framework-path ./my-tests/
 observe project generate analysis.json --output ./tests/
 ```
 
-### 3. Session Recording
+### 3. Dashboard & Analytics
+```bash
+# Start local web dashboard for test results visualization
+observe dashboard start --port 8080
+
+# Import test results
+observe dashboard import-results --junit-xml results/junit.xml
+
+# View statistics
+observe dashboard stats --days 30
+
+# Export metrics for monitoring
+observe dashboard export --format prometheus --output metrics.txt
+```
+
+### 4. Self-Healing Tests
+```bash
+# Analyze test failures and suggest fixes
+observe heal analyze --test-results results/junit.xml
+
+# Automatically fix broken selectors
+observe heal auto --test-results results/junit.xml --commit
+
+# View healing history
+observe heal history --limit 10
+
+# Show healing statistics
+observe heal stats
+```
+
+### 5. Device Management
+```bash
+# List available devices
+observe devices list --platform android
+
+# Check device health
+observe devices health
+
+# Create device pool
+observe devices pool create --name android-pool --devices emulator-5554,emulator-5556
+
+# List pools
+observe devices pool list
+```
+
+### 6. Session Recording
 ```bash
 # (Coming soon - SDK integration required)
 observe record start --session-id my-session
@@ -59,7 +104,7 @@ observe record stop
 observe record correlate <session_id>
 ```
 
-### 4. Test Generation
+### 7. Test Generation
 ```bash
 # (Coming soon - generates from recorded sessions)
 observe generate pages --model app-model.json --output tests/pages/
@@ -121,7 +166,93 @@ pytest tests/ -v
 
 ---
 
-### Scenario 3: Full Automation (Android + iOS)
+### Scenario 3: Dashboard for Test Results
+
+**Goal:** Visualize test results and track test health
+
+```bash
+# 1. Import test results
+observe dashboard import-results --junit-xml test-results/junit.xml
+
+# 2. Start dashboard
+observe dashboard start --port 8080
+# Opens browser at http://localhost:8080
+
+# 3. View statistics in terminal
+observe dashboard stats --days 30
+```
+
+**Dashboard Features:**
+- 📊 Test health tracking
+- ⚡ Pass rate trends
+- 🔄 Flaky test detection
+- 🔧 Self-healing status
+
+---
+
+### Scenario 4: Auto-Healing Broken Tests
+
+**Goal:** Automatically fix broken element selectors
+
+```bash
+# 1. Run tests and capture failures
+pytest tests/ --junit-xml=results/junit.xml
+
+# 2. Analyze failures
+observe heal analyze --test-results results/junit.xml
+
+# 3. Auto-fix selectors (dry-run first)
+observe heal auto --test-results results/junit.xml --dry-run
+
+# 4. Apply fixes and commit
+observe heal auto --test-results results/junit.xml --commit
+
+# 5. Check what was healed
+observe heal history
+observe heal stats
+```
+
+**Healing Process:**
+1. ✅ Detects broken selectors from test failures
+2. ✅ Finds alternative selectors using ML
+3. ✅ Updates test files automatically
+4. ✅ Commits changes to git (optional)
+5. ✅ Tracks healing success rate
+
+---
+
+### Scenario 5: Device Management
+
+**Goal:** Manage Android/iOS devices and device pools
+
+```bash
+# 1. List available devices
+observe devices list --platform android
+
+# 2. Check device health
+observe devices health
+
+# 3. Create device pool for parallel execution
+observe devices pool create \
+  --name android-test-pool \
+  --devices emulator-5554,emulator-5556,emulator-5558 \
+  --strategy round-robin
+
+# 4. View pool info
+observe devices pool info android-test-pool
+
+# 5. Run tests on device pool (coming soon)
+# pytest tests/ --pool android-test-pool
+```
+
+**Device Strategies:**
+- `round-robin` - Distribute tests evenly
+- `least-busy` - Use least busy device
+- `random` - Random device selection
+
+---
+
+### Scenario 6: Full Automation (Android + iOS)
 
 **Goal:** One command to analyze and generate everything
 
