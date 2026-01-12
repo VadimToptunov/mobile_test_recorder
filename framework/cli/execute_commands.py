@@ -305,7 +305,7 @@ def watch(tests: str, interval: int, args: Optional[str]) -> None:
             if current_mtime > last_mtime:
                 last_mtime = current_mtime
 
-                print_info(f"\n🔄 Changes detected, running tests...")
+                print_info("\n🔄 Changes detected, running tests...")
                 print_info("=" * 60)
 
                 cmd = ["pytest", str(tests_path), "-v"]
