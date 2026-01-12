@@ -26,6 +26,7 @@ from framework.cli.notify_commands import notify
 from framework.cli.visual_commands import visual
 from framework.cli.data_commands import data
 from framework.cli.execute_commands import execute
+from framework.cli.mock_commands import mock
 from framework.cli.rich_output import print_banner
 
 
@@ -100,6 +101,7 @@ cli.add_command(notify)
 cli.add_command(visual)
 cli.add_command(data)
 cli.add_command(execute)
+cli.add_command(mock)
 
 # Add self-learning ML commands as subgroup
 ml.add_command(ml_selflearn_commands.check_updates)
