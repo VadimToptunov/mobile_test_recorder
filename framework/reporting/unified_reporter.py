@@ -14,6 +14,7 @@ from datetime import datetime
 
 class ReportFormat(Enum):
     """Supported report formats"""
+
     HTML = "html"
     ALLURE = "allure"
     JUNIT = "junit"
@@ -23,6 +24,7 @@ class ReportFormat(Enum):
 @dataclass
 class TestResult:
     """Individual test result"""
+
     name: str
     status: str  # passed, failed, skipped
     duration: float
@@ -40,6 +42,7 @@ class TestResult:
 @dataclass
 class TestSuite:
     """Test suite results"""
+
     name: str
     tests: List[TestResult]
     timestamp: str
@@ -48,15 +51,15 @@ class TestSuite:
 
     @property
     def passed(self) -> int:
-        return sum(1 for t in self.tests if t.status == 'passed')
+        return sum(1 for t in self.tests if t.status == "passed")
 
     @property
     def failed(self) -> int:
-        return sum(1 for t in self.tests if t.status == 'failed')
+        return sum(1 for t in self.tests if t.status == "failed")
 
     @property
     def skipped(self) -> int:
-        return sum(1 for t in self.tests if t.status == 'skipped')
+        return sum(1 for t in self.tests if t.status == "skipped")
 
     @property
     def total(self) -> int:
@@ -84,23 +87,21 @@ class UnifiedReporter:
     def load_from_junit(self, junit_path: Path) -> None:
         """Load test results from JUnit XML"""
         from .junit_parser import JUnitParser
+
         parser = JUnitParser()
         suite = parser.parse(junit_path)
         self.add_suite(suite)
 
     def load_from_directory(self, directory: Path) -> None:
         """Load all JUnit XML files from directory"""
-        for junit_file in directory.rglob('junit*.xml'):
+        for junit_file in directory.rglob("junit*.xml"):
             try:
                 self.load_from_junit(junit_file)
             except Exception as e:
                 print(f"Warning: Failed to parse {junit_file}: {e}")
 
     def generate_report(
-        self,
-        output_path: Path,
-        format: ReportFormat = ReportFormat.HTML,
-        title: str = "Test Report"
+        self, output_path: Path, format: ReportFormat = ReportFormat.HTML, title: str = "Test Report"
     ) -> None:
         """
         Generate test report
@@ -397,34 +398,34 @@ class UnifiedReporter:
     def _generate_json_report(self, output_path: Path) -> None:
         """Generate JSON report"""
         report_data = {
-            'generated': datetime.now().isoformat(),
-            'summary': {
-                'total': sum(s.total for s in self.suites),
-                'passed': sum(s.passed for s in self.suites),
-                'failed': sum(s.failed for s in self.suites),
-                'skipped': sum(s.skipped for s in self.suites),
-                'duration': sum(s.duration for s in self.suites),
+            "generated": datetime.now().isoformat(),
+            "summary": {
+                "total": sum(s.total for s in self.suites),
+                "passed": sum(s.passed for s in self.suites),
+                "failed": sum(s.failed for s in self.suites),
+                "skipped": sum(s.skipped for s in self.suites),
+                "duration": sum(s.duration for s in self.suites),
             },
-            'suites': [
+            "suites": [
                 {
-                    'name': suite.name,
-                    'platform': suite.platform,
-                    'timestamp': suite.timestamp,
-                    'duration': suite.duration,
-                    'tests': [
+                    "name": suite.name,
+                    "platform": suite.platform,
+                    "timestamp": suite.timestamp,
+                    "duration": suite.duration,
+                    "tests": [
                         {
-                            'name': test.name,
-                            'status': test.status,
-                            'duration': test.duration,
-                            'platform': test.platform,
-                            'device': test.device,
-                            'error_message': test.error_message,
+                            "name": test.name,
+                            "status": test.status,
+                            "duration": test.duration,
+                            "platform": test.platform,
+                            "device": test.device,
+                            "error_message": test.error_message,
                         }
                         for test in suite.tests
-                    ]
+                    ],
                 }
                 for suite in self.suites
-            ]
+            ],
         }
 
         output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -434,6 +435,7 @@ class UnifiedReporter:
     def _generate_allure_report(self, output_path: Path) -> None:
         """Generate Allure-compatible results"""
         from .allure_generator import AllureGenerator
+
         generator = AllureGenerator()
         generator.generate(self.suites, output_path)
         print(f"✓ Allure results generated: {output_path}")
