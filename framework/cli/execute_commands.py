@@ -271,10 +271,10 @@ def stress(tests: str, duration: int, args: Optional[str]) -> None:
 
     # Summary
     elapsed = time.time() - start_time
-    print_success(f"\n✅ Stress test complete")
+    print_success("\n✅ Stress test complete")  # noqa: F541
     print_info(f"Iterations: {iterations}")
     print_info(f"Total passed: {total_passed}")
-    print_info("Total failed: {total_failed}")
+    print_info(f"Total failed: {total_failed}")  # noqa: F541
     print_info(f"Elapsed: {elapsed:.1f}s")
 
 
