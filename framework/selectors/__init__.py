@@ -7,5 +7,31 @@ Provides intelligent selector generation and optimization.
 from framework.selectors.selector_optimizer import SelectorOptimizer
 from framework.selectors.selector_scorer import SelectorScorer
 from framework.selectors.selector_builder import SelectorBuilder
+from framework.selectors.advanced_selector import (
+    AdvancedSelector,
+    AdvancedSelectorEngine,
+    SelectorBuilder as FluentSelectorBuilder,
+    SelectorType,
+    FilterOperator,
+    SelectorFilter,
+    by_id,
+    by_text,
+    by_class,
+    contains_text,
+)
 
-__all__ = ['SelectorOptimizer', 'SelectorScorer', 'SelectorBuilder']
+__all__ = [
+    "SelectorOptimizer",
+    "SelectorScorer",
+    "SelectorBuilder",
+    "AdvancedSelector",
+    "AdvancedSelectorEngine",
+    "FluentSelectorBuilder",
+    "SelectorType",
+    "FilterOperator",
+    "SelectorFilter",
+    "by_id",
+    "by_text",
+    "by_class",
+    "contains_text",
+]
