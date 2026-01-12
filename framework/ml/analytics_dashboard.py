@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 try:
     import plotly.graph_objects as go
     from plotly.subplots import make_subplots
+
     PLOTLY_AVAILABLE = True
 except ImportError:
     PLOTLY_AVAILABLE = False
@@ -34,11 +35,7 @@ class AnalyticsDashboard:
     def __init__(self):
         self.report_data = {}
 
-    def generate_execution_report(
-        self,
-        test_results: List[Dict[str, Any]],
-        output_path: Path
-    ):
+    def generate_execution_report(self, test_results: List[Dict[str, Any]], output_path: Path):
         """
         Generate test execution report with charts.
 
@@ -51,36 +48,35 @@ class AnalyticsDashboard:
 
         # Calculate metrics
         total_tests = len(test_results)
-        passed = sum(1 for r in test_results if r.get('status') == 'passed')
-        failed = sum(1 for r in test_results if r.get('status') == 'failed')
-        skipped = sum(1 for r in test_results if r.get('status') == 'skipped')
+        passed = sum(1 for r in test_results if r.get("status") == "passed")
+        failed = sum(1 for r in test_results if r.get("status") == "failed")
+        skipped = sum(1 for r in test_results if r.get("status") == "skipped")
 
         pass_rate = (passed / total_tests * 100) if total_tests > 0 else 0
 
         # Create subplots
         fig = make_subplots(
-            rows=2, cols=2,
+            rows=2,
+            cols=2,
             subplot_titles=(
-                'Test Results Distribution',
-                'Pass Rate Trend',
-                'Execution Time by Test',
-                'Failure Categories'
+                "Test Results Distribution",
+                "Pass Rate Trend",
+                "Execution Time by Test",
+                "Failure Categories",
             ),
-            specs=[
-                [{'type': 'pie'}, {'type': 'scatter'}],
-                [{'type': 'bar'}, {'type': 'pie'}]
-            ]
+            specs=[[{"type": "pie"}, {"type": "scatter"}], [{"type": "bar"}, {"type": "pie"}]],
         )
 
         # 1. Results pie chart
         fig.add_trace(
             go.Pie(
-                labels=['Passed', 'Failed', 'Skipped'],
+                labels=["Passed", "Failed", "Skipped"],
                 values=[passed, failed, skipped],
-                marker=dict(colors=['#28a745', '#dc3545', '#ffc107']),
-                hole=0.3
+                marker=dict(colors=["#28a745", "#dc3545", "#ffc107"]),
+                hole=0.3,
             ),
-            row=1, col=1
+            row=1,
+            col=1,
         )
 
         # 2. Pass rate trend (mock data for now)
@@ -89,33 +85,23 @@ class AnalyticsDashboard:
 
         fig.add_trace(
             go.Scatter(
-                x=runs,
-                y=pass_rates,
-                mode='lines+markers',
-                line=dict(color='#28a745', width=2),
-                marker=dict(size=8)
+                x=runs, y=pass_rates, mode="lines+markers", line=dict(color="#28a745", width=2), marker=dict(size=8)
             ),
-            row=1, col=2
+            row=1,
+            col=2,
         )
 
         # 3. Execution time bar chart
-        test_names = [r.get('name', f"Test {i}") for i, r in enumerate(test_results[:10])]
-        exec_times = [r.get('duration', 0) for r in test_results[:10]]
+        test_names = [r.get("name", f"Test {i}") for i, r in enumerate(test_results[:10])]
+        exec_times = [r.get("duration", 0) for r in test_results[:10]]
 
-        fig.add_trace(
-            go.Bar(
-                x=test_names,
-                y=exec_times,
-                marker=dict(color='#007bff')
-            ),
-            row=2, col=1
-        )
+        fig.add_trace(go.Bar(x=test_names, y=exec_times, marker=dict(color="#007bff")), row=2, col=1)
 
         # 4. Failure categories
         failure_reasons = defaultdict(int)
         for result in test_results:
-            if result.get('status') == 'failed':
-                reason = result.get('failure_reason', 'Unknown')
+            if result.get("status") == "failed":
+                reason = result.get("failure_reason", "Unknown")
                 failure_reasons[reason] += 1
 
         if failure_reasons:
@@ -123,16 +109,17 @@ class AnalyticsDashboard:
                 go.Pie(
                     labels=list(failure_reasons.keys()),
                     values=list(failure_reasons.values()),
-                    marker=dict(colors=['#dc3545', '#fd7e14', '#ffc107'])
+                    marker=dict(colors=["#dc3545", "#fd7e14", "#ffc107"]),
                 ),
-                row=2, col=2
+                row=2,
+                col=2,
             )
 
         # Update layout
         fig.update_layout(
             title_text=f"Test Execution Dashboard - {datetime.now().strftime('%Y-%m-%d %H:%M')}",
             showlegend=True,
-            height=800
+            height=800,
         )
 
         # Generate HTML with summary metrics
@@ -193,11 +180,7 @@ class AnalyticsDashboard:
 
         logger.info(f"Execution report saved to {output_path}")
 
-    def generate_selector_stability_report(
-        self,
-        selector_history: List[Dict[str, Any]],
-        output_path: Path
-    ):
+    def generate_selector_stability_report(self, selector_history: List[Dict[str, Any]], output_path: Path):
         """
         Generate selector stability trend report.
 
@@ -209,15 +192,16 @@ class AnalyticsDashboard:
             raise RuntimeError("plotly required for dashboard generation")
 
         # Parse history
-        timestamps = [h['timestamp'] for h in selector_history]
-        stability_scores = [h['avg_stability'] for h in selector_history]
-        failures = [h['selector_failures'] for h in selector_history]
+        timestamps = [h["timestamp"] for h in selector_history]
+        stability_scores = [h["avg_stability"] for h in selector_history]
+        failures = [h["selector_failures"] for h in selector_history]
 
         # Create subplots
         fig = make_subplots(
-            rows=2, cols=1,
-            subplot_titles=('Selector Stability Trend', 'Selector Failures Over Time'),
-            vertical_spacing=0.15
+            rows=2,
+            cols=1,
+            subplot_titles=("Selector Stability Trend", "Selector Failures Over Time"),
+            vertical_spacing=0.15,
         )
 
         # Stability trend
@@ -225,12 +209,13 @@ class AnalyticsDashboard:
             go.Scatter(
                 x=timestamps,
                 y=stability_scores,
-                mode='lines+markers',
-                name='Stability Score',
-                line=dict(color='#28a745', width=2),
-                marker=dict(size=6)
+                mode="lines+markers",
+                name="Stability Score",
+                line=dict(color="#28a745", width=2),
+                marker=dict(size=6),
             ),
-            row=1, col=1
+            row=1,
+            col=1,
         )
 
         # Failures trend
@@ -238,20 +223,17 @@ class AnalyticsDashboard:
             go.Scatter(
                 x=timestamps,
                 y=failures,
-                mode='lines+markers',
-                name='Failures',
-                line=dict(color='#dc3545', width=2),
+                mode="lines+markers",
+                name="Failures",
+                line=dict(color="#dc3545", width=2),
                 marker=dict(size=6),
-                fill='tozeroy'
+                fill="tozeroy",
             ),
-            row=2, col=1
+            row=2,
+            col=1,
         )
 
-        fig.update_layout(
-            title_text="Selector Stability Analysis",
-            showlegend=True,
-            height=700
-        )
+        fig.update_layout(title_text="Selector Stability Analysis", showlegend=True, height=700)
 
         # Generate HTML
         html_content = f"""
@@ -274,10 +256,7 @@ class AnalyticsDashboard:
         logger.info(f"Selector stability report saved to {output_path}")
 
 
-def generate_ml_performance_dashboard(
-    model_metrics: Dict[str, Any],
-    output_path: Path
-):
+def generate_ml_performance_dashboard(model_metrics: Dict[str, Any], output_path: Path):
     """
     Generate ML model performance dashboard.
 
@@ -294,18 +273,11 @@ def generate_ml_performance_dashboard(
     metrics_names = list(model_metrics.keys())
     metrics_values = list(model_metrics.values())
 
-    fig.add_trace(go.Bar(
-        x=metrics_names,
-        y=metrics_values,
-        marker=dict(color=['#28a745', '#007bff', '#17a2b8', '#ffc107'])
-    ))
-
-    fig.update_layout(
-        title="ML Model Performance Metrics",
-        yaxis_title="Score",
-        yaxis=dict(range=[0, 1]),
-        height=500
+    fig.add_trace(
+        go.Bar(x=metrics_names, y=metrics_values, marker=dict(color=["#28a745", "#007bff", "#17a2b8", "#ffc107"]))
     )
+
+    fig.update_layout(title="ML Model Performance Metrics", yaxis_title="Score", yaxis=dict(range=[0, 1]), height=500)
 
     # Generate HTML
     html_content = f"""
