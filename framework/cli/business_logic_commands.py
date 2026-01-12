@@ -37,14 +37,14 @@ def analyze(source: str, output: str, format: str) -> None:
     """
     from framework.analyzers.business_logic_analyzer import BusinessLogicAnalyzer
 
-    click.echo(f"\n🔍 Analyzing business logic...")
+    click.echo("\n🔍 Analyzing business logic...")
     click.echo(f"   Source: {source}")
 
     analyzer = BusinessLogicAnalyzer(Path(source))
     analysis = analyzer.analyze()
 
     # Print summary
-    click.echo(f"\n📊 Analysis Summary:")
+    click.echo("\n📊 Analysis Summary:")
     click.echo(f"   Platform: {analyzer.platform.upper()}")
     click.echo(f"   User Flows: {len(analysis.user_flows)}")
     click.echo(f"   Business Rules: {len(analysis.business_rules)}")
@@ -56,7 +56,7 @@ def analyze(source: str, output: str, format: str) -> None:
 
     # Show user flows
     if analysis.user_flows:
-        click.echo(f"\n👤 User Flows:")
+        click.echo("\n👤 User Flows:")
         for flow in analysis.user_flows[:5]:  # Show first 5
             click.echo(f"   • {flow.name}")
             click.echo(f"     Steps: {len(flow.steps)}")
@@ -66,7 +66,7 @@ def analyze(source: str, output: str, format: str) -> None:
 
     # Show state machines
     if analysis.state_machines:
-        click.echo(f"\n🔄 State Machines:")
+        click.echo("\n🔄 State Machines:")
         for sm in analysis.state_machines[:3]:
             click.echo(f"   • {sm.name}: {len(sm.states)} states")
         if len(analysis.state_machines) > 3:
@@ -74,7 +74,7 @@ def analyze(source: str, output: str, format: str) -> None:
 
     # Show edge cases summary
     if analysis.edge_cases:
-        click.echo(f"\n⚠️ Edge Cases:")
+        click.echo("\n⚠️ Edge Cases:")
         edge_types: Dict[str, int] = {}
         for ec in analysis.edge_cases:
             edge_types[ec.type] = edge_types.get(ec.type, 0) + 1
@@ -83,7 +83,7 @@ def analyze(source: str, output: str, format: str) -> None:
 
     # Show data models
     if analysis.data_models:
-        click.echo(f"\n📦 Data Models:")
+        click.echo("\n📦 Data Models:")
         for model in analysis.data_models[:5]:
             click.echo(f"   • {model.name} ({len(model.fields)} fields)")
         if len(analysis.data_models) > 5:
@@ -91,7 +91,7 @@ def analyze(source: str, output: str, format: str) -> None:
 
     # Show mock data
     if analysis.mock_data:
-        click.echo(f"\n🎭 Mock Test Data:")
+        click.echo("\n🎭 Mock Test Data:")
         for entity, data in list(analysis.mock_data.items())[:5]:
             if isinstance(data, dict):
                 if "start_id" in data and "end_id" in data:
@@ -108,7 +108,7 @@ def analyze(source: str, output: str, format: str) -> None:
 
     # Show API contracts
     if analysis.api_contracts:
-        click.echo(f"\n📡 API Contracts:")
+        click.echo("\n📡 API Contracts:")
         for contract in analysis.api_contracts[:5]:
             click.echo(f"   • {contract.method} {contract.endpoint}")
         if len(analysis.api_contracts) > 5:
@@ -125,7 +125,7 @@ def analyze(source: str, output: str, format: str) -> None:
             yaml.dump(export_data, f, default_flow_style=False, sort_keys=False)
 
     click.echo(f"\n💾 Analysis saved to: {output_path}")
-    click.echo(f"\nNext steps:")
+    click.echo("\nNext steps:")
     click.echo(f"  1. Review business logic: cat {output_path}")
     click.echo(f"  2. Generate scenarios: observe business scenarios --input {output_path}")
     click.echo(f"  3. Generate BDD features: observe business features --input {output_path}")
@@ -157,7 +157,7 @@ def scenarios(input_file: str, output: str) -> None:
     """
     from framework.analyzers.business_logic_analyzer import BusinessLogicAnalyzer
 
-    click.echo(f"\n🎯 Generating test scenarios...")
+    click.echo("\n🎯 Generating test scenarios...")
 
     # Load analysis
     with open(input_file) as f:
@@ -234,7 +234,7 @@ def features(input_file: str, output: str) -> None:
         BusinessLogicAnalysis,
     )
 
-    click.echo(f"\n📝 Generating BDD features...")
+    click.echo("\n📝 Generating BDD features...")
 
     # Load analysis
     with open(input_file) as f:
@@ -269,11 +269,11 @@ def features(input_file: str, output: str) -> None:
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(feature_content)
 
-    click.echo(f"\n✅ BDD features generated:")
+    click.echo("\n✅ BDD features generated:")
     click.echo(f"   File: {output_path}")
     click.echo(f"   Flows: {len(analysis.user_flows)}")
 
-    click.echo(f"\nPreview:")
+    click.echo("\nPreview:")
     click.echo("   " + "\n   ".join(feature_content.split("\n")[:15]))
     if len(feature_content.split("\n")) > 15:
         click.echo("   ...")
@@ -294,7 +294,7 @@ def testdata(input_file: str) -> None:
     Example:
         observe business testdata --input business_logic.yaml
     """
-    click.echo(f"\n🎭 Available Mock Test Data:")
+    click.echo("\n🎭 Available Mock Test Data:")
 
     # Load analysis
     with open(input_file) as f:
@@ -317,7 +317,7 @@ def testdata(input_file: str) -> None:
                 click.echo(f"      Records: {entity_data['count']}")
                 click.echo(f"      ID Range: {entity_data['start_id']} - {entity_data['end_id']}")
                 click.echo(f"      Source: {entity_data.get('source', 'N/A')}")
-                click.echo(f"\n      💡 Use in tests:")
+                click.echo("\n      💡 Use in tests:")
                 click.echo(f"         Valid IDs: {entity_data['start_id']}, {entity_data['start_id']+1}, ...")
                 click.echo(f"         Invalid ID: {entity_data['end_id'] + 100}")
             elif "type" in entity_data:
@@ -325,7 +325,7 @@ def testdata(input_file: str) -> None:
                 click.echo(f"      Records: {entity_data['count']}")
                 click.echo(f"      Type: {entity_data['type']}")
                 click.echo(f"      Source: {entity_data.get('source', 'N/A')}")
-                click.echo(f"\n      💡 Use in tests:")
+                click.echo("\n      💡 Use in tests:")
                 click.echo(f"         Use array indices: 0, 1, 2, ... {entity_data['count']-1}")
                 click.echo(f"         Invalid index: {entity_data['count']}")
             else:
@@ -349,7 +349,7 @@ def edgecases(input_file: str) -> None:
     Example:
         observe business edgecases --input business_logic.yaml
     """
-    click.echo(f"\n⚠️ Detected Edge Cases:")
+    click.echo("\n⚠️ Detected Edge Cases:")
 
     # Load analysis
     with open(input_file) as f:
@@ -398,7 +398,7 @@ def statemachines(input_file: str) -> None:
     Example:
         observe business statemachines --input business_logic.yaml
     """
-    click.echo(f"\n🔄 Extracted State Machines:")
+    click.echo("\n🔄 Extracted State Machines:")
 
     # Load analysis
     with open(input_file) as f:
@@ -419,7 +419,7 @@ def statemachines(input_file: str) -> None:
         click.echo(f"      Initial: {sm['initial_state']}")
 
         if sm.get("transitions"):
-            click.echo(f"      Transitions:")
+            click.echo("      Transitions:")
             for from_state, to_states in sm["transitions"].items():
                 if to_states:
                     click.echo(f"        {from_state} → {', '.join(to_states)}")
@@ -446,7 +446,7 @@ def negative(input_file: str, output: str) -> None:
     Example:
         observe business negative --input business_logic.yaml
     """
-    click.echo(f"\n❌ Generated Negative Test Cases:")
+    click.echo("\n❌ Generated Negative Test Cases:")
 
     # Load analysis
     with open(input_file) as f:
@@ -590,7 +590,7 @@ def complexity(source: str, output: str, format: str) -> None:
 
     # Print summary
     summary = result["summary"]
-    click.echo(f"\n📊 Complexity Summary:")
+    click.echo("\n📊 Complexity Summary:")
     click.echo(f"   Total Functions: {summary['total_functions']}")
     click.echo(f"   High Complexity (>10): {summary['high_complexity_functions']}")
     click.echo(f"   Average Complexity: {summary['average_complexity']:.2f}")
@@ -621,7 +621,7 @@ def complexity(source: str, output: str, format: str) -> None:
             yaml.dump(result, f, default_flow_style=False)
 
     click.echo(f"\n💾 Analysis saved to: {output_path}")
-    click.echo(f"\nRecommendations:")
+    click.echo("\nRecommendations:")
     if summary["high_complexity_functions"] > 0:
         click.echo(f"  ⚠️  {summary['high_complexity_functions']} functions " "have high complexity (CC > 10)")
         click.echo("  💡 Consider refactoring these functions")
