@@ -805,8 +805,10 @@ class ModelBuilder:
             trigger = None
             if correlation_result:
                 for nav_corr in correlation_result.api_to_navigation:
-                    if (nav_corr.from_screen == from_screen and
-                        nav_corr.to_screen == to_screen):
+                    if (
+                        nav_corr.from_screen == from_screen
+                        and nav_corr.to_screen == to_screen
+                    ):
                         trigger = f"api_{nav_corr.api_method}_{nav_corr.api_endpoint}"
                         break
 

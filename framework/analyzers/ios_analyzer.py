@@ -136,11 +136,13 @@ class IOSAnalyzer:
 
             # Check if this is a screen (has navigationTitle or is a primary view)
             is_screen = (
-                'navigationTitle' in body_content or
-                'NavigationView' in body_content or
-                'TabView' in body_content or
-                view_name in ['ContentView', 'OnboardingView', 'LoginView',
-                             'HomeView', 'KYCView', 'TopUpView', 'SendMoneyView']
+                'navigationTitle' in body_content
+                or 'NavigationView' in body_content
+                or 'TabView' in body_content
+                or view_name in [
+                    'ContentView', 'OnboardingView', 'LoginView',
+                    'HomeView', 'KYCView', 'TopUpView', 'SendMoneyView'
+                ]
             )
 
             if is_screen:

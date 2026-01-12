@@ -56,9 +56,10 @@ class DevicePool:
 
     def get_available_count(self) -> int:
         """Get number of available devices"""
-        return sum(1 for device in self.devices
-                  if not self._reserved.get(device.id, False)
-                  and device.status == DeviceStatus.AVAILABLE)
+        return sum(
+            1 for device in self.devices
+            if not self._reserved.get(device.id, False) and device.status == DeviceStatus.AVAILABLE
+        )
 
     def acquire_device(self, filters: Optional[Dict] = None) -> Optional[Device]:
         """
@@ -113,9 +114,10 @@ class DevicePool:
     def _filter_devices(self, filters: Optional[Dict]) -> List[Device]:
         """Filter available devices by criteria"""
         # Start with available devices
-        candidates = [d for d in self.devices
-                     if not self._reserved.get(d.id, False)
-                     and d.status == DeviceStatus.AVAILABLE]
+        candidates = [
+            d for d in self.devices
+            if not self._reserved.get(d.id, False) and d.status == DeviceStatus.AVAILABLE
+        ]
 
         if not filters:
             return candidates

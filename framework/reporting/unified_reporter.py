@@ -121,15 +121,15 @@ class UnifiedReporter:
 
     def _generate_html_report(self, output_path: Path, title: str):
         """Generate HTML report"""
-        # total_tests =  # Unused sum(suite.total for suite in self.suites)
-        # total_passed =  # Unused sum(suite.passed for suite in self.suites)
-        # total_failed =  # Unused sum(suite.failed for suite in self.suites)
-        # total_skipped =  # Unused sum(suite.skipped for suite in self.suites)
-        # total_duration =  # Unused sum(suite.duration for suite in self.suites)
+        total_tests = sum(suite.total for suite in self.suites)
+        total_passed = sum(suite.passed for suite in self.suites)
+        total_failed = sum(suite.failed for suite in self.suites)
+        total_skipped = sum(suite.skipped for suite in self.suites)
+        total_duration = sum(suite.duration for suite in self.suites)
 
-        # pass_rate =  # Unused (total_passed / total_tests * 100) if total_tests > 0 else 0
+        pass_rate = (total_passed / total_tests * 100) if total_tests > 0 else 0
 
-        html_content = """<!DOCTYPE html>
+        html_content = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">

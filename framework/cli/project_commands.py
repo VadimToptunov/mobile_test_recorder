@@ -19,7 +19,7 @@ from framework.integration.model_enricher import ProjectIntegrator
 from framework.generators import page_object_gen, api_client_gen, bdd_gen
 from framework.model.app_model import AppModel
 from framework.utils.logger import get_logger, setup_logging
-from framework.utils.sanitizer import sanitize_identifier
+from framework.utils.sanitizer import sanitize_identifier, sanitize_class_name
 from framework.utils.error_handling import handle_cli_errors, validate_and_raise
 from framework.cli.rich_output import (
     print_header,
@@ -545,11 +545,13 @@ def generate(
                     test_file = tests_dir / f"test_{sanitize_identifier(screen_id)}.py"
 
                     # Sanitize names for valid Python code
-                    # Unused: class_name = sanitize_class_name(screen.name)
-                    # Unused: page_module = sanitize_identifier(screen_id)
+                    class_name = sanitize_class_name(screen.name)
+                    page_module = sanitize_identifier(screen_id)
+
+                    print_info(f"Generating test for {screen.name} → {class_name}Page")
 
                     # Simple test template
-                    test_content = '''"""
+                    test_content = f'''"""
 Integration tests for {screen.name}
 Auto-generated from app model
 """
@@ -573,8 +575,8 @@ class Test{class_name}:
                     # Add element tests (limit to first 3 elements)
                     for element in screen.elements[:3]:
                         if "tappable" in element.capabilities:
-                            # element_name =  # Unused sanitize_identifier(element.id)
-                            test_content += '''
+                            element_name = sanitize_identifier(element.id)
+                            test_content += f'''
     def test_{element_name}_clickable(self, page):
         """Test {element.id} is clickable"""
         assert page.{element_name}.is_clickable()

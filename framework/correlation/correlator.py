@@ -312,8 +312,9 @@ class EventCorrelator:
                 else:
                     overall_strength = CorrelationStrength.WEAK
 
-                overall_confidence = (ui_corr.confidence_score +
-                                    sum(nav.confidence_score for nav in related_navs)) / (1 + len(related_navs))
+                overall_confidence = (
+                    ui_corr.confidence_score + sum(nav.confidence_score for nav in related_navs)
+                ) / (1 + len(related_navs))
             else:
                 # No navigation correlations found, use UI correlation values
                 overall_strength = ui_corr.strength

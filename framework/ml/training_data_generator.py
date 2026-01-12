@@ -84,13 +84,15 @@ class TrainingDataGenerator:
         """
         class_name = element.get('class', '').lower()
         text = element.get('text', '')
-        # content_desc =  # Unused element.get('content_desc', '') or element.get('label', '')
+        content_desc = element.get('content_desc', '') or element.get('label', '')
         clickable = element.get('clickable', False)
-        # checkable =  # Unused element.get('checkable', False)
+        checkable = element.get('checkable', False)
         password = element.get('password', False)
 
-        # Button detection
+        # Button detection - improved with content_desc
         if 'button' in class_name or 'btn' in class_name.lower():
+            return ElementType.BUTTON
+        if clickable and ('button' in content_desc.lower() or 'btn' in content_desc.lower()):
             return ElementType.BUTTON
 
         # Input field detection
@@ -99,9 +101,13 @@ class TrainingDataGenerator:
                 return ElementType.INPUT  # Password input
             return ElementType.INPUT
 
-        # Checkbox detection
-        if 'checkbox' in class_name or 'check' in class_name:
+        # Checkbox detection - improved with checkable attribute
+        if 'checkbox' in class_name or 'check' in class_name or checkable:
             return ElementType.CHECKBOX
+
+        # Radio button detection
+        if 'radio' in class_name or 'radio' in content_desc.lower():
+            return ElementType.RADIO
 
         # Switch detection
         if 'switch' in class_name or 'toggle' in class_name:
