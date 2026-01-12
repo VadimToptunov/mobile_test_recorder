@@ -252,14 +252,14 @@ def auto(test_results_path: str, screenshots: Optional[str], repo: str,
             try:
                 # Collect successful healing details
                 successful_healings = [r for r in healing_results if r['success']]
-                
+
                 # Use git_integration to commit
                 commit_msg = f"fix: auto-heal {healed_count} broken selector(s)\n\n"
                 for healing in successful_healings[:5]:  # Show first 5 in commit msg
                     commit_msg += f"- {healing['test_name']}: {healing['old_selector']} → {healing['new_selector']}\n"
                 if len(successful_healings) > 5:
                     commit_msg += f"... and {len(successful_healings) - 5} more\n"
-                
+
                 orchestrator.git_integration.commit_message = commit_msg
                 print_success("✅ Changes committed to git")
             except Exception as e:
