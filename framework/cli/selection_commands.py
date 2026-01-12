@@ -159,13 +159,13 @@ def estimate(tests_dir: str, changed_files: str) -> None:
 
         if changed_files:
             files = [f.strip() for f in changed_files.split(',')]
-            
+
             # Convert to FileChange objects
             file_changes = [
                 FileChange(path=Path(f), change_type=None)  # type: ignore
                 for f in files
             ]
-            
+
             selected_tests = selector.select_tests(file_changes)
             print_info(f"Selected tests: {len(selected_tests)}")
         else:
