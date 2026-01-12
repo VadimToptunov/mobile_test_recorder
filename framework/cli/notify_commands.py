@@ -48,19 +48,19 @@ def configure(
 
     if slack_webhook:
         cfg['notification_slack_webhook'] = slack_webhook
-        print_success(f"✅ Slack webhook configured")
+        print_success("✅ Slack webhook configured")
         updated = True
 
     if teams_webhook:
         cfg['notification_teams_webhook'] = teams_webhook
-        print_success(f"✅ Teams webhook configured")
+        print_success("✅ Teams webhook configured")
         updated = True
 
     if email_smtp and email_from and email_to:
         cfg['notification_email_smtp'] = email_smtp
         cfg['notification_email_from'] = email_from
         cfg['notification_email_to'] = email_to
-        print_success(f"✅ Email configured")
+        print_success("✅ Email configured")
         updated = True
     elif email_smtp or email_from or email_to:
         print_error("Email configuration requires all three options: --email-smtp, --email-from, --email-to")
@@ -299,7 +299,7 @@ def on_healing(healing_results: str, channel: str) -> None:
     # Display results
     for notifier_type, success in results.items():
         if success:
-            print_success(f"✅ {notifier_type}: Sent")
+            print_success(f"✅ {notifier_type}: Sent") # noqa: F541
         else:
             print_error(f"❌ {notifier_type}: Failed")
 
