@@ -339,7 +339,7 @@ class GitHubActionsGenerator:
                 },
                 {
                     'name': 'Comment on PR',
-                    'i': "github.event_name == 'pull_request'",
+                    'if': "github.event_name == 'pull_request'",
                     'run': 'observe ci comment --report final-report.html'
                 }
             ]
@@ -351,7 +351,7 @@ class GitHubActionsGenerator:
             'name': 'Notify',
             'runs-on': 'ubuntu-latest',
             'needs': test_job_names,  # Dynamic dependencies based on actual test jobs
-            'i': 'always()',
+            'if': 'always()',
             'steps': [
                 {
                     'name': 'Send Slack notification',

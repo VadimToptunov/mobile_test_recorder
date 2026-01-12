@@ -17,7 +17,7 @@ from framework.cli.dashboard_commands import dashboard
 from framework.cli.healing_commands import heal
 from framework.cli.device_commands import devices
 from framework.cli.ml_commands import ml
-from framework.cli.ml_selflearn_commands import ml as ml_selflearn
+from framework.cli import ml_selflearn_commands
 from framework.cli.security_commands import security
 from framework.cli.perf_commands import perf
 from framework.cli.selection_commands import select
@@ -102,14 +102,14 @@ cli.add_command(data)
 cli.add_command(execute)
 
 # Add self-learning ML commands as subgroup
-ml.add_command(ml_selflearn.check_updates)
-ml.add_command(ml_selflearn.update_model)
-ml.add_command(ml_selflearn.stats)
-ml.add_command(ml_selflearn.contribute)
-ml.add_command(ml_selflearn.export_cache)
-ml.add_command(ml_selflearn.clear_cache)
-ml.add_command(ml_selflearn.correct)
-ml.add_command(ml_selflearn.info)
+ml.add_command(ml_selflearn_commands.check_updates)
+ml.add_command(ml_selflearn_commands.update_model)
+ml.add_command(ml_selflearn_commands.stats)
+ml.add_command(ml_selflearn_commands.contribute)
+ml.add_command(ml_selflearn_commands.export_cache)
+ml.add_command(ml_selflearn_commands.clear_cache)
+ml.add_command(ml_selflearn_commands.correct)
+ml.add_command(ml_selflearn_commands.info)
 
 
 @cli.command()

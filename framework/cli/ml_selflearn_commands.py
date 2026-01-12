@@ -20,13 +20,8 @@ console = Console()
 settings = Settings()
 
 
-@click.group()
-def ml():
-    """ML model management and self-learning."""
-    pass
-
-
-@ml.command()
+# Individual command functions (not a group)
+@click.command()
 def check_updates():
     """Check for ML model updates."""
     console.print("\n🔍 Checking for model updates...", style="cyan")
@@ -54,7 +49,7 @@ def check_updates():
         console.print(f"❌ Error checking updates: {e}", style="red")
 
 
-@ml.command()
+@click.command()
 @click.option('--auto', is_flag=True, help='Check and install automatically')
 def update_model(auto: bool):
     """Update ML model to latest version."""
@@ -95,7 +90,7 @@ def update_model(auto: bool):
         console.print("❌ Update failed", style="red")
 
 
-@ml.command()
+@click.command()
 def stats():
     """Show ML contribution statistics."""
     collector = SelfLearningCollector(opt_in=True)
@@ -166,7 +161,7 @@ def stats():
         ))
 
 
-@ml.command()
+@click.command()
 @click.option('--enable/--disable', default=True, help='Enable or disable data collection')
 def contribute(enable: bool):
     """Enable or disable ML data contribution."""
@@ -208,7 +203,7 @@ def contribute(enable: bool):
         console.print("[dim]Existing cached data will not be deleted[/dim]")
 
 
-@ml.command()
+@click.command()
 @click.option('--output', '-o', type=Path, help='Output directory')
 def export_cache(output: Path):
     """Export cached training data."""
@@ -231,7 +226,7 @@ def export_cache(output: Path):
     console.print(f"\n✅ Exported {len(batch_files)} batches to {output}", style="green")
 
 
-@ml.command()
+@click.command()
 @click.confirmation_option(prompt='Are you sure you want to clear all cached data?')
 def clear_cache():
     """Clear local training data cache."""
@@ -248,7 +243,7 @@ def clear_cache():
     console.print(f"\n✅ Cleared {len(batch_files)} cached batches", style="green")
 
 
-@ml.command()
+@click.command()
 @click.argument('element_id')
 @click.option('--predicted', required=True, help='What ML predicted')
 @click.option('--actual', required=True, help='What it actually is')
@@ -282,7 +277,7 @@ def correct(element_id: str, predicted: str, actual: str, platform: str):
     ))
 
 
-@ml.command()
+@click.command()
 def info():
     """Show ML system information."""
     updater = ModelUpdater()
@@ -332,4 +327,4 @@ def info():
 
 
 if __name__ == '__main__':
-    ml()
+# Commands are registered in main.py

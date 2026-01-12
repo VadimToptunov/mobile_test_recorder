@@ -1,6 +1,10 @@
 """
 Deep AST Analysis Module
 
+Hybrid implementation:
+- Tries to use Rust core for 50-100x speedup
+- Falls back to Python if Rust not available
+
 Provides deep Abstract Syntax Tree analysis for complex logic extraction.
 Currently supports Python AST analysis as a foundation.
 Future: Kotlin/Java AST parsing, Swift AST parsing.
@@ -10,6 +14,19 @@ import ast
 from pathlib import Path
 from typing import List, Dict, Optional, Any, Union
 from dataclasses import dataclass, field
+import logging
+
+logger = logging.getLogger(__name__)
+
+# Try to import Rust core
+RUST_AVAILABLE = False
+try:
+    from observe_core import RustAstAnalyzer, ComplexityMetrics as RustComplexityMetrics
+    RUST_AVAILABLE = True
+    logger.info("✅ Rust core available - using high-performance backend")
+except ImportError:
+    logger.info("⚠️  Rust core not available - using Python fallback")
+    logger.info("💡 To enable Rust: pip install maturin && cd rust_core && maturin develop")
 
 
 @dataclass

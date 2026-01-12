@@ -296,9 +296,14 @@ def watch(tests: str, interval: int, args: Optional[str]) -> None:
     try:
         while True:
             # Check for file changes
+            test_files = list(tests_path.rglob('*.py'))
+            if not test_files:
+                print_error("No Python test files found in directory")
+                return
+
             current_mtime = max(
                 f.stat().st_mtime
-                for f in tests_path.rglob('*.py')
+                for f in test_files
                 if f.is_file()
             )
 
