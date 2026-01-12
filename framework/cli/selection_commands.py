@@ -8,6 +8,7 @@ import click
 from pathlib import Path
 
 from framework.selection.test_selector import TestSelector
+from framework.selection.change_analyzer import ChangeAnalyzer, FileChange
 from framework.cli.rich_output import print_header, print_info, print_success, print_error
 from rich.console import Console
 from rich.table import Table
@@ -34,13 +35,15 @@ def auto(since: str, tests_dir: str, output: str) -> None:
     print_info(f"Tests directory: {tests_dir}")
 
     try:
-        selector = TestSelector(repo_path=Path('.'))
+        # Initialize selector and analyzer
+        selector = TestSelector(project_root=Path('.'), test_root=Path(tests_dir))
+        analyzer = ChangeAnalyzer(repo_path=Path('.'))
 
         print_info("\n🔄 Analyzing changes...")
 
-        # Get changed files
+        # Get changed files using ChangeAnalyzer
         print_info("  • Detecting changed files")
-        changed_files = selector.get_changed_files(since_commit=since)
+        changed_files = analyzer.get_changed_files(since_commit=since)
 
         if not changed_files:
             print_success("\n✅ No changes detected - no tests need to run")
@@ -67,9 +70,9 @@ def auto(since: str, tests_dir: str, output: str) -> None:
 
         for test in selected_tests[:15]:  # Show top 15
             table.add_row(
-                test.test_path,
-                test.priority.value if hasattr(test, 'priority') else "medium",
-                test.reason if hasattr(test, 'reason') else "Code change"
+                str(test.test_file),
+                test.impact_level.value,
+                test.reasons[0] if test.reasons else "Code change"
             )
 
         console.print(table)
@@ -89,7 +92,7 @@ def auto(since: str, tests_dir: str, output: str) -> None:
 
             with open(output_path, 'w') as f:
                 for test in selected_tests:
-                    f.write(f"{test.test_path}\n")
+                    f.write(f"{test.test_file}::{test.test_name}\n")
 
             print_success(f"\n✅ Test list saved to: {output_path}")
             print_info(f"Run with: pytest $(cat {output_path})")
@@ -114,10 +117,17 @@ def by_files(files: str, tests_dir: str) -> None:
         print_info(f"  • {f}")
 
     try:
-        selector = TestSelector(repo_path=Path('.'))
+        selector = TestSelector(project_root=Path('.'), test_root=Path(tests_dir))
 
         print_info("\n🔄 Analyzing impact...")
-        selected_tests = selector.select_tests(changed_files)
+
+        # Convert string file paths to FileChange objects
+        file_changes = [
+            FileChange(path=Path(f), change_type=None)  # type: ignore
+            for f in changed_files
+        ]
+
+        selected_tests = selector.select_tests(file_changes)
 
         if not selected_tests:
             print_info("\n⚠️  No tests affected by these files")
@@ -126,7 +136,7 @@ def by_files(files: str, tests_dir: str) -> None:
         print_success(f"\n✅ Selected {len(selected_tests)} tests")
 
         for test in selected_tests[:10]:
-            print_info(f"  • {test.test_path}")
+            print_info(f"  • {test.test_file}::{test.test_name}")
 
         if len(selected_tests) > 10:
             print_info(f"  ... and {len(selected_tests) - 10} more")
@@ -145,11 +155,18 @@ def estimate(tests_dir: str, changed_files: str) -> None:
     print_header("Test Execution Time Estimation")
 
     try:
-        selector = TestSelector(repo_path=Path('.'))
+        selector = TestSelector(project_root=Path('.'), test_root=Path(tests_dir))
 
         if changed_files:
             files = [f.strip() for f in changed_files.split(',')]
-            selected_tests = selector.select_tests(files)
+            
+            # Convert to FileChange objects
+            file_changes = [
+                FileChange(path=Path(f), change_type=None)  # type: ignore
+                for f in files
+            ]
+            
+            selected_tests = selector.select_tests(file_changes)
             print_info(f"Selected tests: {len(selected_tests)}")
         else:
             # Estimate all tests

@@ -32,9 +32,9 @@ The framework provides seven main command groups:
 ### 1. Business Logic Analysis
 ```bash
 # Analyze Android/iOS source code for business rules, edge cases, and patterns
-observe business-logic analyze <source_path> --output analysis.json
-observe business-logic report analysis.json     # Human-readable report
-observe business-logic stats analysis.json      # Statistics summary
+observe business analyze <source_path> --output analysis.json
+observe business report analysis.json     # Human-readable report
+observe business stats analysis.json      # Statistics summary
 ```
 
 ### 2. Project Integration
@@ -124,13 +124,13 @@ observe generate api --model app-model.json --output tests/api/
 cd /path/to/your/mobile/app
 
 # 2. Analyze source code
-observe business-logic analyze ./src/main --output analysis.json
+observe business analyze ./src/main --output analysis.json
 
 # 3. View results
-observe business-logic report analysis.json
+observe business report analysis.json
 
 # 4. See statistics
-observe business-logic stats analysis.json
+observe business stats analysis.json
 ```
 
 **Output:**
@@ -316,9 +316,9 @@ observe project fullcycle \
 
 | Command | Description | Example |
 |---------|-------------|---------|
-| `analyze` | Analyze source code | `observe business-logic analyze ./src --output result.json` |
-| `report` | Generate human-readable report | `observe business-logic report result.json` |
-| `stats` | Show statistics summary | `observe business-logic stats result.json` |
+| `analyze` | Analyze source code | `observe business analyze ./src --output result.json` |
+| `report` | Generate human-readable report | `observe business report result.json` |
+| `stats` | Show statistics summary | `observe business stats result.json` |
 
 ### Project Commands
 
@@ -336,8 +336,8 @@ observe project fullcycle \
 ### 1. Audit Existing App
 ```bash
 # Quick analysis to understand app structure
-observe business-logic analyze ./src --output audit.json
-observe business-logic report audit.json > audit-report.txt
+observe business analyze ./src --output audit.json
+observe business report audit.json > audit-report.txt
 
 # Share report with team
 cat audit-report.txt
@@ -357,10 +357,10 @@ ls -la tests/generated/
 ### 3. API Contract Extraction
 ```bash
 # Extract all API endpoints
-observe business-logic analyze ./src --output api-analysis.json
+observe business analyze ./src --output api-analysis.json
 
 # View API contracts
-observe business-logic report api-analysis.json | grep -A 10 "API Contracts"
+observe business report api-analysis.json | grep -A 10 "API Contracts"
 ```
 
 ---
@@ -386,8 +386,8 @@ observe business-logic report api-analysis.json | grep -A 10 "API Contracts"
 find ./src -name "*.kt" -o -name "*.swift" -o -name "*.java"
 
 # Use correct source path
-observe business-logic analyze ./app/src/main  # Android
-observe business-logic analyze ./MyApp/MyApp   # iOS
+observe business analyze ./app/src/main  # Android
+observe business analyze ./MyApp/MyApp   # iOS
 ```
 
 ### Issue: "Command not found: observe"
@@ -414,7 +414,7 @@ observe info
 ```bash
 # Enable debug logging
 export OBSERVE_LOG_LEVEL=DEBUG
-observe business-logic analyze ./src --output result.json
+observe business analyze ./src --output result.json
 
 # Check logs
 cat ~/.observe/logs/observe.log
@@ -443,7 +443,7 @@ cat ~/.observe/logs/observe.log
 ### Quick Help
 ```bash
 observe --help                    # All commands
-observe business-logic --help     # Business logic commands
+observe business --help     # Business logic commands
 observe project --help            # Project commands
 ```
 
