@@ -946,6 +946,8 @@ class BusinessLogicAnalyzer:
         """Detect empty collection/string checks"""
         all_files = list(self.project_path.rglob("*.kt")) + list(self.project_path.rglob("*.swift"))
 
+        seen_empty_checks = set()  # Track unique empty checks across files
+
         for file_path in all_files:
             try:
                 content = file_path.read_text(encoding="utf-8")
@@ -954,14 +956,20 @@ class BusinessLogicAnalyzer:
                 empty_checks = re.findall(r"(\w+)\.isEmpty\(\)", content)
 
                 for var_name in set(empty_checks):
-                    edge_case = EdgeCase(
-                        type="empty",
-                        description=f"Empty check for {var_name}",
-                        test_data=[[], ["item"], "", "text"],
-                        source_file=str(file_path),
-                        severity="medium",
-                    )
-                    self.analysis.edge_cases.append(edge_case)
+                    # Create unique key for cross-file deduplication
+                    empty_key = (var_name, str(file_path))
+
+                    if empty_key not in seen_empty_checks:
+                        seen_empty_checks.add(empty_key)
+
+                        edge_case = EdgeCase(
+                            type="empty",
+                            description=f"Empty check for {var_name}",
+                            test_data=[[], ["item"], "", "text"],
+                            source_file=str(file_path),
+                            severity="medium",
+                        )
+                        self.analysis.edge_cases.append(edge_case)
 
             except Exception as e:
                 print(f"Warning: Could not detect empty checks in {file_path}: {e}")
@@ -1134,20 +1142,28 @@ class BusinessLogicAnalyzer:
             try:
                 content = file_path.read_text(encoding="utf-8")
 
-                # Look for URLSession calls
-                url_patterns = re.findall(r'URL\(string:\s*"([^"]+)"\)', content)
+                # Look for URLSession calls with surrounding context
+                url_pattern = r'URL\(string:\s*"([^"]+)"\)'
+                url_matches = list(re.finditer(url_pattern, content))
 
                 # Look for HTTP method definitions
                 method_patterns = re.findall(r'httpMethod\s*=\s*"(GET|POST|PUT|DELETE|PATCH)"', content)
 
                 # Combine to create contracts
-                for i, url in enumerate(url_patterns):
+                for i, url_match in enumerate(url_matches):
+                    url = url_match.group(1)
                     method = method_patterns[i] if i < len(method_patterns) else "GET"
 
-                    # Extract Codable structs as request/response schemas
+                    # Find schemas near this specific URL (within 500 chars)
+                    url_pos = url_match.start()
+                    context_start = max(0, url_pos - 500)
+                    context_end = min(len(content), url_pos + 500)
+                    context = content[context_start:context_end]
+
+                    # Extract Codable structs within this context
                     schemas = re.findall(
                         r"struct\s+(\w+):\s*Codable\s*{([^}]+)}",
-                        content,
+                        context,
                         re.MULTILINE,
                     )
 
@@ -1171,7 +1187,7 @@ class BusinessLogicAnalyzer:
 
                     # Authentication
                     auth = None
-                    if "Authorization" in content or "Bearer" in content:
+                    if "Authorization" in context or "Bearer" in context:
                         auth = "Bearer Token"
 
                     contract = APIContract(
@@ -1184,8 +1200,8 @@ class BusinessLogicAnalyzer:
                         source_file=str(file_path),
                     )
 
-                    # Extract error handling
-                    if "catch" in content or "Result" in content:
+                    # Extract error handling from context
+                    if "catch" in context or "Result" in context:
                         contract.error_responses = [
                             {
                                 "type": "NetworkError",
