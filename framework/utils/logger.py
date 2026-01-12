@@ -3,7 +3,6 @@ Structured logging utilities with Rich formatting.
 """
 
 import logging
-import sys
 from pathlib import Path
 from typing import Optional
 
@@ -22,7 +21,7 @@ def setup_logging(
 ) -> None:
     """
     Setup logging configuration with Rich handler.
-    
+
     Args:
         level: Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
         log_file: Optional file path for logging output
@@ -41,7 +40,7 @@ def setup_logging(
             )
         ],
     )
-    
+
     if log_file:
         file_handler = logging.FileHandler(log_file)
         file_handler.setFormatter(
@@ -55,10 +54,10 @@ def setup_logging(
 def get_logger(name: str) -> logging.Logger:
     """
     Get or create a logger with the given name.
-    
+
     Args:
         name: Logger name (usually __name__)
-        
+
     Returns:
         Configured logger instance
     """

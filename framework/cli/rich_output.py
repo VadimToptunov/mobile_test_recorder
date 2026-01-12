@@ -38,7 +38,7 @@ def print_info(message: str) -> None:
 def print_header(title: str, subtitle: Optional[str] = None) -> None:
     """
     Print a beautiful header with title and optional subtitle.
-    
+
     Args:
         title: Main title
         subtitle: Optional subtitle
@@ -46,7 +46,7 @@ def print_header(title: str, subtitle: Optional[str] = None) -> None:
     content = f"[bold cyan]{title}[/bold cyan]"
     if subtitle:
         content += f"\n[dim]{subtitle}[/dim]"
-    
+
     console.print(
         Panel(
             content,
@@ -69,7 +69,7 @@ def print_table(
 ) -> None:
     """
     Print data in a beautiful table.
-    
+
     Args:
         data: List of dictionaries with data
         title: Optional table title
@@ -78,32 +78,32 @@ def print_table(
     if not data:
         print_warning("No data to display")
         return
-    
+
     # Auto-detect columns if not provided
     if columns is None:
         columns = list(data[0].keys())
-    
+
     table = Table(title=title, box=box.ROUNDED, show_header=True, header_style="bold magenta")
-    
+
     for col in columns:
         table.add_column(col.replace("_", " ").title(), style="cyan")
-    
+
     for row in data:
         table.add_row(*[str(row.get(col, "")) for col in columns])
-    
+
     console.print(table)
 
 
 def print_tree(data: Dict[str, Any], root_label: str = "Root") -> None:
     """
     Print hierarchical data as a tree.
-    
+
     Args:
         data: Nested dictionary or list
         root_label: Label for root node
     """
     tree = Tree(f"[bold cyan]{root_label}[/bold cyan]")
-    
+
     def add_branch(parent: Tree, data: Any) -> None:
         if isinstance(data, dict):
             for key, value in data.items():
@@ -119,7 +119,7 @@ def print_tree(data: Dict[str, Any], root_label: str = "Root") -> None:
                     add_branch(branch, item)
                 else:
                     parent.add(f"[yellow][{i}]:[/yellow] [green]{item}[/green]")
-    
+
     add_branch(tree, data)
     console.print(tree)
 
@@ -132,7 +132,7 @@ def print_code(
 ) -> None:
     """
     Print syntax-highlighted code.
-    
+
     Args:
         code: Code to display
         language: Programming language
@@ -150,7 +150,7 @@ def print_summary(
 ) -> None:
     """
     Print a summary box with statistics.
-    
+
     Args:
         title: Summary title
         stats: Dictionary of statistics to display
@@ -160,7 +160,7 @@ def print_summary(
     for key, value in stats.items():
         label = key.replace("_", " ").title()
         content += f"[bold]{label}:[/bold] [green]{value}[/green]\n"
-    
+
     console.print(
         Panel(
             content.strip(),
@@ -174,7 +174,7 @@ def print_summary(
 def create_progress() -> Progress:
     """
     Create a beautiful progress bar.
-    
+
     Returns:
         Configured Progress instance
     """
@@ -205,11 +205,11 @@ def print_banner() -> None:
 def confirm(message: str, default: bool = False) -> bool:
     """
     Ask for user confirmation with a beautiful prompt.
-    
+
     Args:
         message: Confirmation message
         default: Default value if user just presses Enter
-        
+
     Returns:
         User's choice
     """
@@ -217,12 +217,12 @@ def confirm(message: str, default: bool = False) -> bool:
     while True:
         console.print(f"[yellow]❓[/yellow] {message} {choices}: ", end="")
         choice = input().strip().lower()
-        
+
         if not choice:
             return default
         if choice in ["y", "yes"]:
             return True
         if choice in ["n", "no"]:
             return False
-        
+
         print_error("Please answer 'yes' or 'no'")

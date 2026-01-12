@@ -242,10 +242,7 @@ def analyze(
             --ios-source ~/MobileProjects/new-flykk-ios/flykk \\
             --output-dir ~/flykk-test-automation/analysis
     """
-    print_header(
-        "📱 Comprehensive Project Analysis",
-        "Analyzing mobile application source code"
-    )
+    print_header("📱 Comprehensive Project Analysis", "Analyzing mobile application source code")
 
     # Validation: At least one source required
     if not android_source and not ios_source:
@@ -280,7 +277,7 @@ def analyze(
                 "platforms_analyzed": len(results),
                 "output_directory": str(output_path),
                 "format": format.upper(),
-            }
+            },
         )
         print_section("Next Steps")
         print_info("Integrate results into test framework:")
