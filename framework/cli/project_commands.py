@@ -7,7 +7,6 @@ test projects.
 
 import click
 import json
-import re
 from pathlib import Path
 from typing import Optional, Dict, Any
 from datetime import datetime
@@ -20,16 +19,15 @@ from framework.integration.model_enricher import ProjectIntegrator
 from framework.generators import page_object_gen, api_client_gen, bdd_gen
 from framework.model.app_model import AppModel
 from framework.utils.logger import get_logger, setup_logging
-from framework.utils.validator import validate_path, ValidationError as ValidatorError
 from framework.utils.sanitizer import sanitize_identifier, sanitize_class_name
 from framework.cli.rich_output import (
     print_header,
     print_success,
     print_error,
     print_warning,
+    print_info,
     print_section,
     print_summary,
-    print_table,
     create_progress,
 )
 
@@ -121,7 +119,7 @@ def _analyze_platform(platform_name: str, source_path: Path, output_path: Path, 
 
         with create_progress() as progress:
             task = progress.add_task(f"[cyan]Analyzing {platform_name}...", total=100)
-            
+
             analyzer = BusinessLogicAnalyzer(source_path)
             progress.update(task, advance=20)
 
@@ -248,7 +246,7 @@ def analyze(
         "📱 Comprehensive Project Analysis",
         "Analyzing mobile application source code"
     )
-    
+
     # Validation: At least one source required
     if not android_source and not ios_source:
         print_error("At least one source (--android-source or --ios-source) must be provided")
@@ -286,7 +284,7 @@ def analyze(
         )
         print_section("Next Steps")
         print_info("Integrate results into test framework:")
-        for platform, file in results.items():
+        for file in results.values():
             print(f"   observe project integrate --analysis {file} --project <test-project-path>")
         logger.info(f"Analysis completed successfully: {len(results)} platforms")
     else:
