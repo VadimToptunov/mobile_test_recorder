@@ -976,6 +976,9 @@ class BusinessLogicAnalyzer:
         """Detect potential overflow/underflow patterns"""
         all_files = list(self.project_path.rglob("*.kt")) + list(self.project_path.rglob("*.java"))
 
+        # Track seen overflow patterns across all files
+        seen_overflow = set()
+
         for file_path in all_files:
             try:
                 content = file_path.read_text(encoding="utf-8")
@@ -985,15 +988,20 @@ class BusinessLogicAnalyzer:
 
                 for left, op, right in arithmetic:
                     if op in ["+", "*"]:
-                        edge_case = EdgeCase(
-                            type="overflow",
-                            description=f"Potential overflow: {left} {op} {right}",
-                            test_data=["MAX_VALUE", "MIN_VALUE", 0, 1, -1],
-                            source_file=str(file_path),
-                            severity="medium",
-                        )
-                        self.analysis.edge_cases.append(edge_case)
-                        break  # Avoid too many duplicates per file
+                        # Create unique key for deduplication
+                        overflow_key = (left, op, right)
+
+                        # Only add if not seen before
+                        if overflow_key not in seen_overflow:
+                            seen_overflow.add(overflow_key)
+                            edge_case = EdgeCase(
+                                type="overflow",
+                                description=f"Potential overflow: {left} {op} {right}",
+                                test_data=["MAX_VALUE", "MIN_VALUE", 0, 1, -1],
+                                source_file=str(file_path),
+                                severity="medium",
+                            )
+                            self.analysis.edge_cases.append(edge_case)
 
             except Exception as e:
                 print(f"Warning: Could not detect overflow patterns in {file_path}: {e}")
