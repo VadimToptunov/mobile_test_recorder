@@ -195,7 +195,7 @@ def send(
         platform=platform
     )
 
-    print_info(f"\n📊 Summary:")
+    print_info("\n📊 Summary:")
     print_info(f"  Total: {total}")
     print_info(f"  Passed: {passed}")
     print_info(f"  Failed: {failed}")
@@ -249,7 +249,7 @@ def send(
     elif success_count > 0:
         print_info(f"\n⚠️  {success_count}/{total_count} notifications sent successfully")
     else:
-        print_error(f"\n❌ All notifications failed")
+        print_error("\n❌ All notifications failed")
 
     for notifier_type, success in results_dict.items():
         status = "✅" if success else "❌"
@@ -299,7 +299,7 @@ def on_healing(healing_results: str, channel: str) -> None:
     # Display results
     for notifier_type, success in results.items():
         if success:
-            print_success(f"✅ {notifier_type}: Sent") # noqa: F541
+            print_success(f"✅ {notifier_type}: Sent")   # noqa: F541
         else:
             print_error(f"❌ {notifier_type}: Failed")
 
