@@ -19,6 +19,7 @@ from framework.cli.ml_commands import ml
 from framework.cli.security_commands import security
 from framework.cli.perf_commands import perf
 from framework.cli.selection_commands import select
+from framework.cli.config_commands import config
 from framework.cli.rich_output import print_banner
 
 
@@ -46,6 +47,7 @@ cli.add_command(ml)
 cli.add_command(security)
 cli.add_command(perf)
 cli.add_command(select)
+cli.add_command(config)
 
 
 @cli.command()
