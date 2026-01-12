@@ -44,7 +44,7 @@ def scan(source_path: str, platform: str, output: str, severity: str) -> None:
         # Run security analysis
         print_info("\n🔄 Analyzing security...")
 
-        # analyzer = SecurityAnalyzer(project_root=source_dir)  # Used for analyze()  # noqa: F841
+        analyzer = SecurityAnalyzer(project_root=source_dir)  # Used for analyze()
         issues = analyzer.analyze(platform=platform)
 
         # Filter by severity if specified
@@ -144,7 +144,7 @@ def check_secrets(source_path: str) -> None:
     print_info(f"Source: {source_dir}")
 
     try:
-        # analyzer = SecurityAnalyzer(project_root=source_dir)  # noqa: F841
+        analyzer = SecurityAnalyzer(project_root=source_dir)
 
         print_info("\n🔄 Scanning for secrets...")
 
@@ -217,7 +217,7 @@ def compliance(source_path: str, standard: str) -> None:
     print_info(f"Standard: {standard}")
 
     try:
-        # analyzer = SecurityAnalyzer(project_root=source_dir)  # noqa: F841
+        analyzer = SecurityAnalyzer(project_root=source_dir)
         issues = analyzer.analyze(platform='android')  # Auto-detect platform
 
         print_info("\n🔄 Checking compliance...")
