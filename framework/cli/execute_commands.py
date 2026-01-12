@@ -9,8 +9,6 @@ from pathlib import Path
 from typing import Optional
 import subprocess
 import time
-from threading import Thread
-from queue import Queue
 import re
 
 from framework.cli.rich_output import print_header, print_info, print_success, print_error
@@ -18,7 +16,6 @@ from rich.console import Console
 from rich.live import Live
 from rich.table import Table
 from rich.panel import Panel
-from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TimeRemainingColumn
 
 console = Console()
 
@@ -277,7 +274,7 @@ def stress(tests: str, duration: int, args: Optional[str]) -> None:
     print_success(f"\n✅ Stress test complete")
     print_info(f"Iterations: {iterations}")
     print_info(f"Total passed: {total_passed}")
-    print_info(f"Total failed: {total_failed}")
+    print_info("Total failed: {total_failed}")
     print_info(f"Elapsed: {elapsed:.1f}s")
 
 
