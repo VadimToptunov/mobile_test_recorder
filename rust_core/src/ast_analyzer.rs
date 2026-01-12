@@ -3,9 +3,8 @@
 //! Provides high-performance AST parsing and complexity metric calculation.
 
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PyList};
+use pyo3::types::PyDict;
 use std::collections::HashMap;
-use std::path::Path;
 use rayon::prelude::*;
 use walkdir::WalkDir;
 
@@ -135,7 +134,9 @@ impl RustAstAnalyzer {
         // Convert to Python dict
         let dict = PyDict::new(py);
         for (file, metrics) in results.iter() {
-            dict.set_item(file, metrics.clone())?;
+            // Convert ComplexityMetrics to Py<ComplexityMetrics>
+            let py_metrics = Py::new(py, metrics.clone())?;
+            dict.set_item(file, py_metrics)?;
         }
 
         Ok(dict.into())

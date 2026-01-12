@@ -14,7 +14,13 @@ fi
 # Activate virtual environment
 source "$VENV_PATH/bin/activate"
 
-echo " Virtual environment activated!"
+# Activate local Rust toolchain
+export RUSTUP_HOME="$VENV_PATH/rustup"
+export CARGO_HOME="$VENV_PATH/cargo"
+export PATH="$CARGO_HOME/bin:$PATH"
+
+echo "✅ Virtual environment activated!"
+echo "🦀 Rust toolchain activated (rustc $(rustc --version 2>/dev/null | awk '{print $2}' || echo 'not found'))"
 echo ""
 echo " Available commands:"
 echo "  observe --help              # Show CLI help"
