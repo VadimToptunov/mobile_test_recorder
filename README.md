@@ -548,7 +548,7 @@ refactor: Code refactoring
 - ✅ Cloud Integrations (AWS, BrowserStack, Firebase)
 - ✅ Lifetime updates
 - ✅ 1 developer seat
-- ✅ Community support (GitHub Discussions)
+- ✅ Slack community access
 
 #### 👥 Team License - $499 (up to 5 devs)
 
