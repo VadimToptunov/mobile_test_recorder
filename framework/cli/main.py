@@ -22,6 +22,7 @@ from framework.cli.selection_commands import select
 from framework.cli.config_commands import config
 from framework.cli.notify_commands import notify
 from framework.cli.visual_commands import visual
+from framework.cli.data_commands import data
 from framework.cli.rich_output import print_banner
 
 
@@ -52,6 +53,7 @@ cli.add_command(select)
 cli.add_command(config)
 cli.add_command(notify)
 cli.add_command(visual)
+cli.add_command(data)
 
 
 @cli.command()
