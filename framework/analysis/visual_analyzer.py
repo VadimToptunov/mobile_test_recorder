@@ -122,7 +122,7 @@ class VisualAnalyzer:
         # Placeholder - in production use image diff algorithms
         return []
 
-    def _create_baseline(self, screen_name: str, image: Path):
+    def _create_baseline(self, screen_name: str, image: Path) -> None:
         """Create new baseline image"""
         import shutil
 
@@ -135,7 +135,7 @@ class VisualAnalyzer:
         except Exception as e:
             print(f"Error creating baseline: {e}")
 
-    def update_baseline(self, screen_name: str, current_image: Path):
+    def update_baseline(self, screen_name: str, current_image: Path) -> None:
         """Update baseline with current image"""
         self._create_baseline(screen_name, current_image)
 
@@ -190,7 +190,7 @@ class VisualAnalyzer:
 
         return report
 
-    def export_diff_images(self, output_dir: Path):
+    def export_diff_images(self, output_dir: Path) -> None:
         """
         Export visual diff images
 

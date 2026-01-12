@@ -29,7 +29,7 @@ class TestImpact:
     impact_level: ImpactLevel
     reasons: List[str]  # Why this test is impacted
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.test_file, self.test_name))
 
 
@@ -298,7 +298,7 @@ class TestSelector:
         report = f"Selected {len(tests)} tests:\n\n"
 
         # Group by impact level
-        by_impact = {}
+        by_impact: Dict[str, List[TestImpact]] = {}
         for test in tests:
             level = test.impact_level.value
             if level not in by_impact:
