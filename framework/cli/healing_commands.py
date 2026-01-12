@@ -189,6 +189,17 @@ def auto(test_results_path: str, screenshots: Optional[str], repo: str,
                         }
                         healing_results.append(result)
                         healed_count += 1
+                    else:
+                        # No alternatives found - track as failed
+                        result = {
+                            'test_name': failure.test_name,
+                            'old_selector': failure.selector,
+                            'new_selector': None,
+                            'success': False,
+                            'error': 'No alternative selectors found'
+                        }
+                        healing_results.append(result)
+                        failed_count += 1
                 else:
                     # Actually heal
                     result = orchestrator.heal_failure(failure, commit=commit)
