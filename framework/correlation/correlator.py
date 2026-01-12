@@ -334,7 +334,8 @@ class EventCorrelator:
 
         # Handle Pydantic models
         if hasattr(event, "model_dump"):
-            return event.model_dump()
+            result = event.model_dump()
+            return result if isinstance(result, dict) else {}
 
         # Fallback
         return {}
