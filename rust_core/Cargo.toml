@@ -1,0 +1,62 @@
+[package]
+name = "observe-core"
+version = "0.1.0"
+edition = "2021"
+authors = ["Vadim Toptunov <your-email@example.com>"]
+description = "High-performance Rust core for Mobile Test Recorder"
+license = "MIT"
+
+[lib]
+name = "observe_core"
+crate-type = ["cdylib"]  # Dynamic library for Python
+
+[dependencies]
+# Python bindings
+pyo3 = { version = "0.20", features = ["extension-module", "abi3-py38"] }
+
+# AST parsing
+syn = { version = "2.0", features = ["full", "parsing"] }
+tree-sitter = "0.20"
+
+# Parallel processing
+rayon = "1.8"
+tokio = { version = "1.35", features = ["full"] }
+
+# Data structures & serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+indexmap = "2.1"  # Ordered HashMap
+
+# Regex
+regex = "1.10"
+once_cell = "1.19"
+
+# File I/O
+memmap2 = "0.9"
+walkdir = "2.4"
+
+# Error handling
+anyhow = "1.0"
+thiserror = "1.0"
+
+# Logging
+log = "0.4"
+env_logger = "0.11"
+
+[dev-dependencies]
+criterion = "0.5"  # Benchmarking
+proptest = "1.4"   # Property testing
+
+[[bench]]
+name = "ast_bench"
+harness = false
+
+[[bench]]
+name = "correlator_bench"
+harness = false
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true
