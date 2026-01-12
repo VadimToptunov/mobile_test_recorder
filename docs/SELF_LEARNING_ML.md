@@ -1,54 +1,54 @@
 # Self-Learning ML System
 
-> Модель учится сама на данных от всех пользователей, без участия человека
+> The model learns automatically from data contributed by all users, without human intervention
 
 ---
 
-## 🎯 Концепция
+## 🎯 Concept
 
-**Проблема:** Обычные ML модели требуют ручной разметки данных для каждого приложения.
+**Problem:** Traditional ML models require manual data labeling for each application.
 
-**Решение:** Краудсорсинг данных от всех пользователей + автоматическая разметка.
+**Solution:** Crowdsource data from all users + automatic labeling.
 
-### Как это работает?
+### How It Works
 
 ```
 ┌────────────────────────────────────────────────────────┐
 │  User 1 (Flutter app)     User 2 (React Native app)   │
 │          ↓                           ↓                 │
-│   Собирает элементы          Собирает элементы        │
-│   автоматически              автоматически             │
+│   Collects elements          Collects elements        │
+│   automatically              automatically             │
 └─────────────┬────────────────────────┬─────────────────┘
               │                        │
               ↓                        ↓
 ┌─────────────────────────────────────────────────────────┐
 │         Central ML Server (api.mobile-observe.dev)      │
 │                                                          │
-│  • Агрегирует данные от всех юзеров                     │
-│  • Переобучает модель каждую неделю                     │
-│  • Публикует обновленные модели                         │
+│  • Aggregates data from all users                       │
+│  • Retrains model weekly                                │
+│  • Publishes updated models                             │
 └──────────────────────────┬──────────────────────────────┘
                            │
                            ↓
               ┌────────────────────────┐
               │  Model v1.1 (updated)  │
-              │  • 10K новых примеров  │
+              │  • 10K new samples     │
               │  • 92% → 95% accuracy  │
               └────────────────────────┘
                            │
                            ↓
 ┌────────────────────────────────────────────────────────┐
 │  All Users: auto-download updated model                │
-│  • Работает лучше с каждой неделей                     │
-│  • Без ручного вмешательства                           │
+│  • Improves every week                                 │
+│  • No manual intervention                              │
 └────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 🚀 Для пользователей (User Experience)
+## 🚀 User Experience
 
-### Первый запуск
+### First Run
 
 ```bash
 # 1. Install framework
@@ -57,7 +57,7 @@ pip install mobile-observe-test
 # 2. Run first test generation
 observe project fullcycle --android-source ./app/src --output ./tests/
 
-# В консоли:
+# Console output:
 # ✅ Using universal pre-trained ML model
 # 📊 Model version: 1.2.0 (trained on 50K+ elements)
 # 🌍 Supports: Android, iOS, Flutter, React Native
@@ -67,13 +67,13 @@ observe project fullcycle --android-source ./app/src --output ./tests/
 #    Opt-out: observe config set ml.contribute false
 ```
 
-### Автоматические обновления
+### Automatic Updates
 
 ```bash
-# Каждую неделю при запуске
+# Weekly check on startup
 observe project fullcycle ...
 
-# В консоли:
+# Console output:
 # 🔄 Checking for model updates...
 # ✅ New model available: v1.3.0
 # 📥 Downloading... [████████████] 100%
@@ -85,16 +85,16 @@ observe project fullcycle ...
 #   • Better React Native support
 ```
 
-### Ручное управление
+### Manual Control
 
 ```bash
-# Проверить обновления
+# Check for updates
 observe ml check-updates
 
-# Загрузить последнюю версию
+# Download latest version
 observe ml update-model
 
-# Посмотреть статистику своих вкладов
+# View contribution statistics
 observe ml stats
 
 # Output:
@@ -105,18 +105,18 @@ observe ml stats
 # • Uploaded: 2,350 / 2,350
 # • Thank you for helping improve the model! 🎉
 
-# Отключить сбор данных
+# Disable data collection
 observe config set ml.contribute false
 
-# Включить обратно
+# Re-enable
 observe config set ml.contribute true
 ```
 
 ---
 
-## 🔒 Приватность (Privacy-First Design)
+## 🔒 Privacy (Privacy-First Design)
 
-### Что собирается?
+### What is Collected?
 
 ```json
 {
@@ -135,35 +135,35 @@ observe config set ml.contribute true
 }
 ```
 
-### Что НЕ собирается?
+### What is NOT Collected?
 
-❌ **App names** - не знаем, какое приложение
-❌ **Package IDs** - не знаем, кто разработчик
-❌ **Actual text** - только `has_text: true` и длина
-❌ **Screenshots** - никогда не собираем изображения
-❌ **User data** - никакой личной информации
-❌ **API calls** - только UI элементы
-❌ **IP addresses** - анонимная загрузка
+❌ **App names** - we don't know which app
+❌ **Package IDs** - we don't know the developer
+❌ **Actual text** - only `has_text: true` and length
+❌ **Screenshots** - never collect images
+❌ **User data** - no personal information
+❌ **API calls** - only UI elements
+❌ **IP addresses** - anonymous upload
 
-### Сравнение с другими инструментами
+### Comparison with Other Tools
 
-| Фича | Mobile Observe | Firebase Crashlytics | Amplitude |
-|------|----------------|----------------------|-----------|
-| Собирает названия приложений | ❌ | ✅ | ✅ |
-| Собирает текст с экранов | ❌ | ✅ (stacktraces) | ✅ |
-| Собирает screenshots | ❌ | ✅ | ❌ |
-| Собирает user IDs | ❌ | ✅ | ✅ |
-| Можно отключить | ✅ | ✅ | ✅ |
+| Feature | Mobile Observe | Firebase Crashlytics | Amplitude |
+|---------|----------------|----------------------|-----------|
+| Collects app names | ❌ | ✅ | ✅ |
+| Collects screen text | ❌ | ✅ (stacktraces) | ✅ |
+| Collects screenshots | ❌ | ✅ | ❌ |
+| Collects user IDs | ❌ | ✅ | ✅ |
+| Can be disabled | ✅ | ✅ | ✅ |
 
-**Вывод:** Мы собираем МЕНЬШЕ данных, чем стандартные аналитические инструменты.
+**Conclusion:** We collect LESS data than standard analytics tools.
 
 ---
 
-## 🏗️ Архитектура
+## 🏗️ Architecture
 
-### Компоненты
+### Components
 
-**1. SelfLearningCollector** - собирает данные локально
+**1. SelfLearningCollector** - collects data locally
 
 ```python
 from framework.ml.self_learning import SelfLearningCollector
@@ -179,7 +179,7 @@ collector.collect_from_hierarchy(hierarchy, platform="android")
 # Auto-uploads when batch reaches 1000 samples
 ```
 
-**2. ModelUpdater** - обновляет модели
+**2. ModelUpdater** - updates models
 
 ```python
 from framework.ml.self_learning import ModelUpdater
@@ -194,7 +194,7 @@ if update:
     # Model updated to v1.3.0!
 ```
 
-**3. FeedbackCollector** - собирает исправления от пользователей
+**3. FeedbackCollector** - collects user corrections
 
 ```python
 from framework.ml.self_learning import FeedbackCollector
@@ -214,7 +214,7 @@ feedback.record_correction(
 
 ---
 
-## 📈 Жизненный цикл модели
+## 📈 Model Lifecycle
 
 ### Week 1: Initial Release
 
@@ -273,9 +273,9 @@ Model v2.0.0
 
 ---
 
-## 🔧 Интеграция в существующий код
+## 🔧 Integration into Existing Code
 
-### В ModelBuilder
+### In ModelBuilder
 
 ```python
 # framework/model_builder/builder.py
@@ -303,7 +303,7 @@ class ModelBuilder:
         return model
 ```
 
-### В CLI commands
+### In CLI commands
 
 ```python
 # framework/cli/project_commands.py
@@ -323,26 +323,26 @@ def fullcycle(...):
 
 ---
 
-## 🧪 Тестирование системы
+## 🧪 Testing the System
 
-### Локальный режим (без сервера)
+### Local Mode (without server)
 
 ```bash
-# 1. Генерируем тестовые данные
+# 1. Generate test data
 observe ml generate-test-samples --count 1000 --output test_samples.json
 
-# 2. Собираем в локальный кэш (не загружаем)
+# 2. Collect to local cache (no uploads)
 observe config set ml.contribute false  # Disable uploads
 observe config set ml.local_cache_only true
 
-# 3. Используем framework как обычно
+# 3. Use framework normally
 observe project fullcycle --android-source ./app/src --output ./tests/
 
-# 4. Проверяем собранные данные
+# 4. Check collected data
 ls ml_cache/training_samples/
 # batch_a3f9e82b.json  (1000 samples)
 
-# 5. Анализируем собранные данные
+# 5. Analyze collected data
 observe ml analyze-cache
 # Output:
 # 📊 Local Training Cache
@@ -358,24 +358,24 @@ observe ml analyze-cache
 #   ...
 ```
 
-### Режим разработки (mock server)
+### Development Mode (mock server)
 
 ```bash
-# 1. Запускаем локальный mock server
+# 1. Start local mock server
 cd ml_server_mock/
 python mock_server.py
 # Server running on http://localhost:8000
 
-# 2. Настраиваем endpoint
+# 2. Configure endpoint
 observe config set ml.upload_endpoint http://localhost:8000/v1/ml/samples
 
-# 3. Включаем uploads
+# 3. Enable uploads
 observe config set ml.contribute true
 
-# 4. Используем framework
+# 4. Use framework
 observe project fullcycle ...
 
-# 5. Проверяем, что данные загрузились
+# 5. Verify data uploaded
 curl http://localhost:8000/v1/ml/samples/stats
 # {
 #   "total_batches": 3,
@@ -386,16 +386,16 @@ curl http://localhost:8000/v1/ml/samples/stats
 
 ---
 
-## 🌍 Production Server (будущее)
+## 🌍 Production Server (Future)
 
-### Требования к серверу
+### Server Requirements
 
 ```yaml
 # Infrastructure
 - Endpoint: https://api.mobile-observe.dev
 - Backup: https://ml.mobile-observe.dev
-- CDN: CloudFlare (для скачивания моделей)
-- Database: PostgreSQL (метаданные)
+- CDN: CloudFlare (for model downloads)
+- Database: PostgreSQL (metadata)
 - Storage: S3 (training samples, models)
 
 # API Endpoints
@@ -405,14 +405,14 @@ GET  /v1/ml/models/{version} # Download specific model version
 POST /v1/ml/feedback         # Upload user corrections
 
 # Authentication
-- API key (для загрузки данных)
-- Public download (модели доступны всем)
+- API key (for data upload)
+- Public download (models available to all)
 
 # Privacy
 - No logging of IP addresses
 - No user tracking
 - GDPR compliant
-- Можно запросить удаление своих данных
+- Data deletion on request
 ```
 
 ### Training Pipeline
@@ -451,23 +451,23 @@ def weekly_retrain():
 
 ---
 
-## 💡 Альтернативы (если нет сервера)
+## 💡 Alternatives (if no server)
 
-### Вариант 1: P2P (peer-to-peer)
+### Option 1: P2P (peer-to-peer)
 
-Пользователи обмениваются training samples напрямую через торрент-подобную систему.
+Users exchange training samples directly through a torrent-like system.
 
-**Плюсы:**
-- Не нужен центральный сервер
-- Децентрализованно
+**Pros:**
+- No central server needed
+- Decentralized
 
-**Минусы:**
-- Сложнее реализовать
-- Нет контроля качества
+**Cons:**
+- More complex to implement
+- No quality control
 
-### Вариант 2: GitHub Releases
+### Option 2: GitHub Releases
 
-Модели и datasets публикуются как GitHub Releases.
+Models and datasets published as GitHub Releases.
 
 ```bash
 # Download latest model
@@ -475,26 +475,26 @@ curl -L https://github.com/yourusername/mobile-observe/releases/latest/download/
   -o ml_models/universal_element_classifier.pkl
 ```
 
-**Плюсы:**
-- Бесплатно
-- Простая интеграция
+**Pros:**
+- Free
+- Simple integration
 - Version control
 
-**Минусы:**
-- Нет автоматической aggregation данных
-- Нужно вручную переобучать модель
+**Cons:**
+- No automatic data aggregation
+- Manual model retraining needed
 
-### Вариант 3: Federated Learning
+### Option 3: Federated Learning
 
-Модель обучается локально у каждого пользователя, только веса обновляются.
+Model trains locally on each user's machine, only weights are updated.
 
-**Плюсы:**
-- Максимальная приватность
-- Не нужно передавать данные
+**Pros:**
+- Maximum privacy
+- No data transmission needed
 
-**Минусы:**
-- Очень сложная реализация
-- Требует много ресурсов на клиенте
+**Cons:**
+- Very complex implementation
+- Requires significant client resources
 
 ---
 
@@ -506,25 +506,27 @@ curl -L https://github.com/yourusername/mobile-observe/releases/latest/download/
 - [x] Basic ML classification
 
 ### Phase 2: Self-Learning (Current)
-- [ ] SelfLearningCollector implementation
-- [ ] ModelUpdater implementation  
-- [ ] FeedbackCollector implementation
-- [ ] Local caching and batching
-- [ ] Privacy-first data anonymization
+- [x] SelfLearningCollector implementation
+- [x] ModelUpdater implementation
+- [x] FeedbackCollector implementation
+- [x] Local caching and batching
+- [x] Privacy-first data anonymization
+- [ ] Production server setup
+- [ ] Automated training pipeline
 
 ### Phase 3: Infrastructure (Future)
-- [ ] Production API server
-- [ ] Automated training pipeline
 - [ ] Model versioning and rollback
 - [ ] A/B testing for model updates
-- [ ] User dashboard (contributions stats)
+- [ ] User dashboard (contribution stats)
+- [ ] Real-time model updates
+- [ ] Federated learning support
 
 ### Phase 4: Advanced Features (Future)
 - [ ] Multi-language model (Rust core?)
-- [ ] Real-time model updates
-- [ ] Federated learning support
 - [ ] Custom model fine-tuning UI
 - [ ] Model marketplace (community models)
+- [ ] Transfer learning for app-specific models
+- [ ] Active learning (prioritize uncertain samples)
 
 ---
 
@@ -539,29 +541,35 @@ curl -L https://github.com/yourusername/mobile-observe/releases/latest/download/
 
 ## 💬 FAQ
 
-**Q: Могу ли я отключить сбор данных?**  
-A: Да, в любой момент: `observe config set ml.contribute false`
+**Q: Can I disable data collection?**
+A: Yes, anytime: `observe config set ml.contribute false`
 
-**Q: Можно ли посмотреть, какие данные собираются?**  
-A: Да, они хранятся локально в `ml_cache/training_samples/`. Можешь изучить любой файл.
+**Q: Can I see what data is collected?**
+A: Yes, it's stored locally in `ml_cache/training_samples/`. You can inspect any file.
 
-**Q: А если я хочу использовать только свою модель?**  
-A: Можешь обучить свою: `observe ml train --data my_data.json --output my_model.pkl`
+**Q: What if I want to use only my own model?**
+A: You can train your own: `observe ml train --data my_data.json --output my_model.pkl`
 
-**Q: Поддерживается ли офлайн режим?**  
-A: Да, модель работает локально. Интернет нужен только для обновлений.
+**Q: Is offline mode supported?**
+A: Yes, the model works locally. Internet is only needed for updates.
 
-**Q: Сколько занимает модель?**  
-A: ~5-10 MB (одна модель для всех платформ)
+**Q: How large is the model?**
+A: ~5-10 MB (one model for all platforms)
 
-**Q: Как часто обновляется модель?**  
-A: Планируется еженедельно, но можно реже/чаще в зависимости от объема данных.
+**Q: How often is the model updated?**
+A: Planned weekly, but can be more/less frequent depending on data volume.
 
-**Q: Что если сервер недоступен?**  
-A: Framework продолжит работать с локальной моделью. Данные сохранятся локально и загрузятся позже.
+**Q: What if the server is unavailable?**
+A: The framework continues working with the local model. Data is saved locally and uploaded later.
 
-**Q: Можно ли контрибьютить только для конкретной платформы (например, только iOS)?**  
-A: Да, можно настроить: `observe config set ml.contribute_platforms ios`
+**Q: Can I contribute only for specific platforms (e.g., iOS only)?**
+A: Yes, you can configure: `observe config set ml.contribute_platforms ios`
 
-**Q: А если я нашел баг в модели?**  
-A: Можешь исправить прогноз командой `observe ml correct` или создать issue на GitHub.
+**Q: What if I found a bug in the model?**
+A: You can correct the prediction with `observe ml correct` or create an issue on GitHub.
+
+**Q: Is the training data available publicly?**
+A: Yes, aggregated datasets will be published periodically for research purposes (with full anonymization).
+
+**Q: Can enterprises use this without data sharing?**
+A: Yes, you can disable contribution and use the pre-trained model, or train your own private model.
