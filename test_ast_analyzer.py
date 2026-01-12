@@ -13,15 +13,15 @@ def test_ast_analyzer() -> None:
 
     print("\n✅ AST Analysis Test Results:")
     print(f"   Total Functions: {result['summary']['total_functions']}")
-    print(f"   High Complexity: " f"{result['summary']['high_complexity_functions']}")
-    print(f"   Average Complexity: " f"{result['summary']['average_complexity']:.2f}")
+    print("   High Complexity: " f"{result['summary']['high_complexity_functions']}")
+    print("   Average Complexity: " f"{result['summary']['average_complexity']:.2f}")
 
     # Show most complex
     if result["functions"]:
         most_complex = max(result["functions"], key=lambda f: f["cyclomatic_complexity"])
         print(f"\n   Most complex function: {most_complex['name']}")
-        print(f"   Cyclomatic Complexity: " f"{most_complex['cyclomatic_complexity']}")
-        print(f"   Cognitive Complexity: " f"{most_complex['cognitive_complexity']}")
+        print("   Cyclomatic Complexity: " f"{most_complex['cyclomatic_complexity']}")
+        print("   Cognitive Complexity: " f"{most_complex['cognitive_complexity']}")
         print(f"   Nested Depth: {most_complex['nested_depth']}")
 
     assert result["summary"]["total_functions"] > 0, "Should find functions"

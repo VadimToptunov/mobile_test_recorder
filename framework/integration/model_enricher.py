@@ -9,10 +9,10 @@ This module extends mobile-observe-test-framework with:
 """
 
 from pathlib import Path
-from typing import Dict, List, Optional, Set
+from typing import Dict, List, Optional
 from copy import deepcopy
 import yaml
-import json
+
 from pydantic import BaseModel
 
 
@@ -332,7 +332,7 @@ class ProjectIntegrator:
                         {
                             "name": screen_name,
                             "id": screen_name.lower(),
-                            "description": f"Extracted from existing Page Object",
+                            "description": "Extracted from existing Page Object",
                             "elements": elements,
                         }
                     )

@@ -9,7 +9,6 @@ from typing import Optional, List
 from pathlib import Path
 from datetime import datetime
 import re
-import ast
 
 
 @dataclass
@@ -21,7 +20,7 @@ class UpdateResult:
     new_selector: tuple
     backup_path: Optional[Path] = None
     error_message: Optional[str] = None
-    
+
     def __repr__(self):
         status = "✓" if self.success else "✗"
         return f"{status} {self.file_path}: {self.old_selector} → {self.new_selector}"
@@ -31,16 +30,16 @@ class FileUpdater:
     """
     Updates Page Object files with healed selectors
     """
-    
+
     def __init__(self, create_backup: bool = True):
         """
         Initialize file updater
-        
+
         Args:
             create_backup: Whether to create backup files before updating
         """
         self.create_backup = create_backup
-    
+
     def update_selector(
         self,
         file_path: Path,
@@ -51,14 +50,14 @@ class FileUpdater:
     ) -> UpdateResult:
         """
         Update selector in Page Object file
-        
+
         Args:
             file_path: Path to Page Object file
             element_name: Name of element/locator
             old_selector: Old (type, value) tuple
             new_selector: New (type, value) tuple
             confidence: Confidence score for the healing
-        
+
         Returns:
             UpdateResult with operation details
         """
@@ -70,7 +69,7 @@ class FileUpdater:
                 new_selector=new_selector,
                 error_message="File not found"
             )
-        
+
         # Determine file type and use appropriate updater
         if file_path.suffix == '.py':
             return self._update_python_file(
@@ -92,7 +91,7 @@ class FileUpdater:
                 new_selector=new_selector,
                 error_message=f"Unsupported file type: {file_path.suffix}"
             )
-    
+
     def _update_python_file(
         self,
         file_path: Path,
@@ -104,17 +103,17 @@ class FileUpdater:
         """Update Python Page Object file"""
         try:
             content = file_path.read_text()
-            
+
             # Create backup
             backup_path = None
             if self.create_backup:
                 backup_path = file_path.with_suffix(f'.py.bak.{int(datetime.now().timestamp())}')
                 backup_path.write_text(content)
-            
+
             # Find and replace selector
             # Pattern: element_name = ("type", "value")
             old_pattern = f'{element_name}\\s*=\\s*\\(\\s*["\']({old_selector[0]})["\']\\s*,\\s*["\']({re.escape(old_selector[1])})["\']\\s*\\)'
-            
+
             match = re.search(old_pattern, content)
             if not match:
                 return UpdateResult(
@@ -124,7 +123,7 @@ class FileUpdater:
                     new_selector=new_selector,
                     error_message=f"Selector pattern not found: {element_name}"
                 )
-            
+
             # Generate healing comment
             timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             comment = (
@@ -132,18 +131,18 @@ class FileUpdater:
                 f"    # Original: {old_selector} - element not found\n"
                 f"    # New: {new_selector[0]} strategy, confidence: {confidence:.2f}\n"
             )
-            
+
             # Build new selector line
             new_line = f'{element_name} = ("{new_selector[0]}", "{new_selector[1]}")'
-            
+
             # Replace with commented version
             replacement = f'{comment}    {new_line}\n    # Fallback: {old_selector}'
-            
+
             new_content = re.sub(old_pattern, replacement, content)
-            
+
             # Write updated content
             file_path.write_text(new_content)
-            
+
             return UpdateResult(
                 success=True,
                 file_path=file_path,
@@ -151,7 +150,7 @@ class FileUpdater:
                 new_selector=new_selector,
                 backup_path=backup_path
             )
-        
+
         except Exception as e:
             return UpdateResult(
                 success=False,
@@ -160,7 +159,7 @@ class FileUpdater:
                 new_selector=new_selector,
                 error_message=str(e)
             )
-    
+
     def _update_kotlin_file(
         self,
         file_path: Path,
@@ -172,17 +171,17 @@ class FileUpdater:
         """Update Kotlin Page Object file"""
         try:
             content = file_path.read_text()
-            
+
             # Create backup
             backup_path = None
             if self.create_backup:
                 backup_path = file_path.with_suffix(f'.kt.bak.{int(datetime.now().timestamp())}')
                 backup_path.write_text(content)
-            
+
             # Kotlin pattern: val elementName = By.id("value") or MobileBy.AndroidUIAutomator("...")
             # This is simplified - real implementation would handle more patterns
             old_pattern = f'val\\s+{element_name}\\s*=\\s*.*?"{re.escape(old_selector[1])}"'
-            
+
             match = re.search(old_pattern, content)
             if not match:
                 return UpdateResult(
@@ -192,7 +191,7 @@ class FileUpdater:
                     new_selector=new_selector,
                     error_message=f"Selector pattern not found: {element_name}"
                 )
-            
+
             # Generate healing comment
             timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             comment = (
@@ -200,7 +199,7 @@ class FileUpdater:
                 f"    // Original: {old_selector} - element not found\n"
                 f"    // New: {new_selector[0]} strategy, confidence: {confidence:.2f}\n"
             )
-            
+
             # Build new selector (simplified)
             strategy_map = {
                 'id': f'By.id("{new_selector[1]}")',
@@ -208,15 +207,15 @@ class FileUpdater:
                 'accessibility_id': f'MobileBy.AccessibilityId("{new_selector[1]}")'
             }
             by_method = strategy_map.get(new_selector[0], f'By.xpath("{new_selector[1]}")')
-            
+
             new_line = f'val {element_name} = {by_method}'
-            
+
             # Replace
             replacement = f'{comment}    {new_line}'
             new_content = re.sub(old_pattern, replacement, content)
-            
+
             file_path.write_text(new_content)
-            
+
             return UpdateResult(
                 success=True,
                 file_path=file_path,
@@ -224,7 +223,7 @@ class FileUpdater:
                 new_selector=new_selector,
                 backup_path=backup_path
             )
-        
+
         except Exception as e:
             return UpdateResult(
                 success=False,
@@ -233,7 +232,7 @@ class FileUpdater:
                 new_selector=new_selector,
                 error_message=str(e)
             )
-    
+
     def _update_swift_file(
         self,
         file_path: Path,
@@ -245,16 +244,16 @@ class FileUpdater:
         """Update Swift Page Object file"""
         try:
             content = file_path.read_text()
-            
+
             # Create backup
             backup_path = None
             if self.create_backup:
                 backup_path = file_path.with_suffix(f'.swift.bak.{int(datetime.now().timestamp())}')
                 backup_path.write_text(content)
-            
+
             # Swift pattern: var elementName: XCUIElement { app.buttons["value"] }
             old_pattern = f'var\\s+{element_name}.*?"{re.escape(old_selector[1])}"'
-            
+
             match = re.search(old_pattern, content, re.DOTALL)
             if not match:
                 return UpdateResult(
@@ -264,7 +263,7 @@ class FileUpdater:
                     new_selector=new_selector,
                     error_message=f"Selector pattern not found: {element_name}"
                 )
-            
+
             # Generate healing comment
             timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             comment = (
@@ -272,26 +271,26 @@ class FileUpdater:
                 f"    // Original: {old_selector} - element not found\n"
                 f"    // New: {new_selector[0]} strategy, confidence: {confidence:.2f}\n"
             )
-            
+
             # Build new selector
-            element_type_map = {
-                'button': 'buttons',
-                'textfield': 'textFields',
-                'label': 'staticTexts'
-            }
-            
+            # element_type_map = {  # Unused
+            #     'button': 'buttons',
+            #     'textfield': 'textFields',
+            #     'label': 'staticTexts'
+            # }
+
             # Simplified - use identifier if available
             if new_selector[0] == 'accessibility_id':
                 new_line = f'var {element_name}: XCUIElement {{ app.buttons.matching(identifier: "{new_selector[1]}").firstMatch }}'
             else:
                 new_line = f'var {element_name}: XCUIElement {{ app.descendants(matching: .any)["{new_selector[1]}"].firstMatch }}'
-            
+
             # Replace
             replacement = f'{comment}    {new_line}'
             new_content = re.sub(old_pattern, replacement, content, flags=re.DOTALL)
-            
+
             file_path.write_text(new_content)
-            
+
             return UpdateResult(
                 success=True,
                 file_path=file_path,
@@ -299,7 +298,7 @@ class FileUpdater:
                 new_selector=new_selector,
                 backup_path=backup_path
             )
-        
+
         except Exception as e:
             return UpdateResult(
                 success=False,
@@ -308,57 +307,56 @@ class FileUpdater:
                 new_selector=new_selector,
                 error_message=str(e)
             )
-    
+
     def restore_backup(self, backup_path: Path) -> bool:
         """
         Restore file from backup
-        
+
         Args:
             backup_path: Path to backup file
-        
+
         Returns:
             True if restored successfully
         """
         try:
             if not backup_path.exists():
                 return False
-            
+
             # Get original file path
             original_path = Path(str(backup_path).split('.bak.')[0])
-            
+
             # Restore
             content = backup_path.read_text()
             original_path.write_text(content)
-            
+
             # Delete backup
             backup_path.unlink()
-            
+
             return True
-        
+
         except Exception as e:
             print(f"Error restoring backup: {e}")
             return False
-    
+
     def batch_update(
         self,
         updates: List[tuple]
     ) -> List[UpdateResult]:
         """
         Perform batch updates
-        
+
         Args:
             updates: List of (file_path, element_name, old_selector, new_selector, confidence) tuples
-        
+
         Returns:
             List of UpdateResults
         """
         results = []
-        
+
         for file_path, element_name, old_selector, new_selector, confidence in updates:
             result = self.update_selector(
                 file_path, element_name, old_selector, new_selector, confidence
             )
             results.append(result)
-        
-        return results
 
+        return results

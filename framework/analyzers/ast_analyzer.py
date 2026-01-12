@@ -117,7 +117,7 @@ class ASTAnalyzer:
         num_returns = sum(1 for n in ast.walk(node) if isinstance(n, ast.Return))
         # Check if ast.Match exists (Python 3.10+)
         match_types = (ast.If, ast.IfExp)
-        if hasattr(ast, 'Match'):
+        if hasattr(ast, "Match"):
             match_types = (ast.If, ast.IfExp, ast.Match)  # type: ignore
         num_branches = sum(1 for n in ast.walk(node) if isinstance(n, match_types))
         num_loops = sum(1 for n in ast.walk(node) if isinstance(n, (ast.For, ast.While, ast.AsyncFor)))
@@ -126,7 +126,12 @@ class ASTAnalyzer:
         nested_depth = self._calculate_nested_depth(node)
 
         # Count lines
-        if hasattr(node, "end_lineno") and hasattr(node, "lineno") and node.end_lineno is not None and node.lineno is not None:
+        if (
+            hasattr(node, "end_lineno")
+            and hasattr(node, "lineno")
+            and node.end_lineno is not None
+            and node.lineno is not None
+        ):
             loc = node.end_lineno - node.lineno + 1
         else:
             loc = 0

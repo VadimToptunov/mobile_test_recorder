@@ -6,7 +6,6 @@ Test Business Logic Analyzer v2.0 Features
 from pathlib import Path
 from framework.analyzers.business_logic_analyzer import (
     BusinessLogicAnalyzer,
-    BusinessRuleType,
     StateMachine,
     EdgeCase
 )
@@ -15,7 +14,7 @@ from framework.analyzers.business_logic_analyzer import (
 def test_platform_detection():
     """Test Android/iOS platform detection"""
     print("\n=== Testing Platform Detection ===")
-    
+
     # Test Android detection
     android_path = Path("/Users/voptunov/MobileProjects/android-mono/demo/src/main/java/isx/financial/demo")
     if android_path.exists():
@@ -24,7 +23,7 @@ def test_platform_detection():
         assert analyzer.platform == "android"
     else:
         print(f"⚠️  Android project not found at {android_path}")
-    
+
     # Test iOS detection (simulated)
     print("✅ iOS detection logic implemented")
 
@@ -32,9 +31,9 @@ def test_platform_detection():
 def test_edge_case_detection():
     """Test edge case detection"""
     print("\n=== Testing Edge Case Detection ===")
-    
-    analyzer = BusinessLogicAnalyzer(Path("."))
-    
+
+    # analyzer =  # Unused BusinessLogicAnalyzer(Path("."))
+
     # Simulate detection
     edge_case = EdgeCase(
         type="boundary",
@@ -42,7 +41,7 @@ def test_edge_case_detection():
         test_data=[-1, 0, 1],
         severity="high"
     )
-    
+
     print(f"✅ Edge case structure: {edge_case.type}")
     print(f"   Description: {edge_case.description}")
     print(f"   Test data: {edge_case.test_data}")
@@ -52,7 +51,7 @@ def test_edge_case_detection():
 def test_state_machine_extraction():
     """Test state machine extraction"""
     print("\n=== Testing State Machine Extraction ===")
-    
+
     state_machine = StateMachine(
         name="AuthenticationState",
         states=["Idle", "Loading", "Authenticated", "Error"],
@@ -66,11 +65,11 @@ def test_state_machine_extraction():
         final_states=["Authenticated"],
         source_file="LoginViewModel.kt"
     )
-    
+
     print(f"✅ State machine: {state_machine.name}")
     print(f"   States: {', '.join(state_machine.states)}")
     print(f"   Initial: {state_machine.initial_state}")
-    print(f"   Transitions:")
+    print("   Transitions:")
     for from_state, to_states in state_machine.transitions.items():
         if to_states:
             print(f"     {from_state} → {', '.join(to_states)}")
@@ -79,7 +78,7 @@ def test_state_machine_extraction():
 def test_negative_test_generation():
     """Test negative test case generation"""
     print("\n=== Testing Negative Test Generation ===")
-    
+
     negative_test = {
         'name': "Negative: Login - Invalid Input",
         'type': 'negative',
@@ -87,7 +86,7 @@ def test_negative_test_generation():
         'expected_outcome': "Show error message",
         'priority': 'high'
     }
-    
+
     print(f"✅ Negative test: {negative_test['name']}")
     print(f"   Type: {negative_test['type']}")
     print(f"   Priority: {negative_test['priority']}")
@@ -97,16 +96,16 @@ def test_negative_test_generation():
 def test_export_format():
     """Test v2.0 export format"""
     print("\n=== Testing Export Format ===")
-    
+
     analyzer = BusinessLogicAnalyzer(Path("."))
     export_data = analyzer.export_to_json()
-    
+
     # Check new fields
     assert 'platform' in export_data
     assert 'state_machines' in export_data
     assert 'edge_cases' in export_data
     assert 'negative_test_cases' in export_data
-    
+
     print("✅ Export contains 'platform'")
     print("✅ Export contains 'state_machines'")
     print("✅ Export contains 'edge_cases'")
@@ -119,14 +118,14 @@ def main():
     print("=" * 60)
     print("Business Logic Analyzer v2.0 - Feature Tests")
     print("=" * 60)
-    
+
     try:
         test_platform_detection()
         test_edge_case_detection()
         test_state_machine_extraction()
         test_negative_test_generation()
         test_export_format()
-        
+
         print("\n" + "=" * 60)
         print("✅ ALL TESTS PASSED")
         print("=" * 60)
@@ -137,7 +136,7 @@ def main():
         print("  ✅ Negative test generation")
         print("  ✅ Export format (backward compatible)")
         print("\nReady for production use!")
-        
+
     except Exception as e:
         print(f"\n❌ TEST FAILED: {e}")
         import traceback
@@ -147,4 +146,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

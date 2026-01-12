@@ -6,7 +6,7 @@ Analyzes apps for common security issues and vulnerabilities.
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import List, Set
+from typing import List
 from pathlib import Path
 import re
 
@@ -36,68 +36,68 @@ class SecurityAnalyzer:
     """
     Analyzes mobile applications for security vulnerabilities
     """
-    
+
     def __init__(self, project_root: Path):
         """
         Initialize security analyzer
-        
+
         Args:
             project_root: Project root directory
         """
         self.project_root = project_root
         self.issues: List[SecurityIssue] = []
-    
+
     def analyze(self, platform: str = "android") -> List[SecurityIssue]:
         """
         Perform comprehensive security analysis
-        
+
         Args:
             platform: Target platform ("android" or "ios")
-        
+
         Returns:
             List of security issues found
         """
         self.issues = []
-        
+
         if platform == "android":
             self._analyze_android()
         elif platform == "ios":
             self._analyze_ios()
-        
+
         return sorted(self.issues, key=lambda i: (i.severity.value, i.title))
-    
+
     def _analyze_android(self):
         """Android-specific security checks"""
         # Check hardcoded secrets
         self._check_hardcoded_secrets("kotlin")
         self._check_hardcoded_secrets("java")
-        
+
         # Check insecure network config
         self._check_network_security_config()
-        
+
         # Check exported components
         self._check_exported_components()
-        
+
         # Check weak crypto
         self._check_weak_cryptography()
-        
+
         # Check debug flags
         self._check_debug_flags()
-    
+
     def _analyze_ios(self):
         """iOS-specific security checks"""
         # Check hardcoded secrets
         self._check_hardcoded_secrets("swift")
-        
+
         # Check Info.plist security
         self._check_info_plist()
-        
+
         # Check keychain usage
         self._check_keychain_usage()
-        
+
         # Check weak crypto
         self._check_weak_cryptography()
-    
+
     def _check_hardcoded_secrets(self, language: str):
         """Check for hardcoded API keys, passwords, etc."""
         patterns = {
@@ -106,22 +106,22 @@ class SecurityAnalyzer:
             'token': r'token\s*=\s*["\']([^"\']+)["\']',
             'secret': r'secret\s*=\s*["\']([^"\']+)["\']',
         }
-        
+
         extensions = {
             'kotlin': ['.kt'],
             'java': ['.java'],
             'swift': ['.swift']
         }
-        
+
         for ext in extensions.get(language, []):
             for file in self.project_root.rglob(f'*{ext}'):
                 if not file.is_file():
                     continue
-                
+
                 try:
                     content = file.read_text()
                     lines = content.split('\n')
-                    
+
                     for line_num, line in enumerate(lines, 1):
                         for secret_type, pattern in patterns.items():
                             if re.search(pattern, line, re.IGNORECASE):
@@ -136,11 +136,11 @@ class SecurityAnalyzer:
                                 ))
                 except Exception:
                     pass
-    
+
     def _check_network_security_config(self):
         """Check Android network security configuration"""
         config_file = self.project_root / "app" / "src" / "main" / "res" / "xml" / "network_security_config.xml"
-        
+
         if not config_file.exists():
             self.issues.append(SecurityIssue(
                 severity=SeverityLevel.MEDIUM,
@@ -150,10 +150,10 @@ class SecurityAnalyzer:
                 recommendation="Add network security configuration with certificate pinning"
             ))
             return
-        
+
         try:
             content = config_file.read_text()
-            
+
             # Check for cleartext traffic
             if 'cleartextTrafficPermitted="true"' in content:
                 self.issues.append(SecurityIssue(
@@ -166,17 +166,17 @@ class SecurityAnalyzer:
                 ))
         except Exception:
             pass
-    
+
     def _check_exported_components(self):
         """Check for exported Android components"""
         manifest = self.project_root / "app" / "src" / "main" / "AndroidManifest.xml"
-        
+
         if not manifest.exists():
             return
-        
+
         try:
             content = manifest.read_text()
-            
+
             if 'android:exported="true"' in content:
                 self.issues.append(SecurityIssue(
                     severity=SeverityLevel.MEDIUM,
@@ -187,19 +187,19 @@ class SecurityAnalyzer:
                 ))
         except Exception:
             pass
-    
+
     def _check_weak_cryptography(self):
         """Check for weak cryptographic algorithms"""
         weak_algorithms = ['MD5', 'SHA1', 'DES', 'RC4']
-        
+
         for file in self.project_root.rglob('*.kt'):
             if not file.is_file():
                 continue
-            
+
             try:
                 content = file.read_text()
                 lines = content.split('\n')
-                
+
                 for line_num, line in enumerate(lines, 1):
                     for algorithm in weak_algorithms:
                         if re.search(rf'\b{algorithm}\b', line, re.IGNORECASE):
@@ -214,20 +214,20 @@ class SecurityAnalyzer:
                             ))
             except Exception:
                 pass
-    
+
     def _check_debug_flags(self):
         """Check for debug flags in production builds"""
         gradle_file = self.project_root / "app" / "build.gradle.kts"
-        
+
         if not gradle_file.exists():
             gradle_file = self.project_root / "app" / "build.gradle"
-        
+
         if not gradle_file.exists():
             return
-        
+
         try:
             content = gradle_file.read_text()
-            
+
             if 'debuggable true' in content or 'debuggable = true' in content:
                 self.issues.append(SecurityIssue(
                     severity=SeverityLevel.CRITICAL,
@@ -238,17 +238,17 @@ class SecurityAnalyzer:
                 ))
         except Exception:
             pass
-    
+
     def _check_info_plist(self):
         """Check iOS Info.plist security settings"""
         info_plist = self.project_root / "Info.plist"
-        
+
         if not info_plist.exists():
             return
-        
+
         try:
             content = info_plist.read_text()
-            
+
             # Check for NSAppTransportSecurity
             if 'NSAllowsArbitraryLoads' in content:
                 self.issues.append(SecurityIssue(
@@ -260,16 +260,16 @@ class SecurityAnalyzer:
                 ))
         except Exception:
             pass
-    
+
     def _check_keychain_usage(self):
         """Check iOS Keychain usage"""
         for file in self.project_root.rglob('*.swift'):
             if not file.is_file():
                 continue
-            
+
             try:
                 content = file.read_text()
-                
+
                 # Check for insecure keychain access
                 if 'kSecAttrAccessibleAlways' in content:
                     self.issues.append(SecurityIssue(
@@ -281,15 +281,15 @@ class SecurityAnalyzer:
                     ))
             except Exception:
                 pass
-    
+
     def generate_report(self) -> str:
         """Generate security analysis report"""
         if not self.issues:
             return "No security issues found."
-        
+
         report = "SECURITY ANALYSIS REPORT\n"
         report += "=" * 80 + "\n\n"
-        
+
         # Group by severity
         by_severity = {}
         for issue in self.issues:
@@ -297,13 +297,13 @@ class SecurityAnalyzer:
             if severity not in by_severity:
                 by_severity[severity] = []
             by_severity[severity].append(issue)
-        
+
         for severity in ['critical', 'high', 'medium', 'low', 'info']:
             if severity in by_severity:
                 issues = by_severity[severity]
                 report += f"\n{severity.upper()} ({len(issues)} issues):\n"
                 report += "-" * 80 + "\n"
-                
+
                 for issue in issues:
                     report += f"\n{issue.title}\n"
                     report += f"  File: {issue.file}"
@@ -315,9 +315,8 @@ class SecurityAnalyzer:
                         report += f"  Recommendation: {issue.recommendation}\n"
                     if issue.cwe_id:
                         report += f"  CWE: {issue.cwe_id}\n"
-        
+
         report += "\n" + "=" * 80 + "\n"
         report += f"Total issues: {len(self.issues)}\n"
-        
-        return report
 
+        return report

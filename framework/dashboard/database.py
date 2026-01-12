@@ -8,7 +8,6 @@ import sqlite3
 from pathlib import Path
 from typing import List, Optional
 from datetime import datetime, timedelta
-import json
 
 from .models import (
     TestResult, TestHealth, HealedSelector,
@@ -18,25 +17,25 @@ from .models import (
 
 class DashboardDB:
     """Database for dashboard data"""
-    
+
     def __init__(self, db_path: Path):
         """
         Initialize database
-        
+
         Args:
             db_path: Path to SQLite database file
         """
         self.db_path = db_path
         self.conn = None
         self._init_db()
-    
+
     def _init_db(self):
         """Initialize database schema"""
         self.conn = sqlite3.connect(self.db_path, check_same_thread=False)
         self.conn.row_factory = sqlite3.Row
-        
+
         cursor = self.conn.cursor()
-        
+
         # Test results table
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS test_results (
@@ -49,7 +48,7 @@ class DashboardDB:
                 error_message TEXT
             )
         """)
-        
+
         # Healed selectors table
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS healed_selectors (
@@ -69,14 +68,14 @@ class DashboardDB:
                 test_passes_after INTEGER DEFAULT 0
             )
         """)
-        
+
         # Create indexes
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_test_results_name ON test_results(name)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_test_results_timestamp ON test_results(timestamp)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_healed_selectors_status ON healed_selectors(status)")
-        
+
         self.conn.commit()
-    
+
     def add_test_result(self, result: TestResult):
         """Add test result to database"""
         cursor = self.conn.cursor()
@@ -93,7 +92,7 @@ class DashboardDB:
             result.error_message
         ))
         self.conn.commit()
-    
+
     def get_test_results(
         self,
         limit: int = 100,
@@ -102,23 +101,23 @@ class DashboardDB:
     ) -> List[TestResult]:
         """Get test results"""
         cursor = self.conn.cursor()
-        
+
         query = "SELECT * FROM test_results WHERE 1=1"
         params = []
-        
+
         if status:
             query += " AND status = ?"
             params.append(status.value)
-        
+
         if since:
             query += " AND timestamp >= ?"
             params.append(since.isoformat())
-        
+
         query += " ORDER BY timestamp DESC LIMIT ?"
         params.append(limit)
-        
+
         cursor.execute(query, params)
-        
+
         results = []
         for row in cursor.fetchall():
             results.append(TestResult(
@@ -130,16 +129,16 @@ class DashboardDB:
                 file_path=row['file_path'],
                 error_message=row['error_message']
             ))
-        
+
         return results
-    
+
     def get_test_health(self, days: int = 30) -> List[TestHealth]:
         """Calculate test health metrics"""
         since = datetime.now() - timedelta(days=days)
-        
+
         cursor = self.conn.cursor()
         cursor.execute("""
-            SELECT 
+            SELECT
                 name,
                 COUNT(*) as total_runs,
                 SUM(CASE WHEN status = 'passed' THEN 1 ELSE 0 END) as passed,
@@ -150,23 +149,23 @@ class DashboardDB:
             WHERE timestamp >= ?
             GROUP BY name
         """, (since.isoformat(),))
-        
+
         health_list = []
         for row in cursor.fetchall():
             total = row['total_runs']
             passed = row['passed']
             pass_rate = passed / total if total > 0 else 0.0
-            
+
             # Flaky if pass rate between 20% and 80%
             is_flaky = 0.2 < pass_rate < 0.8
-            
+
             # Determine trend (simplified)
             trend = "stable"
             if pass_rate > 0.8:
                 trend = "improving"
             elif pass_rate < 0.5:
                 trend = "degrading"
-            
+
             health_list.append(TestHealth(
                 test_name=row['name'],
                 total_runs=total,
@@ -178,14 +177,14 @@ class DashboardDB:
                 last_failure=datetime.fromisoformat(row['last_failure']) if row['last_failure'] else None,
                 trend=trend
             ))
-        
+
         return health_list
-    
+
     def add_healed_selector(self, selector: HealedSelector):
         """Add healed selector to database"""
         cursor = self.conn.cursor()
         cursor.execute("""
-            INSERT OR REPLACE INTO healed_selectors 
+            INSERT OR REPLACE INTO healed_selectors
             (id, test_name, element_name, file_path, old_selector_type, old_selector_value,
              new_selector_type, new_selector_value, confidence, strategy, status, timestamp,
              test_runs_after, test_passes_after)
@@ -207,14 +206,14 @@ class DashboardDB:
             selector.test_passes_after
         ))
         self.conn.commit()
-    
+
     def get_healed_selectors(
         self,
         status: Optional[HealingStatus] = None
     ) -> List[HealedSelector]:
         """Get healed selectors"""
         cursor = self.conn.cursor()
-        
+
         if status:
             cursor.execute(
                 "SELECT * FROM healed_selectors WHERE status = ? ORDER BY timestamp DESC",
@@ -222,7 +221,7 @@ class DashboardDB:
             )
         else:
             cursor.execute("SELECT * FROM healed_selectors ORDER BY timestamp DESC")
-        
+
         selectors = []
         for row in cursor.fetchall():
             selectors.append(HealedSelector(
@@ -241,9 +240,9 @@ class DashboardDB:
                 test_runs_after=row['test_runs_after'],
                 test_passes_after=row['test_passes_after']
             ))
-        
+
         return selectors
-    
+
     def update_selector_status(
         self,
         selector_id: str,
@@ -257,16 +256,16 @@ class DashboardDB:
         )
         self.conn.commit()
         return cursor.rowcount > 0
-    
+
     def get_selector(self, selector_id: str) -> Optional[HealedSelector]:
         """Get single healed selector"""
         cursor = self.conn.cursor()
         cursor.execute("SELECT * FROM healed_selectors WHERE id = ?", (selector_id,))
-        
+
         row = cursor.fetchone()
         if not row:
             return None
-        
+
         return HealedSelector(
             id=row['id'],
             test_name=row['test_name'],
@@ -283,9 +282,8 @@ class DashboardDB:
             test_runs_after=row['test_runs_after'],
             test_passes_after=row['test_passes_after']
         )
-    
+
     def close(self):
         """Close database connection"""
         if self.conn:
             self.conn.close()
-

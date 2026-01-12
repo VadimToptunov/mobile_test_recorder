@@ -5,7 +5,7 @@ FastAPI-based web server for test maintenance dashboard.
 """
 
 from fastapi import FastAPI, HTTPException
-from fastapi.staticfiles import StaticFiles
+
 from fastapi.responses import HTMLResponse, JSONResponse
 from pathlib import Path
 from typing import Optional
@@ -19,11 +19,11 @@ class DashboardServer:
     """
     Web server for maintenance dashboard
     """
-    
+
     def __init__(self, repo_path: Path, db_path: Optional[Path] = None):
         """
         Initialize dashboard server
-        
+
         Args:
             repo_path: Path to repository root
             db_path: Path to SQLite database (defaults to repo/.dashboard.db)
@@ -31,34 +31,34 @@ class DashboardServer:
         self.repo_path = repo_path
         self.db_path = db_path or (repo_path / '.dashboard.db')
         self.db = DashboardDB(self.db_path)
-        
+
         # Create FastAPI app
         self.app = FastAPI(title="Test Maintenance Dashboard")
         self._setup_routes()
-    
+
     def _setup_routes(self):
         """Setup API routes"""
-        
+
         @self.app.get("/")
         async def root():
             """Serve main dashboard page"""
             return HTMLResponse(self._get_dashboard_html())
-        
+
         @self.app.get("/api/stats")
         async def get_stats():
             """Get dashboard statistics"""
             health = self.db.get_test_health(days=30)
-            
+
             total_tests = len(health)
             passing = len([h for h in health if h.pass_rate >= 0.8])
             failing = len([h for h in health if h.pass_rate < 0.5])
             flaky = len([h for h in health if h.is_flaky])
-            
+
             pending_selectors = len(self.db.get_healed_selectors(HealingStatus.PENDING))
             approved_selectors = len(self.db.get_healed_selectors(HealingStatus.APPROVED))
-            
+
             avg_pass_rate = sum(h.pass_rate for h in health) / total_tests if total_tests > 0 else 0.0
-            
+
             stats = DashboardStats(
                 total_tests=total_tests,
                 passing_tests=passing,
@@ -68,67 +68,67 @@ class DashboardServer:
                 healed_selectors_approved=approved_selectors,
                 avg_pass_rate=avg_pass_rate
             )
-            
+
             return JSONResponse(stats.to_dict())
-        
+
         @self.app.get("/api/tests")
         async def get_tests(limit: int = 100, status: Optional[str] = None):
             """Get test results"""
             test_status = TestStatus(status) if status else None
             results = self.db.get_test_results(limit=limit, status=test_status)
             return JSONResponse([r.to_dict() for r in results])
-        
+
         @self.app.get("/api/tests/health")
         async def get_test_health(days: int = 30):
             """Get test health metrics"""
             health = self.db.get_test_health(days=days)
             return JSONResponse([h.to_dict() for h in health])
-        
+
         @self.app.get("/api/selectors")
         async def get_selectors(status: Optional[str] = None):
             """Get healed selectors"""
             selector_status = HealingStatus(status) if status else None
             selectors = self.db.get_healed_selectors(status=selector_status)
             return JSONResponse([s.to_dict() for s in selectors])
-        
+
         @self.app.post("/api/selectors/{selector_id}/approve")
         async def approve_selector(selector_id: str):
             """Approve healed selector"""
             selector = self.db.get_selector(selector_id)
             if not selector:
                 raise HTTPException(status_code=404, detail="Selector not found")
-            
+
             # Update status
             success = self.db.update_selector_status(selector_id, HealingStatus.APPROVED)
             if not success:
                 raise HTTPException(status_code=500, detail="Failed to update status")
-            
+
             # In real implementation, this would trigger actual file update and git commit
             # For now, just return success
             return JSONResponse({"status": "approved", "selector_id": selector_id})
-        
+
         @self.app.post("/api/selectors/{selector_id}/reject")
         async def reject_selector(selector_id: str):
             """Reject healed selector"""
             selector = self.db.get_selector(selector_id)
             if not selector:
                 raise HTTPException(status_code=404, detail="Selector not found")
-            
+
             success = self.db.update_selector_status(selector_id, HealingStatus.REJECTED)
             if not success:
                 raise HTTPException(status_code=500, detail="Failed to update status")
-            
+
             return JSONResponse({"status": "rejected", "selector_id": selector_id})
-        
+
         @self.app.get("/api/selectors/{selector_id}")
         async def get_selector(selector_id: str):
             """Get single selector"""
             selector = self.db.get_selector(selector_id)
             if not selector:
                 raise HTTPException(status_code=404, detail="Selector not found")
-            
+
             return JSONResponse(selector.to_dict())
-    
+
     def _get_dashboard_html(self) -> str:
         """Generate dashboard HTML"""
         return """
@@ -177,7 +177,7 @@ class DashboardServer:
     <div class="container" x-data="dashboard()">
         <h1>Test Maintenance Dashboard</h1>
         <p class="subtitle">Monitor test health and review healed selectors</p>
-        
+
         <!-- Stats -->
         <div class="stats">
             <div class="stat-card">
@@ -197,7 +197,7 @@ class DashboardServer:
                 <div class="stat-label">Pending Review</div>
             </div>
         </div>
-        
+
         <!-- Tabs -->
         <div class="tabs">
             <button class="tab" :class="{ 'active': activeTab === 'health' }" @click="activeTab = 'health'">
@@ -210,7 +210,7 @@ class DashboardServer:
                 History
             </button>
         </div>
-        
+
         <!-- Test Health Tab -->
         <div x-show="activeTab === 'health'" class="card">
             <h2 style="margin-bottom: 20px;">Test Health (Last 30 days)</h2>
@@ -230,8 +230,8 @@ class DashboardServer:
                             <td x-text="test.test_name"></td>
                             <td x-text="test.total_runs"></td>
                             <td>
-                                <span :class="{'badge-success': test.pass_rate >= 0.8, 'badge-danger': test.pass_rate < 0.5, 'badge-warning': test.pass_rate >= 0.5 && test.pass_rate < 0.8}" 
-                                      class="badge" 
+                                <span :class="{'badge-success': test.pass_rate >= 0.8, 'badge-danger': test.pass_rate < 0.5, 'badge-warning': test.pass_rate >= 0.5 && test.pass_rate < 0.8}"
+                                      class="badge"
                                       x-text="(test.pass_rate * 100).toFixed(0) + '%'"></span>
                             </td>
                             <td x-text="test.avg_duration.toFixed(2) + 's'"></td>
@@ -245,7 +245,7 @@ class DashboardServer:
                 </tbody>
             </table>
         </div>
-        
+
         <!-- Healed Selectors Tab -->
         <div x-show="activeTab === 'selectors'" class="card">
             <h2 style="margin-bottom: 20px;">Healed Selectors Pending Review</h2>
@@ -255,28 +255,28 @@ class DashboardServer:
                         <div style="flex: 1;">
                             <h3 style="margin-bottom: 10px;" x-text="selector.test_name"></h3>
                             <p style="color: #7f8c8d; margin-bottom: 15px;" x-text="'Element: ' + selector.element_name"></p>
-                            
+
                             <div class="selector-detail">
                                 <strong>Old:</strong> <span x-text="selector.old_selector.type"></span>: "<span x-text="selector.old_selector.value"></span>"
                             </div>
                             <div class="selector-detail">
                                 <strong>New:</strong> <span x-text="selector.new_selector.type"></span>: "<span x-text="selector.new_selector.value"></span>"
                             </div>
-                            
+
                             <p style="margin-top: 10px;">
-                                <span class="confidence" 
+                                <span class="confidence"
                                       :class="{'confidence-high': selector.confidence >= 0.8, 'confidence-medium': selector.confidence >= 0.6, 'confidence-low': selector.confidence < 0.6}">
                                     Confidence: <span x-text="(selector.confidence * 100).toFixed(0) + '%'"></span>
                                 </span>
                                 <span style="margin-left: 20px; color: #7f8c8d;">Strategy: <span x-text="selector.strategy"></span></span>
                             </p>
-                            
+
                             <p x-show="selector.test_runs_after > 0" style="margin-top: 10px; color: #27ae60;">
                                 Test runs after healing: <span x-text="selector.test_passes_after + '/' + selector.test_runs_after"></span>
                                 (<span x-text="(selector.success_rate * 100).toFixed(0) + '%'"></span>)
                             </p>
                         </div>
-                        
+
                         <div style="display: flex; gap: 10px;">
                             <button class="btn btn-success" @click="approveSelector(selector.id)">Approve</button>
                             <button class="btn btn-danger" @click="rejectSelector(selector.id)">Reject</button>
@@ -288,7 +288,7 @@ class DashboardServer:
                 No selectors pending review
             </p>
         </div>
-        
+
         <!-- History Tab -->
         <div x-show="activeTab === 'history'" class="card">
             <h2 style="margin-bottom: 20px;">Recent Test Results</h2>
@@ -306,8 +306,8 @@ class DashboardServer:
                         <tr>
                             <td x-text="result.name"></td>
                             <td>
-                                <span :class="{'badge-success': result.status === 'passed', 'badge-danger': result.status === 'failed', 'badge-warning': result.status === 'skipped'}" 
-                                      class="badge" 
+                                <span :class="{'badge-success': result.status === 'passed', 'badge-danger': result.status === 'failed', 'badge-warning': result.status === 'skipped'}"
+                                      class="badge"
                                       x-text="result.status"></span>
                             </td>
                             <td x-text="result.duration.toFixed(2) + 's'"></td>
@@ -318,7 +318,7 @@ class DashboardServer:
             </table>
         </div>
     </div>
-    
+
     <script>
         function dashboard() {
             return {
@@ -327,13 +327,13 @@ class DashboardServer:
                 testHealth: [],
                 pendingSelectors: [],
                 testResults: [],
-                
+
                 async init() {
                     await this.loadData();
                     // Refresh every 30 seconds
                     setInterval(() => this.loadData(), 30000);
                 },
-                
+
                 async loadData() {
                     try {
                         const [statsRes, healthRes, selectorsRes, resultsRes] = await Promise.all([
@@ -342,7 +342,7 @@ class DashboardServer:
                             fetch('/api/selectors?status=pending'),
                             fetch('/api/tests?limit=50')
                         ]);
-                        
+
                         this.stats = await statsRes.json();
                         this.testHealth = await healthRes.json();
                         this.pendingSelectors = await selectorsRes.json();
@@ -351,7 +351,7 @@ class DashboardServer:
                         console.error('Error loading data:', error);
                     }
                 },
-                
+
                 async approveSelector(id) {
                     try {
                         await fetch(`/api/selectors/${id}/approve`, { method: 'POST' });
@@ -361,7 +361,7 @@ class DashboardServer:
                         alert('Error approving selector');
                     }
                 },
-                
+
                 async rejectSelector(id) {
                     if (!confirm('Are you sure you want to reject this selector?')) return;
                     try {
@@ -378,19 +378,18 @@ class DashboardServer:
 </body>
 </html>
         """
-    
+
     def run(self, host: str = "0.0.0.0", port: int = 8080):
         """
         Start dashboard server
-        
+
         Args:
             host: Host to bind to
             port: Port to listen on
         """
-        print(f"\nStarting Test Maintenance Dashboard...")
+        print("\nStarting Test Maintenance Dashboard...")
         print(f"URL: http://localhost:{port}")
         print(f"Database: {self.db_path}")
-        print(f"\nPress Ctrl+C to stop\n")
-        
-        uvicorn.run(self.app, host=host, port=port)
+        print("\nPress Ctrl+C to stop\n")
 
+        uvicorn.run(self.app, host=host, port=port)

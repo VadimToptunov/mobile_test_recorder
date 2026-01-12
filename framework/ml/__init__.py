@@ -29,4 +29,3 @@ __all__ = [
     'UniversalModelBuilder',
     'create_universal_pretrained_model',
 ]
-

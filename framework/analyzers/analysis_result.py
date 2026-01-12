@@ -57,20 +57,19 @@ class APIEndpointCandidate(BaseModel):
 class AnalysisResult(BaseModel):
     """
     Complete static analysis result
-    
+
     Contains hypotheses about app structure discovered from source code.
     """
     platform: str  # "android" or "ios"
     source_path: str
-    
+
     screens: List[ScreenCandidate] = Field(default_factory=list)
     ui_elements: List[UIElementCandidate] = Field(default_factory=list)
     navigation: List[NavigationCandidate] = Field(default_factory=list)
     api_endpoints: List[APIEndpointCandidate] = Field(default_factory=list)
-    
+
     files_analyzed: int = 0
     errors: List[str] = Field(default_factory=list)
     warnings: List[str] = Field(default_factory=list)
-    
-    metadata: Dict[str, Any] = Field(default_factory=dict)
 
+    metadata: Dict[str, Any] = Field(default_factory=dict)

@@ -13,4 +13,3 @@ __all__ = [
     "generate_feature_file",
     "generate_step_definitions",
 ]
-

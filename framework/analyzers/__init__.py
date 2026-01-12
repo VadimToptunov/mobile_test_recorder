@@ -8,4 +8,3 @@ from framework.analyzers.android_analyzer import AndroidAnalyzer
 from framework.analyzers.analysis_result import AnalysisResult
 
 __all__ = ['AndroidAnalyzer', 'AnalysisResult']
-

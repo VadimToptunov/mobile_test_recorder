@@ -9,4 +9,3 @@ from framework.selectors.selector_scorer import SelectorScorer
 from framework.selectors.selector_builder import SelectorBuilder
 
 __all__ = ['SelectorOptimizer', 'SelectorScorer', 'SelectorBuilder']
-

@@ -33,16 +33,16 @@ class ChangeAnalyzer:
     """
     Analyzes code changes to identify affected files
     """
-    
+
     def __init__(self, repo_path: Path):
         """
         Initialize change analyzer
-        
+
         Args:
             repo_path: Path to git repository
         """
         self.repo_path = repo_path
-    
+
     def get_changes(
         self,
         base_branch: str = "main",
@@ -51,34 +51,34 @@ class ChangeAnalyzer:
     ) -> List[FileChange]:
         """
         Get list of changed files
-        
+
         Args:
             base_branch: Base branch to compare against
             target_branch: Target branch/commit
             include_untracked: Include untracked files
-        
+
         Returns:
             List of file changes
         """
         changes = []
-        
+
         try:
             # Get diff with base branch
             result = subprocess.run(
-                ["git", "diff", "--name-status", f"{base_branch}...{target_branch}"],
+                ["git", "dif", "--name-status", f"{base_branch}...{target_branch}"],
                 cwd=self.repo_path,
                 capture_output=True,
                 text=True,
                 check=True
             )
-            
+
             for line in result.stdout.strip().split('\n'):
                 if not line:
                     continue
-                
+
                 parts = line.split('\t')
                 status = parts[0]
-                
+
                 if status.startswith('M'):
                     # Modified
                     file_path = Path(parts[1])
@@ -112,22 +112,22 @@ class ChangeAnalyzer:
                         change_type=ChangeType.RENAMED,
                         old_path=old_path
                     ))
-            
+
             # Include staged changes
             if target_branch == "HEAD":
                 staged = self._get_staged_changes()
                 changes.extend(staged)
-            
+
             # Include untracked files if requested
             if include_untracked:
                 untracked = self._get_untracked_files()
                 changes.extend(untracked)
-        
+
         except subprocess.CalledProcessError as e:
             print(f"Warning: Git command failed: {e}")
-        
+
         return changes
-    
+
     def _get_file_stats(
         self,
         file_path: Path,
@@ -137,13 +137,13 @@ class ChangeAnalyzer:
         """Get added/deleted line counts for a file"""
         try:
             result = subprocess.run(
-                ["git", "diff", "--numstat", f"{base_branch}...{target_branch}", "--", str(file_path)],
+                ["git", "dif", "--numstat", f"{base_branch}...{target_branch}", "--", str(file_path)],
                 cwd=self.repo_path,
                 capture_output=True,
                 text=True,
                 check=True
             )
-            
+
             if result.stdout.strip():
                 parts = result.stdout.strip().split('\t')
                 return {
@@ -152,29 +152,29 @@ class ChangeAnalyzer:
                 }
         except Exception:
             pass
-        
+
         return {'added': 0, 'deleted': 0}
-    
+
     def _get_staged_changes(self) -> List[FileChange]:
         """Get staged changes"""
         changes = []
-        
+
         try:
             result = subprocess.run(
-                ["git", "diff", "--cached", "--name-status"],
+                ["git", "dif", "--cached", "--name-status"],
                 cwd=self.repo_path,
                 capture_output=True,
                 text=True,
                 check=True
             )
-            
+
             for line in result.stdout.strip().split('\n'):
                 if not line:
                     continue
-                
+
                 parts = line.split('\t')
                 status = parts[0]
-                
+
                 if status.startswith('M'):
                     changes.append(FileChange(
                         path=Path(parts[1]),
@@ -192,13 +192,13 @@ class ChangeAnalyzer:
                     ))
         except Exception:
             pass
-        
+
         return changes
-    
+
     def _get_untracked_files(self) -> List[FileChange]:
         """Get untracked files"""
         changes = []
-        
+
         try:
             result = subprocess.run(
                 ["git", "ls-files", "--others", "--exclude-standard"],
@@ -207,7 +207,7 @@ class ChangeAnalyzer:
                 text=True,
                 check=True
             )
-            
+
             for line in result.stdout.strip().split('\n'):
                 if line:
                     changes.append(FileChange(
@@ -216,9 +216,9 @@ class ChangeAnalyzer:
                     ))
         except Exception:
             pass
-        
+
         return changes
-    
+
     def get_changed_directories(self, changes: List[FileChange]) -> Set[Path]:
         """Get set of directories containing changes"""
         directories = set()
@@ -226,7 +226,7 @@ class ChangeAnalyzer:
             if change.change_type != ChangeType.DELETED:
                 directories.add(change.path.parent)
         return directories
-    
+
     def filter_by_extension(
         self,
         changes: List[FileChange],
@@ -234,11 +234,11 @@ class ChangeAnalyzer:
     ) -> List[FileChange]:
         """
         Filter changes by file extension
-        
+
         Args:
             changes: List of changes
             extensions: List of extensions (e.g., ['.py', '.kt', '.swift'])
-        
+
         Returns:
             Filtered changes
         """
@@ -246,4 +246,3 @@ class ChangeAnalyzer:
             change for change in changes
             if change.path.suffix in extensions
         ]
-
