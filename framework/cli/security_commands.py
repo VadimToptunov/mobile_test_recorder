@@ -1,257 +1,289 @@
 """
-Security CLI commands
+Security Scanning CLI Commands
 
-Commands for security analysis and vulnerability scanning.
+Commands for automated security testing.
 """
 
 import click
 from pathlib import Path
-import re
+from typing import Optional
 
-from framework.analysis.security_analyzer import SecurityAnalyzer  # noqa: F401
-from framework.cli.rich_output import print_header, print_info, print_success, print_error, create_progress
 from rich.console import Console
 from rich.table import Table
-import json
+from rich.panel import Panel
+
+from framework.security.scanner import (
+    SecurityScanner,
+    SeverityLevel,
+    SecurityScanResult,
+)
+
 
 console = Console()
 
 
-@click.group(name='security')
+@click.group()
 def security() -> None:
-    """🔒 Security analysis commands"""
+    """
+    Security scanning commands.
+
+    Automated security testing following OWASP Mobile guidelines.
+    """
     pass
 
 
 @security.command()
-@click.option('--source', '-s', 'source_path', required=True,
-              type=click.Path(exists=True), help='Path to source code')
-@click.option('--platform', '-p', type=click.Choice(['android', 'ios']),
-              default='android', help='Platform to analyze')
-@click.option('--output', '-o', type=click.Path(),
-              help='Output file for report (JSON)')
-@click.option('--severity', type=click.Choice(['critical', 'high', 'medium', 'low', 'info']),
-              help='Minimum severity level to report')
-def scan(source_path: str, platform: str, output: str, severity: str) -> None:
-    """Scan source code for security vulnerabilities"""
-    print_header(f"Security Scan ({platform.capitalize()})")
+@click.argument("app_path", type=Path)
+@click.option("--platform", "-p", type=click.Choice(["android", "ios"]), required=True, help="Platform")
+@click.option("--app-name", "-n", required=True, help="Application name")
+@click.option("--app-version", "-v", default="1.0", help="Application version")
+@click.option("--output", "-o", type=Path, help="Output report path")
+@click.option("--format", "-f", type=click.Choice(["json", "html"]), default="json", help="Report format")
+def scan(
+    app_path: Path,
+    platform: str,
+    app_name: str,
+    app_version: str,
+    output: Optional[Path],
+    format: str,
+) -> None:
+    """
+    Scan mobile application for security vulnerabilities.
 
-    source_dir = Path(source_path)
-    print_info(f"Source: {source_dir}")
-    print_info(f"Platform: {platform}")
+    APP_PATH: Path to APK or IPA file
 
-    try:
-        # Run security analysis
-        print_info("\n🔄 Analyzing security...")
+    Example:
+        observe security scan app.apk --platform android --app-name MyApp
+        observe security scan app.ipa --platform ios --app-name MyApp -o report.json
+    """
+    if not app_path.exists():
+        console.print(f"[red]✗[/red] File not found: {app_path}")
+        raise SystemExit(1)
 
-        analyzer = SecurityAnalyzer(project_root=source_dir)  # noqa: F841 - for future use
-        issues = analyzer.analyze(platform=platform)
+    console.print(f"[cyan]→[/cyan] Scanning {app_path}...\n")
 
-        # Filter by severity if specified
-        if severity:
-            severity_order = ['critical', 'high', 'medium', 'low', 'info']
-            min_index = severity_order.index(severity)
-            issues = [i for i in issues if severity_order.index(i.severity.value) <= min_index]
+    scanner = SecurityScanner()
 
-        # Display summary
-        print_info(f"\n📊 Found {len(issues)} security issues")
+    if platform == "android":
+        result = scanner.scan_android(app_path, app_name, app_version)
+    else:
+        result = scanner.scan_ios(app_path, app_name, app_version)
 
-        if not issues:
-            print_success("✅ No security issues found!")
-            return
+    # Print summary
+    _print_summary(result)
 
-        # Count by severity
-        by_severity = {}
-        for issue in issues:
-            sev = issue.severity.value
-            by_severity[sev] = by_severity.get(sev, 0) + 1
+    # Generate report if requested
+    if output:
+        scanner.generate_report(result, output, format)
+        console.print(f"\n[green]✓[/green] Report saved to {output}")
 
-        # Display severity summary
-
-        print_info("\n🎯 By Severity:")
-        for sev in ['critical', 'high', 'medium', 'low', 'info']:
-            if sev in by_severity:
-                count = by_severity[sev]
-                emoji = {'critical': '🔴', 'high': '🟠', 'medium': '🟡', 'low': '🔵', 'info': 'ℹ️'}[sev]
-                print_info(f"  {emoji} {sev.capitalize()}: {count}")
-
-        # Display detailed issues
-        table = Table(title=f"Security Issues ({len(issues)})")
-        table.add_column("Severity", style="bold")
-        table.add_column("Issue", style="cyan")
-        table.add_column("File", style="yellow")
-        table.add_column("Line", style="green")
-
-        for issue in issues[:20]:  # Show top 20
-            severity_icon = {'critical': '🔴', 'high': '🟠', 'medium': '🟡', 'low': '🔵', 'info': 'ℹ️'}[issue.severity.value]
-            table.add_row(
-                f"{severity_icon} {issue.severity.value}",
-                issue.title,
-                str(issue.file.name),
-                str(issue.line) if issue.line else "N/A"
-            )
-
-        console.print(table)
-
-        if len(issues) > 20:
-            print_info(f"\n... and {len(issues) - 20} more issues")
-
-        # Show recommendations for critical/high issues
-        critical_high = [i for i in issues if i.severity.value in ['critical', 'high']]
-        if critical_high:
-            print_info(f"\n⚠️  {len(critical_high)} critical/high severity issues require immediate attention!")
-
-        # Save report if requested
-        if output:
-            report = {
-                'platform': platform,
-                'total_issues': len(issues),
-                'by_severity': by_severity,
-                'issues': [
-                    {
-                        'severity': i.severity.value,
-                        'title': i.title,
-                        'description': i.description,
-                        'file': str(i.file),
-                        'line': i.line,
-                        'recommendation': i.recommendation,
-                        'cwe_id': i.cwe_id
-                    }
-                    for i in issues
-                ]
-            }
-
-            output_path = Path(output)
-            output_path.parent.mkdir(parents=True, exist_ok=True)
-            with open(output_path, 'w') as f:
-                json.dump(report, f, indent=2)
-
-            print_success(f"\n✅ Report saved to: {output_path}")
-
-    except Exception as e:
-        print_error(f"Security scan failed: {e}")
-        raise click.Abort()
+    # Exit code based on findings
+    if result.critical_count > 0:
+        raise SystemExit(2)
+    elif result.high_count > 0:
+        raise SystemExit(1)
+    else:
+        raise SystemExit(0)
 
 
-@security.command(name='check-secrets')
-@click.option('--source', '-s', 'source_path', required=True,
-              type=click.Path(exists=True), help='Path to source code')
-def check_secrets(source_path: str) -> None:
-    """Scan for hardcoded secrets and credentials"""
-    print_header("Secret Detection")
+@security.command()
+@click.argument("app_path", type=Path)
+@click.option("--platform", "-p", type=click.Choice(["android", "ios"]), required=True, help="Platform")
+@click.option("--app-name", "-n", required=True, help="Application name")
+@click.option("--app-version", "-v", default="1.0", help="Application version")
+@click.option("--severity", "-s", type=click.Choice(["critical", "high", "medium", "low"]), help="Filter by severity")
+def audit(
+    app_path: Path,
+    platform: str,
+    app_name: str,
+    app_version: str,
+    severity: Optional[str],
+) -> None:
+    """
+    Quick security audit with detailed findings.
 
-    source_dir = Path(source_path)
-    print_info(f"Source: {source_dir}")
+    Example:
+        observe security audit app.apk -p android -n MyApp
+        observe security audit app.apk -p android -n MyApp --severity high
+    """
+    if not app_path.exists():
+        console.print(f"[red]✗[/red] File not found: {app_path}")
+        raise SystemExit(1)
 
-    try:
-        analyzer = SecurityAnalyzer(project_root=source_dir)  # noqa: F841
+    scanner = SecurityScanner()
 
-        print_info("\n🔄 Scanning for secrets...")
+    if platform == "android":
+        result = scanner.scan_android(app_path, app_name, app_version)
+    else:
+        result = scanner.scan_ios(app_path, app_name, app_version)
 
-        # Get all files
-        files = list(source_dir.rglob("*.kt")) + list(source_dir.rglob("*.java")) + \
-            list(source_dir.rglob("*.swift")) + list(source_dir.rglob("*.m"))
+    # Filter by severity if requested
+    findings = result.findings
+    if severity:
+        severity_enum = {
+            "critical": SeverityLevel.CRITICAL,
+            "high": SeverityLevel.HIGH,
+            "medium": SeverityLevel.MEDIUM,
+            "low": SeverityLevel.LOW,
+        }[severity]
+        findings = [f for f in findings if f.severity == severity_enum]
 
-        secrets_found = 0
-        files_with_secrets = []
+    # Print detailed findings
+    for finding in findings:
+        severity_style = {
+            SeverityLevel.CRITICAL: "red",
+            SeverityLevel.HIGH: "yellow",
+            SeverityLevel.MEDIUM: "blue",
+            SeverityLevel.LOW: "dim",
+        }[finding.severity]
 
-        with create_progress() as progress:
-            task = progress.add_task("Scanning files...", total=len(files))
+        panel = Panel(
+            f"[bold]{finding.description}[/bold]\n\n"
+            f"[dim]Category:[/dim] {finding.category.value}\n"
+            f"[dim]Location:[/dim] {finding.location}\n\n"
+            f"[cyan]Recommendation:[/cyan]\n{finding.recommendation}",
+            title=f"[{severity_style}]{finding.severity.value.upper()}[/{severity_style}] {finding.title}",
+            border_style=severity_style,
+        )
+        console.print(panel)
+        console.print()
 
-            for file_path in files:
-                try:
-                    content = file_path.read_text(encoding='utf-8')
 
-                    # Look for common secret patterns
-                    patterns = [
-                        (r'(?i)(api[_-]?key|apikey)\s*[:=]\s*["\']([^"\']+)["\']', 'API Key'),
-                        (r'(?i)(password|passwd|pwd)\s*[:=]\s*["\']([^"\']+)["\']', 'Password'),
-                        (r'(?i)(secret|token)\s*[:=]\s*["\']([^"\']+)["\']', 'Secret/Token'),
-                        (r'(?i)aws[_-]?(access[_-]?key|secret)', 'AWS Credentials'),
-                    ]
+@security.command(name="list")
+def list_checks() -> None:
+    """
+    List available security checks.
 
-                    for pattern, secret_type in patterns:
-                        if re.search(pattern, content):
-                            secrets_found += 1
-                            if file_path not in files_with_secrets:
-                                files_with_secrets.append((file_path, secret_type))
+    Example:
+        observe security list
+    """
+    table = Table(title="OWASP Mobile Security Checks")
+    table.add_column("Category", style="cyan")
+    table.add_column("Description", style="dim")
 
-                except Exception:
-                    pass
+    checks = [
+        ("M1: Improper Platform Usage", "Misuse of platform features or security controls"),
+        ("M2: Insecure Data Storage", "Sensitive data stored insecurely"),
+        ("M3: Insecure Communication", "Unencrypted or weak network communication"),
+        ("M4: Insecure Authentication", "Weak authentication mechanisms"),
+        ("M5: Insufficient Cryptography", "Weak or broken cryptography"),
+        ("M6: Insecure Authorization", "Poor authorization checks"),
+        ("M7: Client Code Quality", "Code-level vulnerabilities"),
+        ("M8: Code Tampering", "Binary patching, hooking, modification"),
+        ("M9: Reverse Engineering", "Analysis of app binaries"),
+        ("M10: Extraneous Functionality", "Hidden backdoors or debug code"),
+    ]
 
-                progress.advance(task)
+    for category, description in checks:
+        table.add_row(category, description)
 
-        if secrets_found == 0:
-            print_success("\n✅ No hardcoded secrets found!")
+    console.print(table)
+
+
+@security.command()
+@click.argument("app_name")
+@click.argument("v1_report", type=Path)
+@click.argument("v2_report", type=Path)
+def compare(app_name: str, v1_report: Path, v2_report: Path) -> None:
+    """
+    Compare security reports between versions.
+
+    Example:
+        observe security compare MyApp v1_report.json v2_report.json
+    """
+    import json
+
+    if not v1_report.exists() or not v2_report.exists():
+        console.print("[red]✗[/red] Report file(s) not found")
+        raise SystemExit(1)
+
+    with open(v1_report, "r") as f:
+        v1_data = json.load(f)
+
+    with open(v2_report, "r") as f:
+        v2_data = json.load(f)
+
+    v1_summary = v1_data["summary"]
+    v2_summary = v2_data["summary"]
+
+    console.print(f"[bold cyan]Security Comparison: {app_name}[/bold cyan]\n")
+
+    table = Table()
+    table.add_column("Severity", style="cyan")
+    table.add_column("Version 1", justify="right")
+    table.add_column("Version 2", justify="right")
+    table.add_column("Change", justify="right")
+
+    for severity in ["critical", "high", "medium", "low"]:
+        v1_count = v1_summary[severity]
+        v2_count = v2_summary[severity]
+        change = v2_count - v1_count
+
+        change_str = ""
+        if change > 0:
+            change_str = f"[red]+{change}[/red]"
+        elif change < 0:
+            change_str = f"[green]{change}[/green]"
         else:
-            print_error(f"\n❌ Found {secrets_found} potential secrets in {len(files_with_secrets)} files")
+            change_str = "[dim]0[/dim]"
 
-            print_info("\n📁 Files with secrets:")
-            for file_path, secret_type in files_with_secrets[:10]:
-                print_error(f"  • {file_path.relative_to(source_dir)} ({secret_type})")
+        table.add_row(
+            severity.title(),
+            str(v1_count),
+            str(v2_count),
+            change_str,
+        )
 
-            if len(files_with_secrets) > 10:
-                print_info(f"\n... and {len(files_with_secrets) - 10} more files")
+    console.print(table)
 
-            print_info("\n💡 Recommendations:")
-            print_info("  • Move secrets to environment variables")
-            print_info("  • Use secure key storage (Android Keystore, iOS Keychain)")
-            print_info("  • Consider using a secrets management service")
+    # Overall verdict
+    total_v1 = v1_summary["total_findings"]
+    total_v2 = v2_summary["total_findings"]
 
-    except Exception as e:
-        print_error(f"Secret scan failed: {e}")
-        raise click.Abort()
+    if total_v2 < total_v1:
+        console.print("\n[green]✓[/green] Security improved!")
+    elif total_v2 > total_v1:
+        console.print("\n[red]✗[/red] Security degraded!")
+    else:
+        console.print("\n[dim]No change in security posture[/dim]")
 
 
-@security.command(name='compliance')
-@click.option('--source', '-s', 'source_path', required=True,
-              type=click.Path(exists=True), help='Path to source code')
-@click.option('--standard', type=click.Choice(['OWASP-MASVS', 'GDPR', 'PCI-DSS']),
-              default='OWASP-MASVS', help='Compliance standard to check')
-def compliance(source_path: str, standard: str) -> None:
-    """Check compliance with security standards"""
-    print_header(f"Compliance Check: {standard}")
+def _print_summary(result: SecurityScanResult) -> None:
+    """Print security scan summary"""
+    console.print(f"[bold]Security Scan Results: {result.app_name}[/bold]")
+    console.print(f"Platform: {result.platform} | Version: {result.app_version}\n")
 
-    source_dir = Path(source_path)
-    print_info(f"Source: {source_dir}")
-    print_info(f"Standard: {standard}")
+    table = Table()
+    table.add_column("Severity", style="cyan")
+    table.add_column("Count", justify="right", style="bold")
 
-    try:
-        analyzer = SecurityAnalyzer(project_root=source_dir)
-        issues = analyzer.analyze(platform='android')  # Auto-detect platform
+    severity_counts = [
+        ("Critical", result.critical_count, "red"),
+        ("High", result.high_count, "yellow"),
+        ("Medium", result.medium_count, "blue"),
+        ("Low", result.low_count, "dim"),
+    ]
 
-        print_info("\n🔄 Checking compliance...")
-
-        # Map issues to compliance requirements
-        compliance_checks = {
-            'OWASP-MASVS': {
-                'Data Storage': ['CWE-922', 'CWE-311'],
-                'Cryptography': ['CWE-327', 'CWE-326'],
-                'Authentication': ['CWE-798', 'CWE-259'],
-                'Network Communication': ['CWE-295', 'CWE-319'],
-                'Code Quality': ['CWE-502', 'CWE-94']
-            }
-        }
-
-        if standard in compliance_checks:
-            categories = compliance_checks[standard]
-
-            print_success(f"\n✅ Compliance Report:")   # noqa: F541
-
-            for category, cwes in categories.items():
-                category_issues = [i for i in issues if i.cwe_id in cwes]
-                status = "❌ FAIL" if category_issues else "✅ PASS"
-                print_info(f"  {category}: {status}")
-                if category_issues:
-                    print_info(f"    → {len(category_issues)} issues found")
-
+    for severity, count, style in severity_counts:
+        if count > 0:
+            table.add_row(severity, f"[{style}]{count}[/{style}]")
         else:
-            print_info(f"\n⚠️  {standard} compliance checking not yet implemented")
+            table.add_row(severity, "[dim]0[/dim]")
 
-    except Exception as e:
-        print_error(f"Compliance check failed: {e}")
-        raise click.Abort()
+    console.print(table)
+
+    # Overall risk level
+    if result.critical_count > 0:
+        risk = "[red bold]CRITICAL RISK[/red bold]"
+    elif result.high_count > 0:
+        risk = "[yellow bold]HIGH RISK[/yellow bold]"
+    elif result.medium_count > 0:
+        risk = "[blue]MEDIUM RISK[/blue]"
+    else:
+        risk = "[green]LOW RISK[/green]"
+
+    console.print(f"\nRisk Level: {risk}")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     security()

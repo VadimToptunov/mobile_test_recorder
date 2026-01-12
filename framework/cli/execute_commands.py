@@ -6,7 +6,7 @@ Real-time test execution monitoring with rich UI.
 
 import click
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Dict, Any
 import subprocess
 import time
 import re
@@ -23,14 +23,14 @@ console = Console()
 class TestMonitor:
     """Monitor test execution in real-time"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.total_tests = 0
         self.passed = 0
         self.failed = 0
         self.skipped = 0
         self.current_test = "Initializing..."
         self.start_time = time.time()
-        self.test_history = []
+        self.test_history: list[Dict[str, Any]] = []
 
     def update_progress(self, line: str) -> None:
         """Parse test output and update progress"""
@@ -55,15 +55,13 @@ class TestMonitor:
     def _extract_test_name(self, line: str) -> None:
         """Extract test name from output"""
         # Try to find test name pattern
-        match = re.search(r'test_\w+', line)
+        match = re.search(r"test_\w+", line)
         if match:
             test_name = match.group(0)
             self.current_test = test_name
-            self.test_history.append({
-                'name': test_name,
-                'status': self._get_status_from_line(line),
-                'time': time.time() - self.start_time
-            })
+            self.test_history.append(
+                {"name": test_name, "status": self._get_status_from_line(line), "time": time.time() - self.start_time}
+            )
 
     def _get_status_from_line(self, line: str) -> str:
         """Determine test status from line"""
@@ -101,10 +99,9 @@ class TestMonitor:
         if not self.test_history:
             return Panel("No tests executed yet", title="📋 Recent Tests")
 
-        history_text = "\n".join([
-            f"{test['status']} {test['name']} ({test['time']:.1f}s)"
-            for test in self.test_history[-5:]
-        ])
+        history_text = "\n".join(
+            [f"{test['status']} {test['name']} ({test['time']:.1f}s)" for test in self.test_history[-5:]]
+        )
 
         return Panel(history_text, title="📋 Recent Tests")
 
@@ -133,13 +130,7 @@ def run_tests_with_monitor(test_path: str, pytest_args: str) -> int:
     print_info(f"Running: {' '.join(cmd)}\n")
 
     # Start process
-    process = subprocess.Popen(
-        cmd,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True,
-        bufsize=1
-    )
+    process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)
 
     # Live display
     with Live(monitor.render_dashboard(), console=console, refresh_per_second=4) as live:
@@ -169,16 +160,16 @@ def run_tests_with_monitor(test_path: str, pytest_args: str) -> int:
     return process.returncode
 
 
-@click.group(name='execute')
+@click.group(name="execute")
 def execute() -> None:
     """🏃 Live test execution commands"""
     pass
 
 
 @execute.command()
-@click.argument('tests', type=click.Path(exists=True), default='tests/')
-@click.option('--live', is_flag=True, help='Enable live monitoring')
-@click.option('--args', '-a', help='Additional pytest arguments')
+@click.argument("tests", type=click.Path(exists=True), default="tests/")
+@click.option("--live", is_flag=True, help="Enable live monitoring")
+@click.option("--args", "-a", help="Additional pytest arguments")
 def run(tests: str, live: bool, args: Optional[str]) -> None:
     """Run tests with optional live monitoring"""
     print_header("Execute Tests")
@@ -202,9 +193,9 @@ def run(tests: str, live: bool, args: Optional[str]) -> None:
 
 
 @execute.command()
-@click.argument('tests', type=click.Path(exists=True), default='tests/')
-@click.option('--workers', '-w', type=int, default=4, help='Number of parallel workers')
-@click.option('--args', '-a', help='Additional pytest arguments')
+@click.argument("tests", type=click.Path(exists=True), default="tests/")
+@click.option("--workers", "-w", type=int, default=4, help="Number of parallel workers")
+@click.option("--args", "-a", help="Additional pytest arguments")
 def parallel(tests: str, workers: int, args: Optional[str]) -> None:
     """Run tests in parallel"""
     print_header("Parallel Test Execution")
@@ -229,9 +220,9 @@ def parallel(tests: str, workers: int, args: Optional[str]) -> None:
 
 
 @execute.command()
-@click.argument('tests', type=click.Path(exists=True), default='tests/')
-@click.option('--duration', '-d', type=int, default=60, help='Duration in seconds')
-@click.option('--args', '-a', help='Additional pytest arguments')
+@click.argument("tests", type=click.Path(exists=True), default="tests/")
+@click.option("--duration", "-d", type=int, default=60, help="Duration in seconds")
+@click.option("--args", "-a", help="Additional pytest arguments")
 def stress(tests: str, duration: int, args: Optional[str]) -> None:
     """Stress test: run tests repeatedly"""
     print_header("Stress Testing")
@@ -258,12 +249,12 @@ def stress(tests: str, duration: int, args: Optional[str]) -> None:
 
             # Parse results
             if "passed" in result.stdout:
-                match = re.search(r'(\d+) passed', result.stdout)
+                match = re.search(r"(\d+) passed", result.stdout)
                 if match:
                     total_passed += int(match.group(1))
 
             if "failed" in result.stdout:
-                match = re.search(r'(\d+) failed', result.stdout)
+                match = re.search(r"(\d+) failed", result.stdout)
                 if match:
                     total_failed += int(match.group(1))
 
@@ -279,9 +270,9 @@ def stress(tests: str, duration: int, args: Optional[str]) -> None:
 
 
 @execute.command()
-@click.argument('tests', type=click.Path(exists=True), default='tests/')
-@click.option('--interval', '-i', type=int, default=60, help='Check interval in seconds')
-@click.option('--args', '-a', help='Additional pytest arguments')
+@click.argument("tests", type=click.Path(exists=True), default="tests/")
+@click.option("--interval", "-i", type=int, default=60, help="Check interval in seconds")
+@click.option("--args", "-a", help="Additional pytest arguments")
 def watch(tests: str, interval: int, args: Optional[str]) -> None:
     """Watch tests and re-run on changes"""
     print_header("Watch Mode")
@@ -291,21 +282,17 @@ def watch(tests: str, interval: int, args: Optional[str]) -> None:
     print_info(f"Interval: {interval}s")
     print_info("\nWatching for changes... (Ctrl+C to stop)\n")
 
-    last_mtime = 0
+    last_mtime: float = 0.0
 
     try:
         while True:
             # Check for file changes
-            test_files = list(tests_path.rglob('*.py'))
+            test_files = list(tests_path.rglob("*.py"))
             if not test_files:
                 print_error("No Python test files found in directory")
                 return
 
-            current_mtime = max(
-                f.stat().st_mtime
-                for f in test_files
-                if f.is_file()
-            )
+            current_mtime = max(f.stat().st_mtime for f in test_files if f.is_file())
 
             if current_mtime > last_mtime:
                 last_mtime = current_mtime
@@ -328,5 +315,5 @@ def watch(tests: str, interval: int, args: Optional[str]) -> None:
         print_info("\n⚠️  Watch mode stopped")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     execute()

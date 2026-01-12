@@ -1,277 +1,282 @@
 """
-Config Management CLI commands
+Configuration Management CLI Commands
 
-Commands for managing framework configuration.
+Commands for managing framework configuration with YAML/JSON support,
+profiles, environment variables, and validation.
 """
 
 import click
 from pathlib import Path
-import json
-from typing import Dict, Any, Optional
+from typing import Optional, Union
+import yaml
 
-from framework.cli.rich_output import print_header, print_info, print_success, print_error
 from rich.console import Console
 from rich.table import Table
+from rich.panel import Panel
+from rich.syntax import Syntax
+
+from framework.config import ConfigManager, ObserveConfig
+
 
 console = Console()
 
 
-CONFIG_FILE = Path.home() / '.observe' / 'config.json'
-DEFAULT_CONFIG: Dict[str, Any] = {
-    'appium_server': 'http://localhost:4723',
-    'implicit_wait': 10,
-    'screenshot_on_failure': True,
-    'parallel_workers': 4,
-    'device_pool_strategy': 'round-robin',
-    'healing_confidence_threshold': 0.8,
-    'healing_auto_commit': False,
-    'dashboard_port': 8080,
-    'dashboard_host': 'localhost',
-    'notification_slack_webhook': '',
-    'notification_teams_webhook': '',
-    'visual_threshold': 0.95,
-    'api_timeout': 30,
-    'log_level': 'INFO',
-    'report_format': 'html',
-    'ml_model_path': './models/element_classifier.pkl',
-}
-
-
-def load_config() -> Dict[str, Any]:
-    """Load configuration from file"""
-    if not CONFIG_FILE.exists():
-        return DEFAULT_CONFIG.copy()
-
-    try:
-        with open(CONFIG_FILE, 'r') as f:
-            config = json.load(f)
-        # Merge with defaults (in case new keys were added)
-        merged = DEFAULT_CONFIG.copy()
-        merged.update(config)
-        return merged
-    except Exception as e:
-        print_error(f"Failed to load config: {e}")
-        return DEFAULT_CONFIG.copy()
-
-
-def save_config(config: Dict[str, Any]) -> None:
-    """Save configuration to file"""
-    CONFIG_FILE.parent.mkdir(parents=True, exist_ok=True)
-    try:
-        with open(CONFIG_FILE, 'w') as f:
-            json.dump(config, f, indent=2)
-    except Exception as e:
-        print_error(f"Failed to save config: {e}")
-        raise
-
-
-@click.group(name='config')
+@click.group()
 def config() -> None:
-    """⚙️  Configuration management commands"""
+    """
+    Configuration management commands.
+
+    Manage framework settings, profiles, and integrations.
+    """
     pass
 
 
 @config.command()
-@click.argument('key')
-@click.argument('value')
-def set(key: str, value: str) -> None:
-    """Set a configuration value"""
-    print_header("Set Configuration")
+@click.option("--path", "-p", type=Path, default=Path(".observe.yaml"), help="Config file path")
+@click.option("--force", "-f", is_flag=True, help="Overwrite existing config")
+def init(path: Path, force: bool) -> None:
+    """
+    Initialize default configuration file.
 
-    cfg = load_config()
+    Example:
+        observe config init
+        observe config init --path custom.yaml
+        observe config init --force
+    """
+    if path.exists() and not force:
+        console.print(f"[yellow]⚠[/yellow] Config already exists: {path}")
+        console.print("Use --force to overwrite")
+        raise SystemExit(1)
 
-    if key not in DEFAULT_CONFIG:
-        print_error(f"Unknown configuration key: {key}")
-        print_info("\nAvailable keys:")
-        for k in sorted(DEFAULT_CONFIG.keys()):
-            print_info(f"  • {k}")
-        raise click.Abort()
+    # If force is True and file exists, delete it first
+    if force and path.exists():
+        path.unlink()
+        console.print(f"[yellow]→[/yellow] Removed existing config: {path}")
 
-    # Type conversion based on default value
-    default_type = type(DEFAULT_CONFIG[key])
+    manager = ConfigManager(config_path=path)
+    manager.init_default()
+
+    console.print(f"[green]✓[/green] Created configuration file: {path}")
+    console.print("\n[dim]Edit the file to customize settings[/dim]")
+
+
+@config.command()
+@click.argument("key")
+@click.argument("value")
+@click.option("--config", "-c", type=Path, help="Config file path")
+def set(key: str, value: str, config: Optional[Path]) -> None:
+    """
+    Set configuration value.
+
+    KEY: Dot-notation key (e.g., framework.timeout)
+    VALUE: New value
+
+    Example:
+        observe config set framework.timeout 60
+        observe config set ml.contribute false
+        observe config set integrations.slack.webhook_url "https://..."
+    """
+    manager = ConfigManager(config_path=config)
+
+    # Convert value to appropriate type
+    converted_value: Union[int, float, bool, str]
+    if value.lower() in ["true", "false"]:
+        converted_value = value.lower() == "true"
+    elif value.isdigit():
+        converted_value = int(value)
+    elif value.replace(".", "", 1).isdigit():
+        converted_value = float(value)
+    else:
+        converted_value = value
+
     try:
-        if default_type == bool:
-            typed_value: Any = value.lower() in ('true', '1', 'yes', 'on')
-        elif default_type == int:
-            typed_value = int(value)
-        elif default_type == float:
-            typed_value = float(value)
-        else:
-            typed_value = value
-
-        cfg[key] = typed_value
-        save_config(cfg)
-
-        print_success(f"✅ Set {key} = {typed_value}")
-        print_info(f"Config file: {CONFIG_FILE}")
-
+        manager.set(key, converted_value)
+        console.print(f"[green]✓[/green] Set {key} = {converted_value}")
     except ValueError as e:
-        print_error(f"Invalid value for {key}: {e}")
-        print_info(f"Expected type: {default_type.__name__}")
-        raise click.Abort()
+        console.print(f"[red]✗[/red] Error: {e}")
+        raise SystemExit(1)
 
 
 @config.command()
-@click.argument('key')
-def get(key: str) -> None:
-    """Get a configuration value"""
-    cfg = load_config()
+@click.argument("key")
+@click.option("--config", "-c", type=Path, help="Config file path")
+def get(key: str, config: Optional[Path]) -> None:
+    """
+    Get configuration value.
 
-    if key not in cfg:
-        print_error(f"Unknown configuration key: {key}")
-        raise click.Abort()
+    KEY: Dot-notation key (e.g., framework.timeout)
 
-    value = cfg[key]
-    print_info(f"{key} = {value}")
+    Example:
+        observe config get framework.timeout
+        observe config get ml.confidence_threshold
+    """
+    manager = ConfigManager(config_path=config)
+
+    value = manager.get(key)
+
+    if value is None:
+        console.print(f"[yellow]⚠[/yellow] Key not found: {key}")
+        raise SystemExit(1)
+
+    console.print(f"{key} = [cyan]{value}[/cyan]")
 
 
-@config.command(name='list')
-def list_config() -> None:
-    """List all configuration values"""
-    print_header("Configuration")
+@config.command(name="list")
+@click.option("--config", "-c", type=Path, help="Config file path")
+@click.option("--format", "-f", type=click.Choice(["table", "yaml", "json"]), default="table", help="Output format")
+def list_config(config: Optional[Path], format: str) -> None:
+    """
+    List all configuration values.
 
-    cfg = load_config()
+    Example:
+        observe config list
+        observe config list --format yaml
+        observe config list --format json
+    """
+    manager = ConfigManager(config_path=config)
+    config_data = manager.list_all()
 
-    # Group by category
-    categories = {
-        'Appium': ['appium_server', 'implicit_wait', 'screenshot_on_failure'],
-        'Execution': ['parallel_workers', 'device_pool_strategy', 'api_timeout'],
-        'Healing': ['healing_confidence_threshold', 'healing_auto_commit'],
-        'Dashboard': ['dashboard_port', 'dashboard_host'],
-        'Notifications': ['notification_slack_webhook', 'notification_teams_webhook'],
-        'Visual Testing': ['visual_threshold'],
-        'ML': ['ml_model_path'],
-        'Reporting': ['report_format', 'log_level'],
-    }
+    if format == "yaml":
+        yaml_str = yaml.dump(config_data, default_flow_style=False)
+        syntax = Syntax(yaml_str, "yaml", theme="monokai")
+        console.print(syntax)
 
-    for category, keys in categories.items():
-        table = Table(title=category)
-        table.add_column("Key", style="cyan")
-        table.add_column("Value", style="yellow")
-        table.add_column("Type", style="green")
+    elif format == "json":
+        import json
 
-        for key in keys:
-            if key in cfg:
-                value = cfg[key]
-                value_str = str(value) if value != '' else '(not set)'
-                type_name = type(value).__name__
-                table.add_row(key, value_str, type_name)
+        json_str = json.dumps(config_data, indent=2)
+        syntax = Syntax(json_str, "json", theme="monokai")
+        console.print(syntax)
 
-        console.print(table)
-        print()
+    else:  # table
+        _print_config_table(config_data)
 
-    print_info(f"Config file: {CONFIG_FILE}")
+
+def _print_config_table(config_data: dict, prefix: str = "") -> None:
+    """Print configuration as nested tables"""
+    for section, values in config_data.items():
+        if isinstance(values, dict):
+            table = Table(title=f"{prefix}{section}" if prefix else section, show_header=True)
+            table.add_column("Key", style="cyan")
+            table.add_column("Value", style="green")
+
+            for key, value in values.items():
+                if isinstance(value, dict):
+                    # Recursively handle nested dicts
+                    _print_config_table({key: value}, prefix=f"{section}.")
+                else:
+                    table.add_row(key, str(value))
+
+            if table.row_count > 0:
+                console.print(table)
+                console.print()
 
 
 @config.command()
-@click.confirmation_option(prompt='Reset all configuration to defaults?')
-def reset() -> None:
-    """Reset configuration to defaults"""
-    print_header("Reset Configuration")
+@click.option("--config", "-c", type=Path, help="Config file path")
+def validate(config: Optional[Path]) -> None:
+    """
+    Validate configuration file.
 
-    save_config(DEFAULT_CONFIG.copy())
-    print_success("✅ Configuration reset to defaults")
-    print_info(f"Config file: {CONFIG_FILE}")
+    Checks:
+    - Required fields
+    - Value ranges
+    - Integration settings
+
+    Example:
+        observe config validate
+    """
+    manager = ConfigManager(config_path=config)
+    errors = manager.validate()
+
+    if not errors:
+        console.print("[green]✓[/green] Configuration is valid")
+        raise SystemExit(0)
+
+    console.print("[red]✗[/red] Configuration validation failed:\n")
+    for error in errors:
+        console.print(f"  • [red]{error}[/red]")
+
+    raise SystemExit(1)
 
 
 @config.command()
-def path() -> None:
-    """Show configuration file path"""
-    print_info(f"Config file: {CONFIG_FILE}")
-    if CONFIG_FILE.exists():
-        print_success("✅ File exists")
-        print_info(f"Size: {CONFIG_FILE.stat().st_size} bytes")
+@click.option("--config", "-c", type=Path, help="Config file path")
+def show(config: Optional[Path]) -> None:
+    """
+    Show configuration file content with syntax highlighting.
+
+    Example:
+        observe config show
+    """
+    manager = ConfigManager(config_path=config)
+
+    if not manager.config_path.exists():
+        console.print(f"[yellow]⚠[/yellow] Config file not found: {manager.config_path}")
+        console.print("Run [cyan]observe config init[/cyan] to create one")
+        raise SystemExit(1)
+
+    with open(manager.config_path, "r") as f:
+        content = f.read()
+
+    syntax = Syntax(content, manager.config_path.suffix[1:], theme="monokai", line_numbers=True)
+
+    panel = Panel(
+        syntax,
+        title=f"Configuration: {manager.config_path}",
+        border_style="cyan",
+    )
+
+    console.print(panel)
+
+
+@config.command()
+@click.option("--config", "-c", type=Path, help="Config file path")
+def path(config: Optional[Path]) -> None:
+    """
+    Show configuration file path.
+
+    Example:
+        observe config path
+    """
+    manager = ConfigManager(config_path=config)
+
+    if manager.config_path.exists():
+        status = "[green]exists[/green]"
     else:
-        print_info("⚠️  File does not exist (using defaults)")
+        status = "[yellow]not found[/yellow]"
+
+    console.print(f"Config path: [cyan]{manager.config_path}[/cyan] ({status})")
 
 
 @config.command()
-def validate() -> None:
-    """Validate configuration"""
-    print_header("Validate Configuration")
+@click.argument("key")
+@click.option("--config", "-c", type=Path, help="Config file path")
+def reset(key: str, config: Optional[Path]) -> None:
+    """
+    Reset configuration value to default.
 
-    cfg = load_config()
-    errors = []
-    warnings = []
+    KEY: Dot-notation key (e.g., framework.timeout)
 
-    # Validate values
-    if cfg['parallel_workers'] < 1:
-        errors.append("parallel_workers must be >= 1")
+    Example:
+        observe config reset framework.timeout
+    """
+    manager = ConfigManager(config_path=config)
+    default_config = ObserveConfig()
 
-    if not (0 <= cfg['healing_confidence_threshold'] <= 1):
-        errors.append("healing_confidence_threshold must be between 0 and 1")
+    default_value = default_config.get(key)
 
-    if not (0 <= cfg['visual_threshold'] <= 1):
-        errors.append("visual_threshold must be between 0 and 1")
-
-    if cfg['dashboard_port'] < 1024 or cfg['dashboard_port'] > 65535:
-        warnings.append("dashboard_port should be between 1024 and 65535")
-
-    if cfg['notification_slack_webhook'] == '' and cfg['notification_teams_webhook'] == '':
-        warnings.append("No notification webhooks configured")
-
-    # Display results
-    if errors:
-        print_error(f"❌ {len(errors)} validation error(s):")
-        for error in errors:
-            print_error(f"  • {error}")
-        raise click.Abort()
-
-    if warnings:
-        print_info(f"⚠️  {len(warnings)} warning(s):")
-        for warning in warnings:
-            print_info(f"  • {warning}")
-
-    if not errors and not warnings:
-        print_success("✅ Configuration is valid")
-
-    print_info(f"\nConfig file: {CONFIG_FILE}")
-
-
-@config.command()
-@click.option('--output', '-o', type=click.Path(), help='Export to file')
-def export(output: Optional[str]) -> None:
-    """Export configuration"""
-    cfg = load_config()
-
-    if output:
-        output_path = Path(output)
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(output_path, 'w') as f:
-            json.dump(cfg, f, indent=2)
-        print_success(f"✅ Exported to: {output_path}")
-    else:
-        print(json.dumps(cfg, indent=2))
-
-
-@config.command()
-@click.argument('file', type=click.Path(exists=True))
-def import_file(file: str) -> None:
-    """Import configuration from file"""
-    print_header("Import Configuration")
+    if default_value is None:
+        console.print(f"[red]✗[/red] Invalid key: {key}")
+        raise SystemExit(1)
 
     try:
-        with open(file, 'r') as f:
-            imported_cfg = json.load(f)
-
-        # Validate keys
-        unknown_keys = set(imported_cfg.keys()) - set(DEFAULT_CONFIG.keys())
-        if unknown_keys:
-            print_error(f"Unknown keys in import: {', '.join(unknown_keys)}")
-            raise click.Abort()
-
-        # Merge with current config
-        current_cfg = load_config()
-        current_cfg.update(imported_cfg)
-        save_config(current_cfg)
-
-        print_success(f"✅ Imported {len(imported_cfg)} settings from {file}")
-        print_info(f"Config file: {CONFIG_FILE}")
-
-    except Exception as e:
-        print_error(f"Failed to import config: {e}")
-        raise click.Abort()
+        manager.set(key, default_value)
+        console.print(f"[green]✓[/green] Reset {key} to default: {default_value}")
+    except ValueError as e:
+        console.print(f"[red]✗[/red] Error: {e}")
+        raise SystemExit(1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     config()
