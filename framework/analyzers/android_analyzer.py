@@ -116,7 +116,7 @@ class AndroidAnalyzer:
         file_path: Path,
         lines: List[str],
         result: AnalysisResult
-    ):
+    ) -> None:
         """Detect Composable screen functions"""
         for match in self.composable_pattern.finditer(content):
             func_name = match.group(1)
@@ -150,7 +150,7 @@ class AndroidAnalyzer:
         file_path: Path,
         lines: List[str],
         result: AnalysisResult
-    ):
+    ) -> None:
         """Detect UI elements with test tags or content descriptions"""
 
         # Find test tags
@@ -200,7 +200,7 @@ class AndroidAnalyzer:
         file_path: Path,
         lines: List[str],
         result: AnalysisResult
-    ):
+    ) -> None:
         """Detect navigation routes and transitions"""
 
         # Look for navigation calls: navController.navigate("route")
@@ -250,7 +250,7 @@ class AndroidAnalyzer:
         file_path: Path,
         lines: List[str],
         result: AnalysisResult
-    ):
+    ) -> None:
         """Detect Retrofit API endpoints"""
 
         # Extract interface name
