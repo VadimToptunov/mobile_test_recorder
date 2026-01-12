@@ -11,6 +11,7 @@ from typing import Dict, List
 @dataclass
 class PerformanceMetrics:
     """Performance metrics for an app"""
+
     app_start_time: float  # seconds
     memory_usage: float  # MB
     cpu_usage: float  # percentage
@@ -23,6 +24,7 @@ class PerformanceMetrics:
 @dataclass
 class PerformanceIssue:
     """Performance issue detected"""
+
     category: str  # memory, cpu, network, rendering
     severity: str  # critical, high, medium, low
     description: str
@@ -36,7 +38,7 @@ class PerformanceAnalyzer:
     Analyzes application performance
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.metrics: Dict[str, PerformanceMetrics] = {}
         self.issues: List[PerformanceIssue] = []
 
@@ -56,69 +58,81 @@ class PerformanceAnalyzer:
 
         # Check app start time
         if metrics.app_start_time > 3.0:
-            self.issues.append(PerformanceIssue(
-                category="startup",
-                severity="high",
-                description="Slow app startup time",
-                value=metrics.app_start_time,
-                threshold=3.0,
-                recommendation="Optimize initialization code and defer non-critical operations"
-            ))
+            self.issues.append(
+                PerformanceIssue(
+                    category="startup",
+                    severity="high",
+                    description="Slow app startup time",
+                    value=metrics.app_start_time,
+                    threshold=3.0,
+                    recommendation="Optimize initialization code and defer non-critical operations",
+                )
+            )
 
         # Check memory usage
         if metrics.memory_usage > 500:
-            self.issues.append(PerformanceIssue(
-                category="memory",
-                severity="high",
-                description="High memory usage",
-                value=metrics.memory_usage,
-                threshold=500,
-                recommendation="Review memory leaks and optimize data structures"
-            ))
+            self.issues.append(
+                PerformanceIssue(
+                    category="memory",
+                    severity="high",
+                    description="High memory usage",
+                    value=metrics.memory_usage,
+                    threshold=500,
+                    recommendation="Review memory leaks and optimize data structures",
+                )
+            )
 
         # Check CPU usage
         if metrics.cpu_usage > 80:
-            self.issues.append(PerformanceIssue(
-                category="cpu",
-                severity="high",
-                description="High CPU usage",
-                value=metrics.cpu_usage,
-                threshold=80,
-                recommendation="Profile CPU-intensive operations and optimize algorithms"
-            ))
+            self.issues.append(
+                PerformanceIssue(
+                    category="cpu",
+                    severity="high",
+                    description="High CPU usage",
+                    value=metrics.cpu_usage,
+                    threshold=80,
+                    recommendation="Profile CPU-intensive operations and optimize algorithms",
+                )
+            )
 
         # Check network performance
         if metrics.avg_request_time > 1000:
-            self.issues.append(PerformanceIssue(
-                category="network",
-                severity="medium",
-                description="Slow network requests",
-                value=metrics.avg_request_time,
-                threshold=1000,
-                recommendation="Optimize API calls, use caching, reduce payload size"
-            ))
+            self.issues.append(
+                PerformanceIssue(
+                    category="network",
+                    severity="medium",
+                    description="Slow network requests",
+                    value=metrics.avg_request_time,
+                    threshold=1000,
+                    recommendation="Optimize API calls, use caching, reduce payload size",
+                )
+            )
 
         # Check rendering performance
         if metrics.fps < 30:
-            self.issues.append(PerformanceIssue(
-                category="rendering",
-                severity="high",
-                description="Low frame rate",
-                value=metrics.fps,
-                threshold=30,
-                recommendation="Optimize UI rendering, reduce overdraw, use hardware acceleration"
-            ))
+            self.issues.append(
+                PerformanceIssue(
+                    category="rendering",
+                    severity="high",
+                    description="Low frame rate",
+                    value=metrics.fps,
+                    threshold=30,
+                    recommendation="Optimize UI rendering, reduce overdraw, use hardware acceleration",
+                )
+            )
 
         # Check battery drain
         if metrics.battery_drain > 200:
-            self.issues.append(PerformanceIssue(
-                category="battery",
-                severity="medium",
-                description="High battery consumption",
-                value=metrics.battery_drain,
-                threshold=200,
-                recommendation="Reduce background operations, optimize network usage"
-            ))
+            self.issues.append(
+                PerformanceIssue(
+                    category="battery",
+                    severity="medium",
+                    description="High battery consumption",
+                    value=metrics.battery_drain,
+                    threshold=200,
+                    recommendation="Reduce background operations, optimize network usage",
+                )
+            )
 
         return self.issues
 
@@ -140,11 +154,11 @@ class PerformanceAnalyzer:
         m2 = self.metrics[profile2]
 
         return {
-            'startup_diff': m2.app_start_time - m1.app_start_time,
-            'memory_diff': m2.memory_usage - m1.memory_usage,
-            'cpu_diff': m2.cpu_usage - m1.cpu_usage,
-            'fps_diff': m2.fps - m1.fps,
-            'battery_diff': m2.battery_drain - m1.battery_drain,
+            "startup_diff": m2.app_start_time - m1.app_start_time,
+            "memory_diff": m2.memory_usage - m1.memory_usage,
+            "cpu_diff": m2.cpu_usage - m1.cpu_usage,
+            "fps_diff": m2.fps - m1.fps,
+            "battery_diff": m2.battery_drain - m1.battery_drain,
         }
 
     def generate_report(self) -> str:
@@ -157,7 +171,7 @@ class PerformanceAnalyzer:
             return report
 
         # Group by category
-        by_category = {}
+        by_category: Dict[str, List[PerformanceIssue]] = {}
         for issue in self.issues:
             if issue.category not in by_category:
                 by_category[issue.category] = []
