@@ -20,6 +20,7 @@ from framework.generators import page_object_gen, api_client_gen, bdd_gen
 from framework.model.app_model import AppModel
 from framework.utils.logger import get_logger, setup_logging
 from framework.utils.sanitizer import sanitize_identifier, sanitize_class_name
+from framework.utils.error_handling import handle_cli_errors, validate_and_raise
 from framework.cli.rich_output import (
     print_header,
     print_success,
@@ -225,6 +226,7 @@ def project() -> None:
     default="yaml",
     help="Output format",
 )
+@handle_cli_errors(exit_on_error=True)
 def analyze(
     android_source: Optional[str],
     ios_source: Optional[str],
@@ -245,10 +247,10 @@ def analyze(
     print_header("📱 Comprehensive Project Analysis", "Analyzing mobile application source code")
 
     # Validation: At least one source required
-    if not android_source and not ios_source:
-        print_error("At least one source (--android-source or --ios-source) must be provided")
-        logger.error("analyze command called without sources")
-        return
+    validate_and_raise(
+        android_source or ios_source,
+        "At least one source (--android-source or --ios-source) must be provided"
+    )
 
     output_path = Path(output_dir)
     output_path.mkdir(parents=True, exist_ok=True)
