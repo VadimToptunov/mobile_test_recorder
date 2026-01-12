@@ -32,7 +32,7 @@ class IOSAnalyzer:
     project_path: Path
     source_dirs: List[Path] = field(default_factory=list)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Initialize analyzer with default source directories"""
         if not self.source_dirs:
             # Default Swift source locations
@@ -149,8 +149,9 @@ class IOSAnalyzer:
                 screens.append(ScreenCandidate(
                     name=view_name,
                     file_path=str(file_path.relative_to(self.project_path)),
+                    line_number=content[:match.start()].count('\n') + 1,
                     route=self._infer_route_from_view_name(view_name),
-                    composable_function=view_name,
+                    composable_name=view_name,
                     parameters=[]
                 ))
 
