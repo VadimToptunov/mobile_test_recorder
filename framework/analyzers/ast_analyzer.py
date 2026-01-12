@@ -176,7 +176,7 @@ class ASTAnalyzer:
                 score += len(node.values) - 1
 
             for child in ast.iter_child_nodes(node):
-                if isinstance(node, (ast.If, ast.For, ast.While, ast.Try)):
+                if isinstance(child, (ast.If, ast.For, ast.While, ast.Try)):
                     score += cognitive_walk(child, depth + 1)
                 else:
                     score += cognitive_walk(child, depth)

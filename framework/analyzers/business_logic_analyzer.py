@@ -865,6 +865,8 @@ class BusinessLogicAnalyzer:
             + list(self.project_path.rglob("*.swift"))
         )
 
+        seen_boundaries = set()  # Track unique boundary checks
+
         for file_path in all_files:
             try:
                 content = file_path.read_text(encoding="utf-8")
@@ -874,16 +876,22 @@ class BusinessLogicAnalyzer:
 
                 for var_name, operator, value in boundaries:
                     if operator in ["<", "<=", ">", ">="] and value != "0":
-                        test_values = self._generate_boundary_test_values(int(value), operator)
+                        # Create unique key for deduplication
+                        boundary_key = (var_name, operator, value, str(file_path))
 
-                        edge_case = EdgeCase(
-                            type="boundary",
-                            description=f"Boundary check: {var_name} {operator} {value}",
-                            test_data=test_values,
-                            source_file=str(file_path),
-                            severity="high",
-                        )
-                        self.analysis.edge_cases.append(edge_case)
+                        if boundary_key not in seen_boundaries:
+                            seen_boundaries.add(boundary_key)
+
+                            test_values = self._generate_boundary_test_values(int(value), operator)
+
+                            edge_case = EdgeCase(
+                                type="boundary",
+                                description=f"Boundary check: {var_name} {operator} {value}",
+                                test_data=test_values,
+                                source_file=str(file_path),
+                                severity="high",
+                            )
+                            self.analysis.edge_cases.append(edge_case)
 
             except Exception as e:
                 print(f"Warning: Could not detect boundaries in {file_path}: {e}")
@@ -901,6 +909,8 @@ class BusinessLogicAnalyzer:
         """Detect null/nil safety checks"""
         all_files = list(self.project_path.rglob("*.kt")) + list(self.project_path.rglob("*.swift"))
 
+        seen_null_checks = set()  # Track unique null checks
+
         for file_path in all_files:
             try:
                 content = file_path.read_text(encoding="utf-8")
@@ -914,14 +924,20 @@ class BusinessLogicAnalyzer:
                 all_checks = set(kt_null_checks + swift_nil_checks)
 
                 for var_name in all_checks:
-                    edge_case = EdgeCase(
-                        type="null",
-                        description=f"Null safety check for {var_name}",
-                        test_data=[None, "valid_value"],
-                        source_file=str(file_path),
-                        severity="high",
-                    )
-                    self.analysis.edge_cases.append(edge_case)
+                    # Create unique key for deduplication
+                    null_check_key = (var_name, str(file_path))
+
+                    if null_check_key not in seen_null_checks:
+                        seen_null_checks.add(null_check_key)
+
+                        edge_case = EdgeCase(
+                            type="null",
+                            description=f"Null safety check for {var_name}",
+                            test_data=[None, "valid_value"],
+                            source_file=str(file_path),
+                            severity="high",
+                        )
+                        self.analysis.edge_cases.append(edge_case)
 
             except Exception as e:
                 print(f"Warning: Could not detect null checks in {file_path}: {e}")
@@ -990,7 +1006,7 @@ class BusinessLogicAnalyzer:
                     "expected_outcome": "Validation error",
                     "error_messages": rule.error_messages,
                     "priority": "high",
-                    "source": rule.source_file,
+                    "source": ([rule.source_file] if rule.source_file else []),
                 }
                 self.analysis.negative_test_cases.append(negative_case)
 
@@ -1092,12 +1108,20 @@ class BusinessLogicAnalyzer:
                         source_file=str(file_path),
                     )
 
-                    # Extract possible error responses
-                    error_codes = re.findall(r"(4\d{2}|5\d{2})", content)
-                    if error_codes:
-                        contract.error_responses = [
-                            {"code": code, "description": "Error response"} for code in set(error_codes)
-                        ]
+                    # Extract error responses near this specific function
+                    # Look for error codes in a context window around the function definition
+                    func_start = content.find(f"fun {func_name}")
+                    if func_start != -1:
+                        # Get ~500 chars before and after function definition
+                        context_start = max(0, func_start - 500)
+                        context_end = min(len(content), func_start + 1000)
+                        func_context = content[context_start:context_end]
+
+                        error_codes = re.findall(r"(4\d{2}|5\d{2})", func_context)
+                        if error_codes:
+                            contract.error_responses = [
+                                {"code": code, "description": "Error response"} for code in set(error_codes)
+                            ]
 
                     self.analysis.api_contracts.append(contract)
 
