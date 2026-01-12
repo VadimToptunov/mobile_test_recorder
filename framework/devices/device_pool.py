@@ -3,7 +3,7 @@ Device pool management for parallel test execution
 """
 
 from dataclasses import dataclass, field
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Any
 from enum import Enum
 import threading
 
@@ -12,6 +12,7 @@ from .device_manager import Device, DeviceStatus, DeviceType
 
 class PoolStrategy(Enum):
     """Strategy for device allocation"""
+
     ROUND_ROBIN = "round_robin"
     LEAST_BUSY = "least_busy"
     RANDOM = "random"
@@ -29,6 +30,7 @@ class DevicePool:
     - Health monitoring
     - Automatic recovery
     """
+
     name: str
     devices: List[Device] = field(default_factory=list)
     strategy: PoolStrategy = PoolStrategy.ROUND_ROBIN
@@ -38,7 +40,7 @@ class DevicePool:
     _reserved: Dict[str, bool] = field(default_factory=dict)
     _last_used_index: int = 0
 
-    def add_device(self, device: Device):
+    def add_device(self, device: Device) -> None:
         """Add device to pool"""
         if device.id not in [d.id for d in self.devices]:
             self.devices.append(device)
@@ -46,7 +48,7 @@ class DevicePool:
             self._reserved[device.id] = False
             print(f"  Added {device.name} to pool '{self.name}'")
 
-    def remove_device(self, device_id: str):
+    def remove_device(self, device_id: str) -> None:
         """Remove device from pool"""
         self.devices = [d for d in self.devices if d.id != device_id]
         if device_id in self._locks:
@@ -57,7 +59,8 @@ class DevicePool:
     def get_available_count(self) -> int:
         """Get number of available devices"""
         return sum(
-            1 for device in self.devices
+            1
+            for device in self.devices
             if not self._reserved.get(device.id, False) and device.status == DeviceStatus.AVAILABLE
         )
 
@@ -84,6 +87,7 @@ class DevicePool:
             device = self._acquire_least_busy(candidates)
         elif self.strategy == PoolStrategy.RANDOM:
             import random
+
             device = random.choice(candidates) if candidates else None
         else:
             device = candidates[0] if candidates else None
@@ -98,7 +102,7 @@ class DevicePool:
 
         return None
 
-    def release_device(self, device_id: str):
+    def release_device(self, device_id: str) -> None:
         """Release (unreserve) a device back to the pool"""
         if device_id in self._reserved:
             with self._locks[device_id]:
@@ -115,28 +119,27 @@ class DevicePool:
         """Filter available devices by criteria"""
         # Start with available devices
         candidates = [
-            d for d in self.devices
-            if not self._reserved.get(d.id, False) and d.status == DeviceStatus.AVAILABLE
+            d for d in self.devices if not self._reserved.get(d.id, False) and d.status == DeviceStatus.AVAILABLE
         ]
 
         if not filters:
             return candidates
 
         # Apply filters
-        if 'platform' in filters:
-            candidates = [d for d in candidates if d.platform == filters['platform']]
+        if "platform" in filters:
+            candidates = [d for d in candidates if d.platform == filters["platform"]]
 
-        if 'type' in filters:
-            device_type = DeviceType(filters['type']) if isinstance(filters['type'], str) else filters['type']
+        if "type" in filters:
+            device_type = DeviceType(filters["type"]) if isinstance(filters["type"], str) else filters["type"]
             candidates = [d for d in candidates if d.type == device_type]
 
-        if 'model' in filters:
-            model = filters['model'].lower()
-            candidates = [d for d in candidates if model in (d.model or '').lower()]
+        if "model" in filters:
+            model = filters["model"].lower()
+            candidates = [d for d in candidates if model in (d.model or "").lower()]
 
-        if 'min_version' in filters:
+        if "min_version" in filters:
             # Use proper semantic version comparison instead of string comparison
-            min_version = filters['min_version']
+            min_version = filters["min_version"]
             candidates = [d for d in candidates if self._compare_versions(d.platform_version, min_version) >= 0]
 
         return candidates
@@ -156,8 +159,8 @@ class DevicePool:
         """
         try:
             # Split versions and convert to integers
-            parts1 = [int(x) for x in version1.split('.')]
-            parts2 = [int(x) for x in version2.split('.')]
+            parts1 = [int(x) for x in version1.split(".")]
+            parts2 = [int(x) for x in version2.split(".")]
 
             # Pad shorter version with zeros
             max_len = max(len(parts1), len(parts2))
@@ -194,7 +197,7 @@ class DevicePool:
         # TODO: Track device usage metrics and select least busy
         return candidates[0] if candidates else None
 
-    def health_check(self) -> Dict[str, any]:
+    def health_check(self) -> Dict[str, Any]:
         """Perform health check on all devices in pool"""
         healthy = 0
         unhealthy = 0
@@ -213,7 +216,7 @@ class DevicePool:
             "healthy": healthy,
             "unhealthy": unhealthy,
             "offline": offline,
-            "utilization": (len(self.devices) - healthy) / len(self.devices) if self.devices else 0
+            "utilization": (len(self.devices) - healthy) / len(self.devices) if self.devices else 0,
         }
 
     def to_dict(self) -> Dict:
@@ -225,14 +228,14 @@ class DevicePool:
             "total_devices": len(self.devices),
             "available_devices": self.get_available_count(),
             "health": health,
-            "devices": [d.to_dict() for d in self.devices]
+            "devices": [d.to_dict() for d in self.devices],
         }
 
 
 class PoolManager:
     """Manages multiple device pools"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.pools: Dict[str, DevicePool] = {}
 
     def create_pool(self, name: str, strategy: PoolStrategy = PoolStrategy.ROUND_ROBIN) -> DevicePool:
@@ -249,13 +252,13 @@ class PoolManager:
         """Get pool by name"""
         return self.pools.get(name)
 
-    def delete_pool(self, name: str):
+    def delete_pool(self, name: str) -> None:
         """Delete a pool"""
         if name in self.pools:
             del self.pools[name]
             print(f"Deleted pool: '{name}'")
 
-    def list_pools(self):
+    def list_pools(self) -> None:
         """Print all pools"""
         if not self.pools:
             print("No device pools created.")
