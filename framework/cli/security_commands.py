@@ -44,7 +44,7 @@ def scan(source_path: str, platform: str, output: str, severity: str) -> None:
         # Run security analysis
         print_info("\n🔄 Analyzing security...")
 
-        # analyzer = SecurityAnalyzer(project_root=source_dir)  # noqa: F841 - for future use
+analyzer = SecurityAnalyzer(project_root=source_dir)  # noqa: F841 - for future use
         issues = analyzer.analyze(platform=platform)
 
         # Filter by severity if specified
@@ -144,7 +144,7 @@ def check_secrets(source_path: str) -> None:
     print_info(f"Source: {source_dir}")
 
     try:
-        analyzer = SecurityAnalyzer(project_root=source_dir)
+        analyzer = SecurityAnalyzer(project_root=source_dir)  # noqa: F841
 
         print_info("\n🔄 Scanning for secrets...")
 
