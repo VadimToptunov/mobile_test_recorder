@@ -202,7 +202,7 @@ def auto(test_results_path: str, screenshots: Optional[str], repo: str,
                         failed_count += 1
                 else:
                     # Actually heal
-                    result = orchestrator.heal_failure(failure, commit=commit)
+                    result = orchestrator.heal_failure(failure, dry_run=False)
                     healing_results.append({
                         'test_name': failure.test_name,
                         'old_selector': failure.selector,
