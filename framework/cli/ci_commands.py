@@ -142,6 +142,12 @@ def validate(config_file: Path):
             with open(config_file) as f:
                 config = yaml.safe_load(f)
             
+            # Check if YAML is empty or invalid
+            if config is None:
+                console.print("[red]✗[/red] Validation failed!")
+                console.print("[red]Error:[/red] YAML file is empty or invalid")
+                raise SystemExit(1)
+            
             # Basic validation
             issues = []
             if "name" not in config:
@@ -156,6 +162,12 @@ def validate(config_file: Path):
             import yaml
             with open(config_file) as f:
                 config = yaml.safe_load(f)
+            
+            # Check if YAML is empty or invalid
+            if config is None:
+                console.print("[red]✗[/red] Validation failed!")
+                console.print("[red]Error:[/red] YAML file is empty or invalid")
+                raise SystemExit(1)
             
             issues = []
             if "stages" not in config:
@@ -177,6 +189,12 @@ def validate(config_file: Path):
             import yaml
             with open(config_file) as f:
                 config = yaml.safe_load(f)
+            
+            # Check if YAML is empty or invalid
+            if config is None:
+                console.print("[red]✗[/red] Validation failed!")
+                console.print("[red]Error:[/red] YAML file is empty or invalid")
+                raise SystemExit(1)
             
             issues = []
             if "version" not in config:

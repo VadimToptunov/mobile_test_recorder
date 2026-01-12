@@ -48,6 +48,11 @@ def init(path: Path, force: bool) -> None:
         console.print("Use --force to overwrite")
         raise SystemExit(1)
 
+    # If force is True and file exists, delete it first
+    if force and path.exists():
+        path.unlink()
+        console.print(f"[yellow]→[/yellow] Removed existing config: {path}")
+
     manager = ConfigManager(config_path=path)
     manager.init_default()
 
