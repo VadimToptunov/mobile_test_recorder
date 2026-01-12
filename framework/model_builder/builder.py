@@ -26,8 +26,11 @@ from framework.model.app_model import (
 )
 from framework.correlation import CorrelationResult, EventCorrelator
 from framework.storage.event_store import EventStore
+from framework.ml.self_learning import SelfLearningCollector
+from framework.config.settings import Settings
 
 logger = logging.getLogger(__name__)
+settings = Settings()
 
 
 class ModelBuilder:
@@ -43,6 +46,7 @@ class ModelBuilder:
         event_store: Optional[EventStore] = None,
         use_ml_classifier: bool = False,
         ml_model_path: Optional[Path] = None,
+        enable_self_learning: bool = True,
     ):
         """
         Initialize model builder
@@ -51,10 +55,25 @@ class ModelBuilder:
             event_store: Optional EventStore for loading events
             use_ml_classifier: Enable ML-based element classification
             ml_model_path: Path to trained ML model (optional)
+            enable_self_learning: Enable automatic ML data collection
         """
         self.event_store = event_store
         self.use_ml_classifier = use_ml_classifier
         self.ml_classifier = None
+
+        # Initialize self-learning collector
+        self.enable_self_learning = enable_self_learning
+        self.ml_collector: Optional[SelfLearningCollector] = None
+
+        if enable_self_learning:
+            try:
+                # Check if user has opted in
+                ml_contribute = getattr(settings, 'ml', {}).get('contribute', True)
+                self.ml_collector = SelfLearningCollector(opt_in=ml_contribute)
+                logger.info("Self-learning ML collector initialized")
+            except Exception as e:
+                logger.warning(f"Failed to initialize self-learning collector: {e}")
+                self.ml_collector = None
 
         if use_ml_classifier:
             try:
@@ -166,7 +185,25 @@ class ModelBuilder:
         # Build state machine
         state_machine = self._build_state_machine(nav_events, correlation_result)
 
-        return AppModel(meta=meta, screens=screens, api_calls=api_calls, flows=flows, state_machine=state_machine)
+        # Collect training data for self-learning ML (if enabled)
+        model = AppModel(meta=meta, screens=screens, api_calls=api_calls, flows=flows, state_machine=state_machine)
+
+        if self.ml_collector and self.ml_collector.opt_in:
+            try:
+                # Convert screens to hierarchies and collect training data
+                for screen_name, screen in screens.items():
+                    hierarchy = self._screen_to_hierarchy(screen)
+                    self.ml_collector.collect_from_hierarchy(
+                        hierarchy=hierarchy,
+                        platform=platform.value,
+                        confidence=0.9 if self.use_ml_classifier else 0.7,  # Higher confidence with ML
+                        source="ml-predicted" if self.use_ml_classifier else "rule-based"
+                    )
+                logger.debug(f"Collected {len(screens)} screens for self-learning")
+            except Exception as e:
+                logger.warning(f"Failed to collect self-learning data: {e}")
+
+        return model
 
     def _build_screens(self, nav_events: List[Dict[str, Any]], ui_events: List[Dict[str, Any]]) -> Dict[str, Screen]:
         """
@@ -777,3 +814,49 @@ class ModelBuilder:
             return event.model_dump()
 
         return {}
+
+    def _screen_to_hierarchy(self, screen: Screen) -> Dict[str, Any]:
+        """
+        Convert Screen model to hierarchy dict for self-learning.
+
+        Args:
+            screen: Screen model
+
+        Returns:
+            Hierarchy dict compatible with SelfLearningCollector
+        """
+        hierarchy = {
+            "class": screen.class_name or "Screen",
+            "name": screen.name,
+            "children": []
+        }
+
+        # Convert elements to hierarchy nodes
+        for element in screen.elements:
+            element_node = {
+                "class": element.type.value if hasattr(element.type, 'value') else str(element.type),
+                "text": "",  # Don't include actual text for privacy
+                "clickable": element.clickable,
+                "focusable": element.focusable,
+                "enabled": True,  # Assume enabled if interacted with
+                "bounds": {
+                    "width": 100,  # Placeholder
+                    "height": 50   # Placeholder
+                },
+                "element_type": element.type.value if hasattr(element.type, 'value') else str(element.type),
+                "children": []
+            }
+
+            # Add selector info as attributes
+            if element.selector:
+                if element.selector.id:
+                    element_node["has_id"] = True
+                if element.selector.accessibility_id:
+                    element_node["has_accessibility_id"] = True
+                if element.selector.text:
+                    element_node["has_text"] = True
+                    element_node["text_length"] = len(element.selector.text)
+
+            hierarchy["children"].append(element_node)
+
+        return hierarchy

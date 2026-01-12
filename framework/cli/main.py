@@ -6,6 +6,7 @@ Simplified main module that imports command groups from separate modules.
 
 import click
 from framework import __version__
+from framework.ml.self_learning import ModelUpdater
 
 # Import command groups
 from framework.cli.business_logic_commands import business
@@ -28,6 +29,45 @@ from framework.cli.execute_commands import execute
 from framework.cli.rich_output import print_banner
 
 
+def _check_ml_updates() -> None:
+    """Check for ML model updates on CLI startup (once per day)."""
+    try:
+        from pathlib import Path
+        import datetime
+        import json
+
+        # Check if we should update (once per day)
+        update_check_file = Path(".observe_ml_check")
+        should_check = True
+
+        if update_check_file.exists():
+            try:
+                with open(update_check_file, 'r') as f:
+                    last_check = json.load(f).get("last_check")
+                    last_check_date = datetime.datetime.fromisoformat(last_check)
+
+                    # Check if last check was today
+                    if last_check_date.date() == datetime.datetime.now().date():
+                        should_check = False
+            except Exception:
+                pass  # If error reading, just check anyway
+
+        if should_check:
+            updater = ModelUpdater()
+            update = updater.check_for_updates()
+
+            # Save check timestamp
+            with open(update_check_file, 'w') as f:
+                json.dump({"last_check": datetime.datetime.now().isoformat()}, f)
+
+            if update:
+                click.echo(f"\n💡 New ML model available: v{update['version']}")
+                click.echo("   Run: observe ml update-model")
+
+    except Exception:
+        pass  # Silently fail - don't interrupt user workflow
+
+
 @click.group()
 @click.version_option(version=__version__)
 @click.pass_context
@@ -38,6 +78,9 @@ def cli(ctx):
     Intelligent Mobile Testing Platform - Observe, Analyze, Automate
     """
     ctx.ensure_object(dict)
+
+    # Check for ML model updates on startup (once per day)
+    _check_ml_updates()
 
 
 # Register command groups
