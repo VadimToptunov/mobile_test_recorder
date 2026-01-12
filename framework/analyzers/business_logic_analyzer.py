@@ -946,7 +946,7 @@ class BusinessLogicAnalyzer:
         """Detect empty collection/string checks"""
         all_files = list(self.project_path.rglob("*.kt")) + list(self.project_path.rglob("*.swift"))
 
-        seen_empty_checks = set()  # Track unique empty checks across files (by var_name only)
+        seen_empty_checks = set()  # Track unique empty checks across files
 
         for file_path in all_files:
             try:
@@ -956,9 +956,11 @@ class BusinessLogicAnalyzer:
                 empty_checks = re.findall(r"(\w+)\.isEmpty\(\)", content)
 
                 for var_name in set(empty_checks):
-                    # Create unique key for cross-file deduplication (var_name only)
-                    if var_name not in seen_empty_checks:
-                        seen_empty_checks.add(var_name)
+                    # Create unique key for deduplication (include file_path like other methods)
+                    empty_check_key = (var_name, str(file_path))
+
+                    if empty_check_key not in seen_empty_checks:
+                        seen_empty_checks.add(empty_check_key)
 
                         edge_case = EdgeCase(
                             type="empty",
