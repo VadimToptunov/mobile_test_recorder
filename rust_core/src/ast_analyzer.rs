@@ -157,26 +157,51 @@ impl RustAstAnalyzer {
         let mut cognitive = 0;
         let mut max_nesting = 0;
         let mut current_nesting = 0;
+        let mut indent_stack: Vec<usize> = vec![0]; // Track indentation levels
 
         for line in source.lines() {
             let trimmed = line.trim();
             
-            // Count control flow
+            // Skip empty lines (don't reset nesting)
+            if trimmed.is_empty() {
+                continue;
+            }
+            
+            // Calculate current indentation
+            let indent = line.len() - line.trim_start().len();
+            
+            // Update nesting level based on indentation
+            while indent_stack.len() > 1 && indent < *indent_stack.last().unwrap() {
+                indent_stack.pop();
+                if current_nesting > 0 {
+                    current_nesting -= 1;
+                }
+            }
+            
+            // Count control flow with word boundary check
             for keyword in &control_flow_keywords {
-                if trimmed.starts_with(keyword) {
+                // Check if line starts with keyword followed by whitespace, colon, or parenthesis
+                let keyword_pattern = format!("{} ", keyword);
+                let keyword_colon = format!("{}:", keyword);
+                let keyword_paren = format!("{}(", keyword);
+                
+                if trimmed.starts_with(&keyword_pattern) 
+                    || trimmed.starts_with(&keyword_colon)
+                    || trimmed.starts_with(&keyword_paren)
+                    || trimmed == *keyword {  // standalone keyword
+                    
                     complexity += 1;
                     cognitive += 1 + current_nesting;
                     
+                    // Increase nesting for most control flow (but not else/elif/except)
                     if *keyword != "else" && *keyword != "elif" && *keyword != "except" {
                         current_nesting += 1;
                         max_nesting = max_nesting.max(current_nesting);
+                        indent_stack.push(indent);
                     }
+                    
+                    break; // Only count once per line
                 }
-            }
-
-            // Decrease nesting on dedent (simplified)
-            if trimmed.is_empty() {
-                current_nesting = 0;
             }
         }
 
