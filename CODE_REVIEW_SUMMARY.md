@@ -167,3 +167,36 @@ Minor improvements can be addressed incrementally without blocking release.
 2. Consider adding CI/CD pipeline
 3. Plan for performance optimization (caching)
 
+
+---
+
+## 🔄 Update (2026-01-12 Evening)
+
+### Additional Bug Fixes
+
+**Bug 5: Missing cross-file deduplication in _detect_empty_checks**
+- **File:** `framework/analyzers/business_logic_analyzer.py:945-967`
+- **Issue:** Edge case deduplication only worked within single file, not across files
+- **Impact:** ❌ High - Duplicate edge cases inflated statistics
+- **Fix:** Added `seen_empty_checks` set for cross-file deduplication
+- **Status:** ✅ FIXED (commit e31df9b)
+
+**Bug 6: Global schema extraction in _generate_ios_api_contracts**
+- **File:** `framework/analyzers/business_logic_analyzer.py:1131-1203`
+- **Issue:** Codable structs extracted once from entire file, applied to all URLs
+- **Impact:** ❌ High - All URLs got same schemas, creating misleading contracts
+- **Fix:** Changed to context-based extraction (500 chars around each URL)
+- **Status:** ✅ FIXED (commit e31df9b)
+
+### Total Bugs Fixed: 6
+
+All critical bugs in business logic analyzer now resolved:
+1. ✅ AST cognitive complexity calculation
+2. ✅ Edge case deduplication (boundary/null)
+3. ✅ Inconsistent source field types
+4. ✅ Global API error code extraction
+5. ✅ Empty check cross-file deduplication
+6. ✅ iOS API contract schema scope
+
+**Final Status:** Production-ready ✅
+
