@@ -140,10 +140,10 @@ class PerformanceAnalyzer:
         m2 = self.metrics[profile2]
 
         return {
-            'startup_dif': m2.app_start_time - m1.app_start_time,
-            'memory_dif': m2.memory_usage - m1.memory_usage,
-            'cpu_dif': m2.cpu_usage - m1.cpu_usage,
-            'fps_dif': m2.fps - m1.fps,
+            'startup_diff': m2.app_start_time - m1.app_start_time,
+            'memory_diff': m2.memory_usage - m1.memory_usage,
+            'cpu_diff': m2.cpu_usage - m1.cpu_usage,
+            'fps_diff': m2.fps - m1.fps,
             'battery_diff': m2.battery_drain - m1.battery_drain,
         }
 

@@ -15,11 +15,11 @@ from typing import List
 from dataclasses import dataclass, field
 
 from .analysis_result import (
-        AnalysisResult,
-        ScreenCandidate,
-        UIElementCandidate,
-        APIEndpointCandidate,
-        NavigationCandidate
+    AnalysisResult,
+    ScreenCandidate,
+    UIElementCandidate,
+    APIEndpointCandidate,
+    NavigationCandidate,
 )
 
 
@@ -83,8 +83,10 @@ class IOSAnalyzer:
                 print(f"[IOSAnalyzer] Error analyzing {swift_file.name}: {e}")
                 continue
 
-        print(f"[IOSAnalyzer] Found {len(screens)} screens, {len(elements)} elements, "
-              f"{len(apis)} APIs, {len(navigation)} navigation routes")
+        print(
+            f"[IOSAnalyzer] Found {len(screens)} screens, {len(elements)} elements, "
+            f"{len(apis)} APIs, {len(navigation)} navigation routes"
+        )
 
         return AnalysisResult(
             platform="ios",
@@ -94,9 +96,7 @@ class IOSAnalyzer:
             api_endpoints=apis,
             navigation=navigation,
             files_analyzed=len(swift_files),
-            metadata={
-                "project_path": str(self.project_path)
-            }
+            metadata={"project_path": str(self.project_path)},
         )
 
     def _find_swift_files(self) -> List[Path]:
@@ -106,7 +106,7 @@ class IOSAnalyzer:
         for source_dir in self.source_dirs:
             for root, _, files in os.walk(source_dir):
                 for file in files:
-                    if file.endswith('.swift'):
+                    if file.endswith(".swift"):
                         swift_files.append(Path(root) / file)
 
         return swift_files
@@ -118,14 +118,14 @@ class IOSAnalyzer:
         Returns:
             Tuple of (screens, elements)
         """
-        with open(file_path, 'r', encoding='utf-8') as f:
+        with open(file_path, "r", encoding="utf-8") as f:
             content = f.read()
 
         screens = []
         elements = []
 
         # Pattern: struct SomeView: View {
-        view_pattern = r'struct\s+(\w+View)\s*:\s*View\s*\{'
+        view_pattern = r"struct\s+(\w+View)\s*:\s*View\s*\{"
 
         for match in re.finditer(view_pattern, content):
             view_name = match.group(1)
@@ -136,42 +136,35 @@ class IOSAnalyzer:
 
             # Check if this is a screen (has navigationTitle or is a primary view)
             is_screen = (
-                'navigationTitle' in body_content
-                or 'NavigationView' in body_content
-                or 'TabView' in body_content
-                or view_name in [
-                    'ContentView', 'OnboardingView', 'LoginView',
-                    'HomeView', 'KYCView', 'TopUpView', 'SendMoneyView'
-                ]
+                "navigationTitle" in body_content
+                or "NavigationView" in body_content
+                or "TabView" in body_content
+                or view_name
+                in ["ContentView", "OnboardingView", "LoginView", "HomeView", "KYCView", "TopUpView", "SendMoneyView"]
             )
 
             if is_screen:
-                screens.append(ScreenCandidate(
-                    name=view_name,
-                    file_path=str(file_path.relative_to(self.project_path)),
-                    line_number=content[:match.start()].count('\n') + 1,
-                    route=self._infer_route_from_view_name(view_name),
-                    composable_name=view_name,
-                    parameters=[]
-                ))
+                screens.append(
+                    ScreenCandidate(
+                        name=view_name,
+                        file_path=str(file_path.relative_to(self.project_path)),
+                        line_number=content[: match.start()].count("\n") + 1,
+                        route=self._infer_route_from_view_name(view_name),
+                        composable_name=view_name,
+                        parameters=[],
+                    )
+                )
 
                 # Extract elements from this screen
                 screen_elements = self._extract_elements_from_view(
-                    screen_name=view_name,
-                    full_content=content,
-                    view_body_start=start_pos,
-                    file_path=file_path
+                    screen_name=view_name, full_content=content, view_body_start=start_pos, file_path=file_path
                 )
                 elements.extend(screen_elements)
 
         return screens, elements
 
     def _extract_elements_from_view(
-            self,
-            screen_name: str,
-            full_content: str,
-            view_body_start: int,
-            file_path: Path
+        self, screen_name: str, full_content: str, view_body_start: int, file_path: Path
     ) -> List[UIElementCandidate]:
         """Extract UI elements with accessibility identifiers from view"""
         elements = []
@@ -196,16 +189,18 @@ class IOSAnalyzer:
             element_type = self._infer_element_type_from_context(context)
 
             # Calculate line number from file start
-            line_number = full_content[:absolute_pos].count('\n') + 1
+            line_number = full_content[:absolute_pos].count("\n") + 1
 
-            elements.append(UIElementCandidate(
-                id=element_id,
-                type=element_type,
-                screen=screen_name,
-                file_path=str(file_path.relative_to(self.project_path)),
-                line_number=line_number,
-                test_tag=element_id  # Use accessibility ID as test tag
-            ))
+            elements.append(
+                UIElementCandidate(
+                    id=element_id,
+                    type=element_type,
+                    screen=screen_name,
+                    file_path=str(file_path.relative_to(self.project_path)),
+                    line_number=line_number,
+                    test_tag=element_id,  # Use accessibility ID as test tag
+                )
+            )
 
         return elements
 
@@ -213,76 +208,80 @@ class IOSAnalyzer:
         """Infer element type from surrounding code"""
         context_lower = context.lower()
 
-        if 'button' in context_lower:
-            return 'Button'
-        elif 'textfield' in context_lower:
-            return 'TextField'
-        elif 'securefield' in context_lower:
-            return 'SecureField'
-        elif 'text(' in context_lower:
-            return 'Text'
-        elif 'image' in context_lower:
-            return 'Image'
-        elif 'picker' in context_lower:
-            return 'Picker'
-        elif 'toggle' in context_lower:
-            return 'Toggle'
-        elif 'slider' in context_lower:
-            return 'Slider'
-        elif 'list' in context_lower or 'scrollview' in context_lower:
-            return 'List'
+        if "button" in context_lower:
+            return "Button"
+        elif "textfield" in context_lower:
+            return "TextField"
+        elif "securefield" in context_lower:
+            return "SecureField"
+        elif "text(" in context_lower:
+            return "Text"
+        elif "image" in context_lower:
+            return "Image"
+        elif "picker" in context_lower:
+            return "Picker"
+        elif "toggle" in context_lower:
+            return "Toggle"
+        elif "slider" in context_lower:
+            return "Slider"
+        elif "list" in context_lower or "scrollview" in context_lower:
+            return "List"
         else:
-            return 'View'
+            return "View"
 
     def _analyze_navigation_file(self, file_path: Path) -> List[NavigationCandidate]:
         """Analyze navigation routes from Swift file"""
-        with open(file_path, 'r', encoding='utf-8') as f:
+        with open(file_path, "r", encoding="utf-8") as f:
             content = f.read()
 
         navigation = []
 
         # Pattern: .sheet(isPresented: ...) or .fullScreenCover
-        sheet_pattern = r'\.(sheet|fullScreenCover)\(isPresented:[^{]+\{\s*(\w+View)\('
+        sheet_pattern = r"\.(sheet|fullScreenCover)\(isPresented:[^{]+\{\s*(\w+View)\("
 
         for match in re.finditer(sheet_pattern, content):
             presentation_type = match.group(1)
             destination_view = match.group(2)
 
             # Calculate line number
-            line_number = content[:match.start()].count('\n') + 1
+            line_number = content[: match.start()].count("\n") + 1
 
-            navigation.append(NavigationCandidate(
-                from_screen="Unknown",  # Would need more context
-                to_screen=destination_view,
-                route=self._infer_route_from_view_name(destination_view),
-                trigger=f"{presentation_type}_presentation",
-                file_path=str(file_path.relative_to(self.project_path)),
-                line_number=line_number
-            ))
+            navigation.append(
+                NavigationCandidate(
+                    from_screen="Unknown",  # Would need more context
+                    to_screen=destination_view,
+                    route=self._infer_route_from_view_name(destination_view),
+                    trigger=f"{presentation_type}_presentation",
+                    file_path=str(file_path.relative_to(self.project_path)),
+                    line_number=line_number,
+                )
+            )
 
         # Pattern: NavigationLink(destination: SomeView())
-        navlink_pattern = r'NavigationLink\([^)]*destination:\s*(\w+View)\('
+        navlink_pattern = r"NavigationLink\([^)]*destination:\s*(\w+View)\("
 
         for match in re.finditer(navlink_pattern, content):
             destination_view = match.group(1)
 
             # Calculate line number
-            line_number = content[:match.start()].count('\n') + 1
+            line_number = content[: match.start()].count("\n") + 1
 
-            navigation.append(NavigationCandidate(
-                from_screen="Unknown",
-                to_screen=destination_view,
-                route=self._infer_route_from_view_name(destination_view),
-                trigger="navigation_link",
-                file_path=str(file_path.relative_to(self.project_path)),
-                line_number=line_number
-            ))
+            navigation.append(
+                NavigationCandidate(
+                    from_screen="Unknown",
+                    to_screen=destination_view,
+                    route=self._infer_route_from_view_name(destination_view),
+                    trigger="navigation_link",
+                    file_path=str(file_path.relative_to(self.project_path)),
+                    line_number=line_number,
+                )
+            )
 
         return navigation
 
     def _analyze_api_file(self, file_path: Path) -> List[APIEndpointCandidate]:
         """Analyze API endpoint definitions from Swift file"""
-        with open(file_path, 'r', encoding='utf-8') as f:
+        with open(file_path, "r", encoding="utf-8") as f:
             content = f.read()
 
         apis = []
@@ -301,19 +300,23 @@ class IOSAnalyzer:
             method = self._extract_http_method_from_context(context)
 
             # Calculate line number
-            line_number = content[:match.start()].count('\n') + 1
+            line_number = content[: match.start()].count("\n") + 1
 
-            apis.append(APIEndpointCandidate(
-                method=method,
-                path=self._extract_path_from_url(url),
-                interface_name="URLSession",  # Generic for iOS
-                function_name=f"{method.lower()}_request",
-                file_path=str(file_path.relative_to(self.project_path)),
-                line_number=line_number
-            ))
+            apis.append(
+                APIEndpointCandidate(
+                    method=method,
+                    path=self._extract_path_from_url(url),
+                    interface_name="URLSession",  # Generic for iOS
+                    function_name=f"{method.lower()}_request",
+                    file_path=str(file_path.relative_to(self.project_path)),
+                    line_number=line_number,
+                )
+            )
 
         # Pattern: URLRequest with httpMethod
-        request_pattern = r'var\s+request\s*=\s*URLRequest\(url:[^)]+\)[^}]*?\.httpMethod\s*=\s*"(GET|POST|PUT|DELETE|PATCH)"'
+        request_pattern = (
+            r'var\s+request\s*=\s*URLRequest\(url:[^)]+\)[^}]*?\.httpMethod\s*=\s*"(GET|POST|PUT|DELETE|PATCH)"'
+        )
 
         for match in re.finditer(request_pattern, content, re.DOTALL):
             method = match.group(1)
@@ -328,21 +331,21 @@ class IOSAnalyzer:
             return method_match.group(1)
 
         # Check for method in URLSession.dataTask or similar
-        if 'POST' in context.upper():
-            return 'POST'
-        elif 'PUT' in context.upper():
-            return 'PUT'
-        elif 'DELETE' in context.upper():
-            return 'DELETE'
-        elif 'PATCH' in context.upper():
-            return 'PATCH'
+        if "POST" in context.upper():
+            return "POST"
+        elif "PUT" in context.upper():
+            return "PUT"
+        elif "DELETE" in context.upper():
+            return "DELETE"
+        elif "PATCH" in context.upper():
+            return "PATCH"
 
-        return 'GET'  # Default
+        return "GET"  # Default
 
     def _extract_path_from_url(self, url: str) -> str:
         """Extract path from full URL"""
         # Remove protocol and domain
-        match = re.search(r'https?://[^/]+(/.+)', url)
+        match = re.search(r"https?://[^/]+(/.+)", url)
         if match:
             return match.group(1)
         return url
@@ -350,22 +353,22 @@ class IOSAnalyzer:
     def _infer_service_name_from_url(self, url: str) -> str:
         """Infer service name from URL"""
         # Extract domain
-        match = re.search(r'https?://([^/]+)', url)
+        match = re.search(r"https?://([^/]+)", url)
         if match:
             domain = match.group(1)
             # Remove common prefixes
-            domain = re.sub(r'^(api\.|www\.)', '', domain)
+            domain = re.sub(r"^(api\.|www\.)", "", domain)
             # Remove TLD
-            domain = re.sub(r'\.(com|net|org|io)$', '', domain)
-            return domain.replace('.', '_')
-        return 'unknown'
+            domain = re.sub(r"\.(com|net|org|io)$", "", domain)
+            return domain.replace(".", "_")
+        return "unknown"
 
     def _infer_route_from_view_name(self, view_name: str) -> str:
         """Infer navigation route from view name"""
         # Remove 'View' suffix and convert to snake_case
-        route = view_name.replace('View', '')
-        route = re.sub(r'([A-Z])', r'_\1', route).lower().strip('_')
-        return f'/{route}'
+        route = view_name.replace("View", "")
+        route = re.sub(r"([A-Z])", r"_\1", route).lower().strip("_")
+        return f"/{route}"
 
     def _extract_balanced_braces(self, content: str, start_pos: int) -> str:
         """Extract content within balanced braces"""
@@ -376,11 +379,11 @@ class IOSAnalyzer:
             char = content[i]
             result.append(char)
 
-            if char == '{':
+            if char == "{":
                 depth += 1
-            elif char == '}':
+            elif char == "}":
                 depth -= 1
                 if depth == 0:
                     break
 
-        return ''.join(result)
+        return "".join(result)

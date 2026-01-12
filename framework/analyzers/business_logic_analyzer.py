@@ -946,7 +946,7 @@ class BusinessLogicAnalyzer:
         """Detect empty collection/string checks"""
         all_files = list(self.project_path.rglob("*.kt")) + list(self.project_path.rglob("*.swift"))
 
-        seen_empty_checks = set()  # Track unique empty checks across files
+        seen_empty_checks = set()  # Track unique empty checks across files (by var_name only)
 
         for file_path in all_files:
             try:
@@ -956,11 +956,9 @@ class BusinessLogicAnalyzer:
                 empty_checks = re.findall(r"(\w+)\.isEmpty\(\)", content)
 
                 for var_name in set(empty_checks):
-                    # Create unique key for cross-file deduplication
-                    empty_key = (var_name, str(file_path))
-
-                    if empty_key not in seen_empty_checks:
-                        seen_empty_checks.add(empty_key)
+                    # Create unique key for cross-file deduplication (var_name only)
+                    if var_name not in seen_empty_checks:
+                        seen_empty_checks.add(var_name)
 
                         edge_case = EdgeCase(
                             type="empty",
@@ -1146,20 +1144,21 @@ class BusinessLogicAnalyzer:
                 url_pattern = r'URL\(string:\s*"([^"]+)"\)'
                 url_matches = list(re.finditer(url_pattern, content))
 
-                # Look for HTTP method definitions
-                method_patterns = re.findall(r'httpMethod\s*=\s*"(GET|POST|PUT|DELETE|PATCH)"', content)
-
-                # Combine to create contracts
-                for i, url_match in enumerate(url_matches):
+                # Process each URL individually
+                for url_match in url_matches:
                     url = url_match.group(1)
-                    method = method_patterns[i] if i < len(method_patterns) else "GET"
 
-                    # Find schemas near this specific URL (within 500 chars)
+                    # Find HTTP method in context around this specific URL (not globally)
                     url_pos = url_match.start()
                     context_start = max(0, url_pos - 500)
                     context_end = min(len(content), url_pos + 500)
                     context = content[context_start:context_end]
 
+                    # Search for httpMethod assignment in this context
+                    method_match = re.search(r'httpMethod\s*=\s*"(GET|POST|PUT|DELETE|PATCH)"', context)
+                    method = method_match.group(1) if method_match else "GET"
+
+                    # Find schemas near this specific URL
                     # Extract Codable structs within this context
                     schemas = re.findall(
                         r"struct\s+(\w+):\s*Codable\s*{([^}]+)}",
