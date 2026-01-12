@@ -248,7 +248,7 @@ def stress(tests: str, duration: int, args: Optional[str]) -> None:
     with console.status("[bold green]Running stress tests...") as status:
         while (time.time() - start_time) < duration:
             iterations += 1
-            status.update(f"[bold green]Iteration {iterations}...")
+            status.update(f"[bold green]Iteration {iterations}...")  # noqa: F541
 
             cmd = ["pytest", str(tests_path), "-q"]
             if args:
