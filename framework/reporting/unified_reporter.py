@@ -4,7 +4,7 @@ Unified test reporter
 Aggregates test results from multiple sources and generates comprehensive reports.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
 from typing import List, Optional
@@ -30,9 +30,9 @@ class TestResult:
     stack_trace: Optional[str] = None
     platform: Optional[str] = None
     device: Optional[str] = None
-    screenshots: List[str] = None
+    screenshots: List[str] = field(default_factory=list)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.screenshots is None:
             self.screenshots = []
 
@@ -74,21 +74,21 @@ class UnifiedReporter:
     Unified test reporter supporting multiple formats
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.suites: List[TestSuite] = []
 
-    def add_suite(self, suite: TestSuite):
+    def add_suite(self, suite: TestSuite) -> None:
         """Add a test suite to the report"""
         self.suites.append(suite)
 
-    def load_from_junit(self, junit_path: Path):
+    def load_from_junit(self, junit_path: Path) -> None:
         """Load test results from JUnit XML"""
         from .junit_parser import JUnitParser
         parser = JUnitParser()
         suite = parser.parse(junit_path)
         self.add_suite(suite)
 
-    def load_from_directory(self, directory: Path):
+    def load_from_directory(self, directory: Path) -> None:
         """Load all JUnit XML files from directory"""
         for junit_file in directory.rglob('junit*.xml'):
             try:
@@ -101,7 +101,7 @@ class UnifiedReporter:
         output_path: Path,
         format: ReportFormat = ReportFormat.HTML,
         title: str = "Test Report"
-    ):
+    ) -> None:
         """
         Generate test report
 
@@ -119,7 +119,7 @@ class UnifiedReporter:
         else:
             raise ValueError(f"Unsupported format: {format}")
 
-    def _generate_html_report(self, output_path: Path, title: str):
+    def _generate_html_report(self, output_path: Path, title: str) -> None:
         """Generate HTML report"""
         total_tests = sum(suite.total for suite in self.suites)
         total_passed = sum(suite.passed for suite in self.suites)
@@ -394,7 +394,7 @@ class UnifiedReporter:
         output_path.write_text(html_content)
         print(f"✓ HTML report generated: {output_path}")
 
-    def _generate_json_report(self, output_path: Path):
+    def _generate_json_report(self, output_path: Path) -> None:
         """Generate JSON report"""
         report_data = {
             'generated': datetime.now().isoformat(),
@@ -431,7 +431,7 @@ class UnifiedReporter:
         output_path.write_text(json.dumps(report_data, indent=2))
         print(f"✓ JSON report generated: {output_path}")
 
-    def _generate_allure_report(self, output_path: Path):
+    def _generate_allure_report(self, output_path: Path) -> None:
         """Generate Allure-compatible results"""
         from .allure_generator import AllureGenerator
         generator = AllureGenerator()
