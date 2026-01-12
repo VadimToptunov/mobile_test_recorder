@@ -3,7 +3,6 @@
 //! High-performance event correlation for UI ↔ API ↔ Navigation
 
 use pyo3::prelude::*;
-use std::collections::HashMap;
 
 #[pyclass]
 pub struct RustCorrelator {

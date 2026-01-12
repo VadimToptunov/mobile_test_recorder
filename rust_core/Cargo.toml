@@ -47,13 +47,14 @@ env_logger = "0.11"
 criterion = "0.5"  # Benchmarking
 proptest = "1.4"   # Property testing
 
-[[bench]]
-name = "ast_bench"
-harness = false
-
-[[bench]]
-name = "correlator_bench"
-harness = false
+# Benchmarks (commented out until implemented)
+# [[bench]]
+# name = "ast_bench"
+# harness = false
+#
+# [[bench]]
+# name = "correlator_bench"
+# harness = false
 
 [profile.release]
 opt-level = 3

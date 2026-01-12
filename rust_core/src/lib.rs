@@ -20,7 +20,7 @@ pub mod io;
 pub mod utils;
 
 // Re-exports
-pub use ast_analyzer::RustAstAnalyzer;
+pub use ast_analyzer::{RustAstAnalyzer, ComplexityMetrics};
 pub use correlator::RustCorrelator;
 pub use business_logic::RustBusinessLogicAnalyzer;
 
@@ -32,6 +32,7 @@ fn observe_core(_py: Python, m: &PyModule) -> PyResult<()> {
 
     // Register classes
     m.add_class::<RustAstAnalyzer>()?;
+    m.add_class::<ComplexityMetrics>()?;
     m.add_class::<RustCorrelator>()?;
     m.add_class::<RustBusinessLogicAnalyzer>()?;
 

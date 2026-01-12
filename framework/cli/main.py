@@ -26,6 +26,16 @@ from framework.cli.notify_commands import notify
 from framework.cli.visual_commands import visual
 from framework.cli.data_commands import data
 from framework.cli.execute_commands import execute
+from framework.cli.mock_commands import mock
+from framework.cli.selector_commands import selector
+from framework.cli.parallel_commands import parallel
+from framework.cli.ci_commands import ci
+from framework.cli.doctor_command import doctor
+from framework.cli.report_commands import report
+from framework.cli.observability_commands import observe_ as observability
+from framework.cli.a11y_commands import a11y
+from framework.cli.load_commands import load
+from framework.cli.docs_commands import docs
 from framework.cli.rich_output import print_banner
 
 
@@ -42,7 +52,7 @@ def _check_ml_updates() -> None:
 
         if update_check_file.exists():
             try:
-                with open(update_check_file, 'r') as f:
+                with open(update_check_file, "r") as f:
                     last_check = json.load(f).get("last_check")
                     last_check_date = datetime.datetime.fromisoformat(last_check)
 
@@ -57,7 +67,7 @@ def _check_ml_updates() -> None:
             update = updater.check_for_updates()
 
             # Save check timestamp
-            with open(update_check_file, 'w') as f:
+            with open(update_check_file, "w") as f:
                 json.dump({"last_check": datetime.datetime.now().isoformat()}, f)
 
             if update:
@@ -100,6 +110,16 @@ cli.add_command(notify)
 cli.add_command(visual)
 cli.add_command(data)
 cli.add_command(execute)
+cli.add_command(mock)
+cli.add_command(selector)
+cli.add_command(parallel)
+cli.add_command(ci)
+cli.add_command(doctor)
+cli.add_command(report)
+cli.add_command(observability, name="observe")
+cli.add_command(a11y)
+cli.add_command(load)
+cli.add_command(docs)
 
 # Add self-learning ML commands as subgroup
 ml.add_command(ml_selflearn_commands.check_updates)
