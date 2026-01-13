@@ -869,53 +869,23 @@ observability:
     enabled: false
 ```
 
-### Docker Deployment
-
-```dockerfile
-FROM python:3.13-slim
-
-# Install Rust
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-ENV PATH="/root/.cargo/bin:${PATH}"
-
-# Install framework
-RUN pip install mobile-test-recorder[rust]
-
-# Install Appium
-RUN npm install -g appium
-RUN appium driver install uiautomator2
-
-# Setup
-WORKDIR /app
-COPY tests/ tests/
-COPY observe.yaml .
-
-# Run tests
-CMD ["observe", "parallel", "run", "tests/", "--workers", "4"]
-```
-
 ---
 
 ## Future Architecture
 
 ### Phase 6+ (Planned)
 
-1. **Distributed Execution**
-   - Kubernetes orchestration
-   - Cloud device farms (AWS Device Farm, BrowserStack)
-   - Global test distribution
-
-2. **Real-Time Collaboration**
+1. **Real-Time Collaboration**
    - Live test session sharing
    - Team dashboards
    - Collaborative debugging
 
-3. **AI-Powered Features**
+2. **AI-Powered Features**
    - GPT-based test generation
    - Natural language test specification
    - Automatic bug report generation
 
-4. **WebAssembly Support**
+3. **WebAssembly Support**
    - Browser-based test runner
    - Zero-install execution
    - Rust → WASM compilation

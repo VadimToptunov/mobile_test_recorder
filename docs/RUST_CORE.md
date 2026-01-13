@@ -428,14 +428,6 @@ Users with Rust installed can compile:
 pip install mobile-observe-test --no-binary :all:
 ```
 
-### Option 3: Docker Images
-
-Pre-built images with Rust core:
-
-```bash
-docker pull mobile-observe:latest-rust
-```
-
 ---
 
 ## 🔒 Safety & Error Handling

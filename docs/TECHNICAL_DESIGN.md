@@ -1066,58 +1066,6 @@ pytest tests/
 cargo test
 ```
 
-### Docker
-
-```dockerfile
-FROM python:3.13-slim
-
-# Install Rust
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-ENV PATH="/root/.cargo/bin:${PATH}"
-
-# Install framework
-COPY . /app
-WORKDIR /app
-RUN pip install -r requirements.txt
-RUN cd rust_core && maturin develop --release
-
-ENTRYPOINT ["observe"]
-```
-
-### Kubernetes
-
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: mobile-test-runner
-spec:
-  replicas: 4
-  selector:
-    matchLabels:
-      app: mobile-test-runner
-  template:
-    metadata:
-      labels:
-        app: mobile-test-runner
-    spec:
-      containers:
-      - name: test-runner
-        image: mobile-test-recorder:2.0
-        env:
-        - name: DEVICE_POOL
-          value: "k8s-device-pool"
-        - name: WORKERS
-          value: "4"
-        resources:
-          requests:
-            memory: "2Gi"
-            cpu: "2"
-          limits:
-            memory: "4Gi"
-            cpu: "4"
-```
-
 ---
 
 ## Security Considerations

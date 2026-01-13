@@ -22,26 +22,19 @@
               │                        │
               ↓                        ↓
 ┌─────────────────────────────────────────────────────────┐
-│         Central ML Server (api.mobile-observe.dev)      │
+│         Local ML Model (Privacy-First)                  │
 │                                                          │
-│  • Aggregates data from all users                       │
-│  • Retrains model weekly                                │
-│  • Publishes updated models                             │
+│  • Trains on your data locally                          │
+│  • Improves with each test run                          │
+│  • No data leaves your machine                          │
 └──────────────────────────┬──────────────────────────────┘
                            │
                            ↓
               ┌────────────────────────┐
               │  Model v1.1 (updated)  │
-              │  • 10K new samples     │
-              │  • 92% → 95% accuracy  │
+              │  • Local improvements  │
+              │  • Your data only      │
               └────────────────────────┘
-                           │
-                           ↓
-┌────────────────────────────────────────────────────────┐
-│  All Users: auto-download updated model                │
-│  • Improves every week                                 │
-│  • No manual intervention                              │
-└────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -59,12 +52,11 @@ observe project fullcycle --android-source ./app/src --output ./tests/
 
 # Console output:
 # ✅ Using universal pre-trained ML model
-# 📊 Model version: 1.2.0 (trained on 50K+ elements)
+# 📊 Model version: 1.2.0 (trained locally)
 # 🌍 Supports: Android, iOS, Flutter, React Native
 # 
-# 💡 TIP: Your usage helps improve the model for everyone!
-#    Data shared: element attributes only (no app names, no text content)
-#    Opt-out: observe config set ml.contribute false
+# 💡 TIP: Model improves automatically with each test run!
+#    All training happens locally - your data never leaves your machine
 ```
 
 ### Automatic Updates
@@ -147,10 +139,10 @@ observe config set ml.contribute true
 
 ### Comparison with Other Tools
 
-| Feature | Mobile Observe | Firebase Crashlytics | Amplitude |
-|---------|----------------|----------------------|-----------|
-| Collects app names | ❌ | ✅ | ✅ |
-| Collects screen text | ❌ | ✅ (stacktraces) | ✅ |
+| Feature | Mobile Observe | Other Analytics |
+|---------|----------------|-----------------|
+| Collects app names | ❌ | ✅ |
+| Collects screen text | ❌ | ✅ (stacktraces) |
 | Collects screenshots | ❌ | ✅ | ❌ |
 | Collects user IDs | ❌ | ✅ | ✅ |
 | Can be disabled | ✅ | ✅ | ✅ |
@@ -169,11 +161,10 @@ observe config set ml.contribute true
 from framework.ml.self_learning import SelfLearningCollector
 
 collector = SelfLearningCollector(
-    opt_in=True,  # User consent
-    upload_endpoint="https://api.mobile-observe.dev/v1/ml/samples"
+    opt_in=True  # Local training only
 )
 
-# Automatically collects during normal usage
+# Automatically improves during normal usage
 collector.collect_from_hierarchy(hierarchy, platform="android")
 
 # Auto-uploads when batch reaches 1000 samples
@@ -358,35 +349,9 @@ observe ml analyze-cache
 #   ...
 ```
 
-### Development Mode (mock server)
-
-```bash
-# 1. Start local mock server
-cd ml_server_mock/
-python mock_server.py
-# Server running on http://localhost:8000
-
-# 2. Configure endpoint
-observe config set ml.upload_endpoint http://localhost:8000/v1/ml/samples
-
-# 3. Enable uploads
-observe config set ml.contribute true
-
-# 4. Use framework
-observe project fullcycle ...
-
-# 5. Verify data uploaded
-curl http://localhost:8000/v1/ml/samples/stats
-# {
-#   "total_batches": 3,
-#   "total_samples": 3000,
-#   "last_upload": "2026-01-12T11:45:00Z"
-# }
-```
-
 ---
 
-## 🌍 Production Server (Future)
+## 💡 Best Practices
 
 ### Server Requirements
 
