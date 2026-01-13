@@ -36,6 +36,7 @@ from framework.cli.observability_commands import observe_ as observability
 from framework.cli.a11y_commands import a11y
 from framework.cli.load_commands import load
 from framework.cli.docs_commands import docs
+from framework.cli.daemon_commands import daemon_command
 from framework.cli.rich_output import print_banner
 
 
@@ -120,6 +121,7 @@ cli.add_command(observability, name="observe")
 cli.add_command(a11y)
 cli.add_command(load)
 cli.add_command(docs)
+cli.add_command(daemon_command, name="daemon")
 
 # Add self-learning ML commands as subgroup
 ml.add_command(ml_selflearn_commands.check_updates)
