@@ -1,44 +1,60 @@
-# Mobile Test Recorder 🦀
+# Mobile Test Recorder 🦀 → JetBrains IDE Plugin
 
-> **Next-Generation Intelligent Mobile Testing Platform** - 16x faster with Rust, ML-powered self-healing, and enterprise-grade observability
+> **Next-Generation Intelligent Mobile Testing Platform** - Now as a powerful JetBrains IDE plugin with interactive UI control, smart selectors, and multi-language support
 
-[![Python 3.13+](https://img.shields.io/badge/python-3.13%2B-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://www.python.org/downloads/)
 [![Rust 1.75+](https://img.shields.io/badge/rust-1.75%2B-orange.svg)](https://www.rust-lang.org/)
-[![Android](https://img.shields.io/badge/android-native%20%7C%20compose-green.svg)](demo-app/android)
-[![iOS](https://img.shields.io/badge/ios-uikit%20%7C%20swiftui-blue.svg)](demo-app/ios)
-[![Cross-Platform](https://img.shields.io/badge/cross--platform-flutter%20%7C%20react%20native-purple.svg)](#features)
+[![Kotlin](https://img.shields.io/badge/kotlin-1.9%2B-purple.svg)](https://kotlinlang.org/)
+[![JetBrains Plugin](https://img.shields.io/badge/jetbrains-plugin-blue.svg)](jetbrains-plugin/)
+[![Android](https://img.shields.io/badge/android-Appium%20%7C%20Espresso-green.svg)](demo-app/android)
+[![iOS](https://img.shields.io/badge/ios-Appium%20%7C%20XCTest-blue.svg)](demo-app/ios)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Performance](https://img.shields.io/badge/performance-16x%20faster-red.svg)](#performance)
-[![ML Accuracy](https://img.shields.io/badge/ML%20accuracy-94%25-success.svg)](#ml-system)
 
 ---
 
 ## 🎯 What Makes Us Different
 
-### Performance First
+### JetBrains IDE Integration
 
-- 🦀 **Rust Core** - 16x faster than pure Python
-- ⚡ **Parallel Everything** - Tests, file I/O, analysis
-- 🚀 **Sub-second Analysis** - 1000 files in 2.5 seconds
+- 🖥️ **Native IDE Plugin** - Works in IntelliJ, Android Studio, PyCharm
+- 🎯 **Interactive UI Control** - Tap, swipe, type directly from IDE
+- 🔍 **Live UI Inspector** - Explore app hierarchy in real-time
+- 📊 **Device Management** - Android emulators & iOS simulators
 
-### Intelligence Built-In
+### Multi-Language & Multi-Backend
 
-- 🤖 **Self-Learning ML** - 94% accuracy, improves daily
-- 🔧 **Self-Healing Tests** - 92% auto-fix success rate
-- 🧠 **Universal Model** - Works across all mobile frameworks
-
-### Enterprise Ready
-
-- 📊 **Full Observability** - Prometheus, OpenTelemetry
-- 🔒 **Security Scanning** - OWASP Mobile Top 10
-- ♿ **Accessibility** - WCAG 2.1 compliance checks
-- 🏗️ **Load Testing** - Built-in performance profiling
+- 🌍 **6 Languages** - Python, Java, Kotlin, JS/TS, Go, Ruby
+- 🔌 **6 Automation Backends** - Appium, Espresso, XCTest, Detox, Maestro, Playwright
+- 🧠 **Smart Selectors** - AI-powered stability scoring & healing
+- 🔄 **Flow Analysis** - Automatic app state & transition detection
 
 ---
 
 ## 🚀 Quick Start
 
-### Installation
+### IDE Plugin (Recommended)
+
+1. **Install Plugin**:
+   - Open JetBrains IDE (IntelliJ IDEA, Android Studio, PyCharm)
+   - Go to Settings → Plugins → Marketplace
+   - Search for "Mobile Test Recorder"
+   - Click Install
+
+2. **Install CLI Backend**:
+```bash
+pip install mobile-observe-test
+```
+
+3. **Start Testing**:
+   - Open View → Tool Windows → Mobile Test Recorder
+   - Click "Start Daemon"
+   - Select your device
+   - Start recording!
+
+See [Plugin Documentation](jetbrains-plugin/README.md) for more details.
+
+### CLI Installation
 
 ```bash
 # 1. Clone repository
@@ -46,8 +62,8 @@ git clone https://github.com/VadimToptunov/mobile_test_recorder.git
 cd mobile_test_recorder
 
 # 2. Setup environment
-python3.13 -m venv .venv
-source .venv/bin/activate
+python3 -m venv .venv
+source .venv/bin/activate  # or activate.sh on macOS
 
 # 3. Install framework
 pip install -r requirements.txt
