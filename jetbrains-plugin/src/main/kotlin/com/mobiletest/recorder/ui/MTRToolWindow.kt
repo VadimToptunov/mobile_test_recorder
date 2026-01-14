@@ -7,6 +7,7 @@ import com.mobiletest.recorder.services.MTRDaemonService
 import com.mobiletest.recorder.ui.panels.DevicesPanel
 import com.mobiletest.recorder.ui.panels.InspectorPanel
 import com.mobiletest.recorder.ui.panels.LogsPanel
+import com.mobiletest.recorder.ui.panels.ScreenPanel
 import java.awt.BorderLayout
 import javax.swing.*
 
@@ -16,6 +17,7 @@ class MTRToolWindow(private val project: Project) {
     
     // Panels
     private val devicesPanel = DevicesPanel(project, daemonService)
+    private val screenPanel = ScreenPanel(project, daemonService)
     private val inspectorPanel = InspectorPanel(project, daemonService)
     private val logsPanel = LogsPanel(project, daemonService)
     
@@ -85,6 +87,7 @@ class MTRToolWindow(private val project: Project) {
     
     private fun createTabs() {
         tabbedPane.addTab("Devices", devicesPanel.getPanel())
+        tabbedPane.addTab("Screen", screenPanel.getPanel())
         tabbedPane.addTab("Inspector", inspectorPanel.getPanel())
         tabbedPane.addTab("Logs", logsPanel.getPanel())
         
