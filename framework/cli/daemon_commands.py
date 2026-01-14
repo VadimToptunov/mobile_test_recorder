@@ -8,6 +8,7 @@ from typing import Dict, Any, Optional
 import click
 
 from framework.health import HealthChecker
+from framework.devices.device_manager import DeviceManager
 
 
 logger = logging.getLogger(__name__)
@@ -18,14 +19,177 @@ class JSONRPCServer:
     
     def __init__(self):
         self.health_checker = HealthChecker()
+        self.device_manager = DeviceManager()
+        self.sessions = {}  # session_id -> session_data
+        
         self.handlers = {
             "health/check": self.handle_health_check,
-            # More handlers will be added in future phases
+            "device/list": self.handle_device_list,
+            "session/start": self.handle_session_start,
+            "session/stop": self.handle_session_stop,
+            "ui/getScreenshot": self.handle_get_screenshot,
+            "action/tap": self.handle_tap,
+            "action/swipe": self.handle_swipe,
+            "action/type": self.handle_type,
         }
     
     def handle_health_check(self, params: Dict[str, Any]) -> Dict[str, Any]:
         """Handle health check request."""
         return self.health_checker.check()
+    
+    def handle_device_list(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        """Handle device list request."""
+        platform = params.get("platform", "all")
+        devices = self.device_manager.list_all_devices(platform)
+        return {"devices": devices}
+    
+    def handle_session_start(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        """Handle session start request."""
+        import uuid
+        
+        session_id = str(uuid.uuid4())
+        device_id = params.get("device_id")
+        backend = params.get("backend", "appium")
+        
+        # Store session info (actual Appium connection in Phase 3)
+        self.sessions[session_id] = {
+            "id": session_id,
+            "device_id": device_id,
+            "backend": backend,
+            "started_at": "2026-01-14T12:00:00Z"
+        }
+        
+        return {
+            "session_id": session_id,
+            "backend": backend,
+            "device_id": device_id
+        }
+    
+    def handle_session_stop(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        """Handle session stop request."""
+        session_id = params.get("session_id")
+        if session_id in self.sessions:
+            del self.sessions[session_id]
+        return {"status": "stopped"}
+    
+    def handle_get_screenshot(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        """Handle screenshot capture request."""
+        session_id = params.get("session_id")
+        format_type = params.get("format", "png")
+        
+        if session_id not in self.sessions:
+            raise Exception(f"Session not found: {session_id}")
+        
+        session = self.sessions[session_id]
+        device_id = session["device_id"]
+        
+        # Capture screenshot via adb/simctl
+        import subprocess
+        import base64
+        import tempfile
+        import os
+        
+        with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
+            tmp_path = tmp.name
+        
+        try:
+            # Try Android first
+            result = subprocess.run(
+                ["adb", "-s", device_id, "exec-out", "screencap", "-p"],
+                capture_output=True,
+                timeout=5
+            )
+            
+            if result.returncode == 0:
+                with open(tmp_path, "wb") as f:
+                    f.write(result.stdout)
+            else:
+                # Try iOS simulator
+                subprocess.run(
+                    ["xcrun", "simctl", "io", device_id, "screenshot", tmp_path],
+                    check=True,
+                    timeout=5
+                )
+            
+            # Read and encode
+            with open(tmp_path, "rb") as f:
+                image_data = f.read()
+                base64_data = base64.b64encode(image_data).decode('utf-8')
+            
+            # Get dimensions (simplified - just return 1080x2400 for now)
+            return {
+                "format": format_type,
+                "data": base64_data,
+                "width": 1080,
+                "height": 2400
+            }
+        finally:
+            if os.path.exists(tmp_path):
+                os.unlink(tmp_path)
+    
+    def handle_tap(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        """Handle tap action."""
+        session_id = params.get("session_id")
+        x = params.get("x")
+        y = params.get("y")
+        
+        if session_id not in self.sessions:
+            raise Exception(f"Session not found: {session_id}")
+        
+        session = self.sessions[session_id]
+        device_id = session["device_id"]
+        
+        # Execute tap via adb
+        subprocess.run(
+            ["adb", "-s", device_id, "shell", "input", "tap", str(x), str(y)],
+            timeout=2
+        )
+        
+        return {"status": "success", "x": x, "y": y}
+    
+    def handle_swipe(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        """Handle swipe action."""
+        session_id = params.get("session_id")
+        start_x = params.get("start_x")
+        start_y = params.get("start_y")
+        end_x = params.get("end_x")
+        end_y = params.get("end_y")
+        duration_ms = params.get("duration_ms", 300)
+        
+        if session_id not in self.sessions:
+            raise Exception(f"Session not found: {session_id}")
+        
+        session = self.sessions[session_id]
+        device_id = session["device_id"]
+        
+        # Execute swipe via adb
+        subprocess.run(
+            ["adb", "-s", device_id, "shell", "input", "swipe",
+             str(start_x), str(start_y), str(end_x), str(end_y), str(duration_ms)],
+            timeout=2
+        )
+        
+        return {"status": "success"}
+    
+    def handle_type(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        """Handle type action."""
+        session_id = params.get("session_id")
+        text = params.get("text", "")
+        
+        if session_id not in self.sessions:
+            raise Exception(f"Session not found: {session_id}")
+        
+        session = self.sessions[session_id]
+        device_id = session["device_id"]
+        
+        # Execute text input via adb (escape spaces)
+        escaped_text = text.replace(" ", "%s")
+        subprocess.run(
+            ["adb", "-s", device_id, "shell", "input", "text", escaped_text],
+            timeout=2
+        )
+        
+        return {"status": "success", "text": text}
     
     def handle_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """
