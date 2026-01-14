@@ -46,7 +46,7 @@ def _check_ml_updates() -> None:
         from pathlib import Path
         import datetime
         import json
-        
+
         # Check if we should update (once per day)
         update_check_file = Path(".observe_ml_check")
         should_check = True
