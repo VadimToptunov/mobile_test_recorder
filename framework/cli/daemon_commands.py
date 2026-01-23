@@ -9,6 +9,9 @@ import click
 
 from framework.health import HealthChecker
 from framework.devices.device_manager import DeviceManager
+from framework.backends import BackendFactory
+# Import backends to register them
+from framework.backends import appium_backend, espresso_backend, xctest_backend
 
 
 logger = logging.getLogger(__name__)
@@ -20,14 +23,17 @@ class JSONRPCServer:
     def __init__(self):
         self.health_checker = HealthChecker()
         self.device_manager = DeviceManager()
-        self.sessions = {}  # session_id -> session_data
+        self.sessions = {}  # session_id -> {backend, backend_session_id, ...}
+        self.backends = {}  # backend_name -> backend_instance
         
         self.handlers = {
             "health/check": self.handle_health_check,
             "device/list": self.handle_device_list,
+            "backend/list": self.handle_backend_list,
             "session/start": self.handle_session_start,
             "session/stop": self.handle_session_stop,
             "ui/getScreenshot": self.handle_get_screenshot,
+            "ui/getTree": self.handle_get_ui_tree,
             "action/tap": self.handle_tap,
             "action/swipe": self.handle_swipe,
             "action/type": self.handle_type,

@@ -91,8 +91,84 @@ JetBrains IDE Plugin (Kotlin)
 
 ## Development Phases (Evening/Weekend Work)
 
-### **Phase 0: Foundation (1-2 weeks, 4-6 evenings)**
-**Branch**: `feature/phase0-foundation`
+### **Phase 0: Foundation ✅ COMPLETED (1-2 weeks, 4-6 evenings)**
+**Status**: ✅ Merged to master
+**Branch**: `feature/phase0-foundation` (merged)
+
+**Completed**:
+- ✅ JSON-RPC 2.0 protocol specification (docs/PROTOCOL.md)
+- ✅ Health check system (framework/health/)
+- ✅ Daemon command for IDE plugin communication (stdio mode)
+- ✅ CLI API documentation (docs/CLI_API.md)
+- ✅ Protocol testing with manual clients
+
+**Deliverables**:
+- Clean, documented CLI API ✅
+- Protocol specification (10 core methods) ✅
+- Basic health check command ✅
+- Updated architecture docs ✅
+
+---
+
+### **Phase 1: JetBrains Plugin MVP ✅ COMPLETED (1-2 months, 8-12 evenings)**
+**Status**: ✅ Merged to master
+**Branch**: `feature/phase1-ide-plugin-mvp` (merged)
+
+**Completed**:
+- ✅ Gradle build configuration (Kotlin + IntelliJ Platform SDK)
+- ✅ plugin.xml with ToolWindow, Settings, Actions
+- ✅ JSON-RPC Client (full async support)
+- ✅ MTRDaemonService (application service)
+- ✅ ToolWindow with 3 tabs (Devices, Inspector, Logs)
+- ✅ DevicesPanel with device list table
+- ✅ LogsPanel with auto-scroll
+- ✅ Actions: Start/Stop Daemon, Refresh, Screenshot
+
+**Deliverables**:
+- JetBrains plugin installable locally ✅
+- Device list (adb + simctl) ✅
+- XML viewer placeholder ✅
+- Logs streaming with notifications ✅
+- Screenshot capture action ✅
+
+**Tech Stack**:
+- Kotlin 1.9.21 ✅
+- IntelliJ SDK 2023.2+ ✅
+- Gson for JSON ✅
+
+---
+
+### **Phase 2: Interactive UI Control ✅ COMPLETED (3-4 weeks, 6-8 evenings)**
+**Status**: ✅ Merged to master
+**Branch**: `feature/phase2-interactive-ui` (merged)
+
+**Completed**:
+- ✅ DeviceManager for listing Android/iOS devices
+- ✅ Session management (start/stop)
+- ✅ Screenshot capture (adb/simctl)
+- ✅ Actions: tap, swipe, type via adb
+- ✅ ScreenPanel - new tab in ToolWindow
+- ✅ Interactive screenshot viewer with click-to-tap
+- ✅ Coordinate mapping (screen → device)
+- ✅ Auto-refresh after tap
+
+**Deliverables**:
+- Live device screen in ToolWindow ✅
+- Clickable element overlay ✅
+- Action execution (tap/swipe/type) ✅
+- Visual feedback ✅
+
+**Tech Stack**:
+- BufferedImage + Graphics2D ✅
+- adb exec-out screencap ✅
+- xcrun simctl io screenshot ✅
+- Base64 encoding/decoding ✅
+
+---
+
+### **Phase 3: Multi-Backend Abstraction 🚧 IN PROGRESS (1-2 months, 8-12 evenings)**
+**Status**: 🚧 Starting now
+**Branch**: `feature/phase3-multi-backend`
 
 **Goals**:
 - Stabilize current CLI core

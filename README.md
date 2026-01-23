@@ -15,14 +15,24 @@
 
 ## 🎯 What Makes Us Different
 
-### JetBrains IDE Integration
+### JetBrains IDE Integration ✅ IMPLEMENTED
 
-- 🖥️ **Native IDE Plugin** - Works in IntelliJ, Android Studio, PyCharm
-- 🎯 **Interactive UI Control** - Tap, swipe, type directly from IDE
-- 🔍 **Live UI Inspector** - Explore app hierarchy in real-time
-- 📊 **Device Management** - Android emulators & iOS simulators
+- ✅ **Native IDE Plugin** - Works in IntelliJ, Android Studio, PyCharm
+- ✅ **Interactive UI Control** - Click-to-tap on device screen from IDE
+- ✅ **Live Screenshot Viewer** - Real-time device screen with auto-refresh
+- ✅ **Device Management** - List and control Android/iOS devices
+- ✅ **Session Management** - Start/stop automation sessions
+- ✅ **JSON-RPC Protocol** - Fast, reliable CLI ↔ Plugin communication
 
-### Multi-Language & Multi-Backend
+### Phase 0-2 Complete (3/11 phases)
+
+**✅ Phase 0**: Foundation - JSON-RPC protocol, daemon, health check
+**✅ Phase 1**: Plugin MVP - ToolWindow, tabs, device list, logs
+**✅ Phase 2**: Interactive UI - Screenshot viewer, click-to-tap, actions
+
+**🚧 Phase 3-11**: Multi-backend, smart selectors, flow analysis, static analysis, PRO features
+
+### Multi-Language & Multi-Backend (Coming in Phase 3-7)
 
 - 🌍 **6 Languages** - Python, Java, Kotlin, JS/TS, Go, Ruby
 - 🔌 **6 Automation Backends** - Appium, Espresso, XCTest, Detox, Maestro, Playwright
@@ -33,26 +43,48 @@
 
 ## 🚀 Quick Start
 
-### IDE Plugin (Recommended)
+### IDE Plugin (Recommended) ✅ Phase 1-2
 
-1. **Install Plugin**:
-   - Open JetBrains IDE (IntelliJ IDEA, Android Studio, PyCharm)
-   - Go to Settings → Plugins → Marketplace
-   - Search for "Mobile Test Recorder"
-   - Click Install
-
-2. **Install CLI Backend**:
+1. **Install CLI Backend**:
 ```bash
 pip install mobile-observe-test
+# or from source:
+git clone https://github.com/VadimToptunov/mobile_test_recorder.git
+cd mobile_test_recorder
+pip install -e .
+```
+
+2. **Build Plugin** (Phase 1-2 complete, Phase 3+ in progress):
+```bash
+cd jetbrains-plugin
+./gradlew buildPlugin
+# Install from: build/distributions/mobile-test-recorder-*.zip
 ```
 
 3. **Start Testing**:
    - Open View → Tool Windows → Mobile Test Recorder
    - Click "Start Daemon"
-   - Select your device
-   - Start recording!
+   - Go to "Screen" tab
+   - Click "Load Devices", select device
+   - Click "Start Session"
+   - Click on device screen to interact!
 
-See [Plugin Documentation](jetbrains-plugin/README.md) for more details.
+**Current Features** (Phase 0-2):
+- ✅ Device list (Android via adb, iOS via simctl)
+- ✅ Session management
+- ✅ Screenshot capture
+- ✅ Click-to-tap interaction
+- ✅ Real-time logs
+- ✅ JSON-RPC protocol
+
+**Coming Soon** (Phase 3+):
+- Multi-backend support (Appium, Espresso, XCTest)
+- UI Tree inspector
+- Smart selector generation
+- Flow analysis
+- Multi-language code generation
+
+See [Plugin Documentation](jetbrains-plugin/README.md) and [Roadmap](JETBRAINS_PLUGIN_ROADMAP.md) for details.
 
 ### CLI Installation
 
