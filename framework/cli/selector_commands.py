@@ -13,6 +13,7 @@ from framework.selectors.advanced_selector import (
     AdvancedSelectorEngine,
     SelectorBuilder,
     SelectorType,
+    SelectorFilter,
     FilterOperator,
     by_id,
     by_text,

@@ -157,13 +157,14 @@ exchange_rates = {
 }
 
 # Users database
+# ⚠️ WARNING: Passwords in plain text - FOR DEMO ONLY
 users_db = {
     "user123": {
         "user_id": "user123",
         "email": "john@example.com",
         "full_name": "John Doe",
         "phone": "+1234567890",
-        "password": "password",  # In real app - hashed!
+        "password": hash_password(DEFAULT_TEST_PASSWORD),  # Configurable via env
         "kyc_status": "verified",
         "created_at": "2024-01-15T10:00:00Z",
         "photo_url": None,
@@ -306,7 +307,7 @@ def login(request: LoginRequest):
     # Mock: find user by email
     user = next((u for u in users_db.values() if u["email"] == request.email), None)
     
-    if not user or user["password"] != request.password:
+    if not user or user["password"] != hash_password(request.password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
     return AuthResponse(
@@ -329,7 +330,7 @@ def register(request: RegisterRequest):
         "email": request.email,
         "full_name": request.full_name,
         "phone": request.phone,
-        "password": request.password,
+        "password": hash_password(request.password),
         "kyc_status": "pending",
         "created_at": datetime.now().isoformat() + "Z",
         "photo_url": None,

@@ -123,12 +123,12 @@ class BackendFactory:
     _backends: Dict[str, type] = {}
     
     @classmethod
-    def register(cls, name: str, backend_class: type):
+    def register(cls, name: str, backend_class: type) -> None:
         """Register a backend implementation."""
         cls._backends[name] = backend_class
     
     @classmethod
-    def create(cls, name: str, **kwargs) -> MobileAutomationBackend:
+    def create(cls, name: str, **kwargs: Any) -> MobileAutomationBackend:
         """Create backend instance by name."""
         if name not in cls._backends:
             raise ValueError(f"Unknown backend: {name}. Available: {list(cls._backends.keys())}")

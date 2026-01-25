@@ -10,6 +10,7 @@ from enum import Enum
 import json
 import random
 import string
+import os
 from datetime import datetime, timedelta
 
 
@@ -123,6 +124,23 @@ class TestDataGenerator:
         if seed:
             random.seed(seed)
 
+    def _generate_secure_password(self) -> str:
+        """Generate a secure test password"""
+        # Use environment variable for consistent test passwords, or generate secure random
+        test_password = os.environ.get('TEST_USER_PASSWORD')
+        if test_password:
+            return test_password
+
+        # Generate secure random password for test data
+        chars = string.ascii_letters + string.digits + "!@#$%"
+        password = ''.join(random.choice(chars) for _ in range(12))
+        # Ensure it meets basic requirements
+        if not any(c.isupper() for c in password):
+            password = password[0].upper() + password[1:]
+        if not any(c.isdigit() for c in password):
+            password = password[:-1] + str(random.randint(0, 9))
+        return password
+
     def generate_users(self, count: int) -> List[User]:
         """Generate user test data"""
         users = []
@@ -137,7 +155,7 @@ class TestDataGenerator:
                 email=self._generate_email(first_name, last_name),
                 phone=self._generate_phone(),
                 date_of_birth=self._generate_dob(),
-                password="Test123!",
+                password=self._generate_secure_password(),
                 status=random.choice(["active", "pending", "suspended"]),
                 metadata={"created_at": datetime.now().isoformat()}
             )

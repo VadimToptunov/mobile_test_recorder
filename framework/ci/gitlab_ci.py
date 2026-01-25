@@ -46,7 +46,8 @@ class GitLabCIGenerator:
             job_name = f'test:{platform}'
             pipeline[job_name] = self._generate_test_job(platform)
 
-        return yaml.dump(pipeline, sort_keys=False, default_flow_style=False)
+        result = yaml.dump(pipeline, sort_keys=False, default_flow_style=False)
+        return str(result)
 
     def generate_advanced_pipeline(
         self,

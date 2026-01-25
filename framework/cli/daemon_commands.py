@@ -3,6 +3,10 @@
 import sys
 import json
 import logging
+import subprocess
+import base64
+import tempfile
+import os
 from typing import Dict, Any, Optional
 
 import click
