@@ -15,9 +15,10 @@ class APICall(BaseModel):
     name: str = Field(..., description="API call identifier")
     endpoint: str = Field(..., description="API endpoint path")
     method: str = Field(..., description="HTTP method")
-    schema: Dict[str, Any] = Field(
+    request_schema: Dict[str, Any] = Field(
         default_factory=dict,
-        description="Request/Response schema"
+        description="Request/Response schema",
+        alias="schema"  # Backward compatibility
     )
     responses: List[Dict[str, Any]] = Field(
         default_factory=list,
@@ -34,11 +35,12 @@ class APICall(BaseModel):
                 "name": "auth_login",
                 "endpoint": "/api/v1/auth/login",
                 "method": "POST",
-                "schema": {
+                "request_schema": {
                     "username": "string",
                     "password": "string"
                 },
                 "triggers_state_change": "login_success"
             }
-        }
+        },
+        "populate_by_name": True  # Allow using 'schema' alias
     }
