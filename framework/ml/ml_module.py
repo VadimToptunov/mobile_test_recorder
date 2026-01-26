@@ -145,6 +145,16 @@ class SelectorPredictor(MLModel):
         Returns:
             Prediction with confidence score
         """
+        # Handle None or invalid features
+        if not features or not isinstance(features, dict):
+            return PredictionResult(
+                prediction="xpath",
+                confidence=0.0,
+                alternatives=[],
+                model_version=self.version,
+                metadata={'error': 'invalid_features'}
+            )
+
         # Extract and normalize features
         feature_vector = self._extract_features(features)
 
