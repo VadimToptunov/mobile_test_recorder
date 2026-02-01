@@ -14,7 +14,7 @@ This module is designed to be flexible and support multiple ML backends
 without hardcoding specific implementations.
 """
 
-from typing import List, Dict, Any, Optional, Protocol, Tuple
+from typing import List, Dict, Any, Optional, Tuple
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path

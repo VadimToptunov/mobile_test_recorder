@@ -8,7 +8,7 @@ Includes positive, negative, and edge case tests.
 import pytest
 from pathlib import Path
 import json
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
 from framework.ml import (
     MLBackend,
     ModelType,
@@ -652,8 +652,8 @@ class TestMLModuleErrorHandling:
         module = MLModule()
 
         # Should not crash, should handle gracefully
-        result = module.predict_selector(None)
-        assert isinstance(result, PredictionResult) or result is not None
+        result = module.predict_selector({})  # Empty dict instead of None
+        assert isinstance(result, PredictionResult)
 
     def test_save_to_invalid_path(self):
         """Test saving to invalid path (negative test)"""
