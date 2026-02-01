@@ -11,6 +11,9 @@ from framework.cli import ml_selflearn_commands
 from framework.cli.a11y_commands import a11y
 # Import command groups
 from framework.cli.business_logic_commands import business
+from framework.cli.fuzz_commands import fuzz
+from framework.cli.license_commands import license
+from framework.cli.verify_commands import verify
 from framework.cli.ci_commands import ci
 from framework.cli.config_commands import config
 from framework.cli.daemon_commands import daemon_command
@@ -122,6 +125,9 @@ cli.add_command(a11y)
 cli.add_command(load)
 cli.add_command(docs)
 cli.add_command(daemon_command, name="daemon")
+cli.add_command(fuzz)
+cli.add_command(license)
+cli.add_command(verify)
 
 # Add self-learning ML commands as subgroup
 ml.add_command(ml_selflearn_commands.check_updates)
