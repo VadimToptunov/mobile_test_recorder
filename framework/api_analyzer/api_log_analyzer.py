@@ -13,14 +13,14 @@ Features:
 Максимально гибкая архитектура без хардкода
 """
 
-from typing import List, Dict, Any, Optional, Tuple, Callable
-from dataclasses import dataclass, field
-from enum import Enum
-from datetime import datetime, timedelta
-from pathlib import Path
 import json
 import re
 from collections import defaultdict, Counter
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta
+from enum import Enum
+from pathlib import Path
+from typing import List, Dict, Any, Optional
 
 
 class LogLevel(Enum):
@@ -322,7 +322,7 @@ class LogAnalyzer:
             if len(logs_list) >= min_occurrences:
                 # Check if it's an error pattern
                 is_error = any(re.search(pattern, normalized, re.IGNORECASE)
-                             for pattern in self.error_patterns)
+                               for pattern in self.error_patterns)
 
                 pattern = LogPattern(
                     pattern=normalized,
@@ -361,7 +361,7 @@ class LogAnalyzer:
             Analysis results
         """
         filtered_logs = [log for log in self.logs
-                        if start <= log.timestamp <= end]
+                         if start <= log.timestamp <= end]
 
         return {
             'total': len(filtered_logs),
@@ -371,7 +371,7 @@ class LogAnalyzer:
         }
 
     def correlate_with_api(self, api_calls: List[APICall],
-                          time_window_ms: int = 5000) -> Dict[APICall, List[LogEntry]]:
+                           time_window_ms: int = 5000) -> Dict[APICall, List[LogEntry]]:
         """
         Correlate logs with API calls
 

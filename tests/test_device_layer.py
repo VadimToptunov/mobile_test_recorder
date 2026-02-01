@@ -4,10 +4,12 @@ Unit tests for STEP 2: Device Layer
 Tests device management, screenshots, logs, and API tracing.
 """
 
-import pytest
-from pathlib import Path
 from datetime import datetime
-from unittest.mock import Mock, MagicMock, patch
+from pathlib import Path
+from unittest.mock import Mock, patch
+
+import pytest
+
 from framework.devices.device_layer import (
     Platform,
     DeviceType,
@@ -139,6 +141,7 @@ class TestDevice:
 
     def test_capture_screenshot(self, device, tmp_path):
         """Test screenshot capture"""
+
         # Mock save_screenshot to actually create a file
         def fake_save(path):
             Path(path).touch()

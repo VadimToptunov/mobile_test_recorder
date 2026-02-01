@@ -4,6 +4,7 @@
 """
 
 import sys
+
 sys.path.insert(0, '/Users/vadimtoptunov/PycharmProjects/mobile_test_recorder')
 
 print("🤖 Testing ML Module...")
@@ -26,4 +27,5 @@ try:
 except Exception as e:
     print(f"❌ Error: {e}")
     import traceback
+
     traceback.print_exc()

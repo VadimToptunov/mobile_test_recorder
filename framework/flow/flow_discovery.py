@@ -10,13 +10,13 @@ Features:
 - Flow visualization export
 """
 
-from typing import List, Dict, Any, Optional, Tuple, Callable
-from dataclasses import dataclass, field
-from enum import Enum
-from datetime import datetime
-from pathlib import Path
 import json
 from collections import defaultdict
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from pathlib import Path
+from typing import List, Dict, Any, Optional, Tuple, Callable
 
 
 class TransitionType(Enum):
@@ -198,12 +198,12 @@ class FlowDiscovery:
         return node
 
     def record_transition(
-        self,
-        from_screen: str,
-        to_screen: str,
-        action: UIAction,
-        duration_ms: float,
-        api_calls: List[Dict[str, Any]] = None
+            self,
+            from_screen: str,
+            to_screen: str,
+            action: UIAction,
+            duration_ms: float,
+            api_calls: List[Dict[str, Any]] = None
     ):
         """
         Record a screen transition
@@ -309,7 +309,8 @@ class FlowDiscovery:
         with open(output_path, 'w') as f:
             f.write('\n'.join(dot))
 
-    def _detect_edge_case(self, screen_name: str, elements: List[Dict[str, Any]]) -> Tuple[bool, Optional[EdgeCaseType]]:
+    def _detect_edge_case(self, screen_name: str, elements: List[Dict[str, Any]]) -> Tuple[
+        bool, Optional[EdgeCaseType]]:
         """Simple heuristic edge case detection"""
         screen_lower = screen_name.lower()
 
@@ -356,8 +357,8 @@ class FlowDiscovery:
         """Find existing edge"""
         for edge in self.edges:
             if (edge.from_node == from_node and
-                edge.to_node == to_node and
-                edge.action.action_type == action_type):
+                    edge.to_node == to_node and
+                    edge.action.action_type == action_type):
                 return edge
         return None
 

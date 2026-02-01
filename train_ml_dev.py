@@ -4,10 +4,7 @@ ML Training Module - DEV MODE (без license check для разработки)
 Версия для разработки и тестирования ML моделей
 """
 
-import json
 from pathlib import Path
-from typing import List, Dict, Any
-from datetime import datetime
 from unittest.mock import patch
 
 

@@ -4,14 +4,14 @@ License Validation System
 Simple, offline-first license validation with upgrade prompts.
 """
 
-import os
-import json
 import hashlib
 import hmac
-from datetime import datetime, timedelta
-from typing import Optional, Dict, Any
-from pathlib import Path
+import json
+import os
+from datetime import datetime
 from enum import Enum
+from pathlib import Path
+from typing import Optional, Dict, Any
 
 
 class LicenseTier(Enum):
@@ -25,12 +25,12 @@ class License:
     """License information"""
 
     def __init__(
-        self,
-        key: str,
-        tier: LicenseTier,
-        email: str,
-        expires_at: Optional[datetime] = None,
-        features: Optional[list] = None
+            self,
+            key: str,
+            tier: LicenseTier,
+            email: str,
+            expires_at: Optional[datetime] = None,
+            features: Optional[list] = None
     ):
         self.key = key
         self.tier = tier
@@ -42,7 +42,7 @@ class License:
         """Default features per tier"""
         if self.tier == LicenseTier.ENTERPRISE:
             return ['ml_healing', 'cloud_devices', 'parallel_execution',
-                   'distributed_execution', 'visual_testing', 'sso', 'audit_logs']
+                    'distributed_execution', 'visual_testing', 'sso', 'audit_logs']
         elif self.tier == LicenseTier.PRO:
             return ['ml_healing', 'cloud_devices', 'parallel_execution']
         else:
@@ -126,7 +126,7 @@ class LicenseValidator:
                 expires_at=expires_at,
                 features=data.get('features')
             )
-        except Exception as e:
+        except (OSError, json.JSONDecodeError, KeyError, ValueError) as e:
             print(f"⚠️  Error loading license: {e}")
             return License(key='FREE', tier=LicenseTier.FREE, email='')
 
@@ -146,7 +146,7 @@ class LicenseValidator:
             ).hexdigest()[:16]
 
             return parts[1] == expected_hash
-        except:
+        except (ValueError, TypeError, KeyError, IndexError):
             return False
 
     def _show_welcome(self):

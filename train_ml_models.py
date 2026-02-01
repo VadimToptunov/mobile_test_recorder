@@ -5,16 +5,14 @@ ML Training Module - Тренировка моделей на реальных �
 для предсказания селекторов, рекомендации шагов и scoring элементов.
 """
 
-import json
-from pathlib import Path
-from typing import List, Dict, Any
 from datetime import datetime
+from pathlib import Path
+
 from framework.ml import (
     MLModule,
     MLBackend,
     ModelType,
-    TrainingData,
-    SelectorPredictor
+    TrainingData
 )
 
 

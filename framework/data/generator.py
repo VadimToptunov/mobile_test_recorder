@@ -4,14 +4,14 @@ Test Data Generator
 Generate realistic test data for mobile applications.
 """
 
-from dataclasses import dataclass, field
-from typing import List, Dict, Any, Optional
-from enum import Enum
 import json
+import os
 import random
 import string
-import os
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta
+from enum import Enum
+from typing import List, Dict, Any, Optional
 
 
 class DataType(Enum):
@@ -172,7 +172,7 @@ class TestDataGenerator:
 
             product = Product(
                 id=self._generate_id("prod"),
-                name=f"{name} {i+1}",
+                name=f"{name} {i + 1}",
                 description=f"High quality {category} product",
                 price=round(random.uniform(9.99, 999.99), 2),
                 currency="USD",

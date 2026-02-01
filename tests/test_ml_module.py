@@ -5,10 +5,12 @@ Tests ML-powered selector prediction, step recommendations, and element scoring.
 Includes positive, negative, and edge case tests.
 """
 
-import pytest
-from pathlib import Path
 import json
+from pathlib import Path
 from unittest.mock import Mock, patch
+
+import pytest
+
 from framework.ml import (
     MLBackend,
     ModelType,

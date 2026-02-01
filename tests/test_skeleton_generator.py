@@ -5,13 +5,13 @@ Tests page object generation, self-healing selectors, and test scaffolds.
 """
 
 import pytest
-from pathlib import Path
+
+from framework.core.engine import Language, Screen, UIElement
 from framework.generators.skeleton_generator import (
     SkeletonTestGenerator,
     PageObjectPattern,
     SelectorStrategy
 )
-from framework.core.engine import Language, Screen, UIElement
 
 
 class TestSelectorStrategy:

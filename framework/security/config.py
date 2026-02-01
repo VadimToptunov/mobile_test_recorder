@@ -4,12 +4,12 @@ Security Configuration and Best Practices
 Centralized security configuration for the Mobile Test Recorder framework.
 """
 
+import hashlib
+import logging
 import os
 import secrets
-import hashlib
-from typing import Optional
 from pathlib import Path
-import logging
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -197,7 +197,7 @@ def is_production_environment() -> bool:
     ci = os.environ.get('CI', 'false').lower() == 'true'
 
     return env in ('production', 'prod') or (
-        ci and os.environ.get('CI_ENVIRONMENT', '').lower() in ('production', 'prod')
+            ci and os.environ.get('CI_ENVIRONMENT', '').lower() in ('production', 'prod')
     )
 
 

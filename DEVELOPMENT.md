@@ -47,6 +47,7 @@ nano .env  # or your preferred editor
 ```
 
 **Important Environment Variables:**
+
 - `TEST_USER_PASSWORD` - Password for generated test users
 - `APPIUM_SERVER_URL` - Appium server URL (default: http://localhost:4723)
 - `LOG_LEVEL` - Logging level (DEBUG, INFO, WARNING, ERROR)
@@ -283,6 +284,7 @@ maturin develop --release
 ```
 
 Expected speedup:
+
 - Event correlation: **16-90x faster**
 - AST analysis: **20-50x faster**
 - Business logic detection: **10-30x faster**
@@ -344,6 +346,7 @@ open _build/html/index.html
 ### Update README
 
 When adding features:
+
 1. Update `README.md` with usage examples
 2. Update `QUICKSTART.md` if workflow changes
 3. Add entry to `CHANGELOG.md`
@@ -371,6 +374,7 @@ git push origin main --tags
 ### Publishing
 
 GitHub Actions automatically publishes on tag push:
+
 - PyPI package
 - JetBrains plugin
 - GitHub release

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-import subprocess
 import os
 import re
-from datetime import datetime
+import subprocess
 import time
+from datetime import datetime
 
 # ---------------------------
 # Настройки
@@ -16,6 +16,7 @@ CHECK_INTERVAL = 60  # секунд между проверками новых �
 processed_steps = set()
 file_timestamps = {}
 
+
 # ---------------------------
 # Вспомогательные функции
 # ---------------------------
@@ -24,16 +25,19 @@ def run_command(cmd):
     result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
     return result.returncode, result.stdout + result.stderr
 
+
 def run_unit_tests():
     """Запуск unit-тестов Python (можно расширить под другие языки)"""
     code, output = run_command("pytest -q --tb=short")
     return code == 0, output
+
 
 def auto_fix_errors():
     """Автофикс для Python (расширяемо под другие языки)"""
     print("⚠️ Ошибки обнаружены. Пытаемся автофикс...")
     run_command("autopep8 --in-place -r .")
     run_command("git add .")
+
 
 def detect_new_step_files():
     """Ищет новые или изменённые файлы с STEP комментариями"""
@@ -66,6 +70,7 @@ def detect_new_step_files():
                     file_timestamps[path] = mtime
     return sorted(new_steps)
 
+
 def git_commit_push(step_number, step_description):
     """Автокоммит и push с фильтром .md и других игнорируемых файлов"""
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -74,6 +79,7 @@ def git_commit_push(step_number, step_description):
     run_command(f"git commit -m \"{message}\"")
     run_command("git push origin main")
     print(f"✅ Committed and pushed: {message}")
+
 
 # ---------------------------
 # Основной цикл

@@ -1,12 +1,24 @@
 //! Fast AST Analysis Engine
 //!
+//! STEP 7: Paid Modules Enhancement - Rust Core Refactoring
+//!
 //! Provides high-performance AST parsing and complexity metric calculation.
+//! Features:
+//! - Zero-copy parsing where possible
+//! - Parallel directory analysis
+//! - Caching for performance
+//! - Comprehensive error handling
 
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
+use pyo3::exceptions::{PyIOError, PyValueError};
 use std::collections::HashMap;
+use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use rayon::prelude::*;
 use walkdir::WalkDir;
+use anyhow::{Context, Result as AnyhowResult};
+use log::{debug, warn, info};
 
 /// Complexity metrics for a code element
 #[derive(Debug, Clone)]

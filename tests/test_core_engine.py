@@ -4,9 +4,10 @@ Unit tests for STEP 1: Core Engine
 Tests UI discovery, flow graph building, and multi-language test generation.
 """
 
-import pytest
-from pathlib import Path
 import json
+
+import pytest
+
 from framework.core.engine import (
     CoreEngine, UIElement, Screen, Language
 )

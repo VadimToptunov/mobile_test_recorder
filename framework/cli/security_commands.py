@@ -4,20 +4,19 @@ Security Scanning CLI Commands
 Commands for automated security testing.
 """
 
-import click
 from pathlib import Path
 from typing import Optional
 
+import click
 from rich.console import Console
-from rich.table import Table
 from rich.panel import Panel
+from rich.table import Table
 
 from framework.security.scanner import (
     SecurityScanner,
     SeverityLevel,
     SecurityScanResult,
 )
-
 
 console = Console()
 
@@ -40,12 +39,12 @@ def security() -> None:
 @click.option("--output", "-o", type=Path, help="Output report path")
 @click.option("--format", "-f", type=click.Choice(["json", "html"]), default="json", help="Report format")
 def scan(
-    app_path: Path,
-    platform: str,
-    app_name: str,
-    app_version: str,
-    output: Optional[Path],
-    format: str,
+        app_path: Path,
+        platform: str,
+        app_name: str,
+        app_version: str,
+        output: Optional[Path],
+        format: str,
 ) -> None:
     """
     Scan mobile application for security vulnerabilities.
@@ -93,11 +92,11 @@ def scan(
 @click.option("--app-version", "-v", default="1.0", help="Application version")
 @click.option("--severity", "-s", type=click.Choice(["critical", "high", "medium", "low"]), help="Filter by severity")
 def audit(
-    app_path: Path,
-    platform: str,
-    app_name: str,
-    app_version: str,
-    severity: Optional[str],
+        app_path: Path,
+        platform: str,
+        app_name: str,
+        app_version: str,
+        severity: Optional[str],
 ) -> None:
     """
     Quick security audit with detailed findings.

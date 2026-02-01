@@ -9,10 +9,11 @@ Features:
 - BDD support
 """
 
-from typing import List, Optional
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
+from typing import List, Optional
+
 from framework.core.engine import Language, Screen, UIElement
 
 
@@ -169,7 +170,7 @@ class {class_name}:
                     EC.presence_of_element_located((by_type, locator_value))
                 )
                 return element
-            except:
+            except Exception:
                 continue
         
         raise Exception(f"Could not find {elem_name} with any selector strategy")
@@ -183,7 +184,7 @@ class {class_name}:
             # Check for presence of key elements
             self.get_{(screen.elements[0].label or screen.elements[0].id or "element").replace(" ", "_").lower()}()
             return True
-        except:
+        except Exception:
             return False
 
     def wait_until_visible(self, timeout: int = 10):

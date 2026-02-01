@@ -15,9 +15,9 @@ Production ML Training - Тренировка для системы
 - Productivity (Gmail, Slack, Notion)
 """
 
-from pathlib import Path
-from typing import List, Dict, Any
 from datetime import datetime
+from pathlib import Path
+from typing import List, Dict
 from unittest.mock import patch
 
 
@@ -40,7 +40,8 @@ class RealWorldTrainingDataGenerator:
         # 1. КРИТИЧЕСКИЕ ЭЛЕМЕНТЫ (Login/Signup buttons) - всегда с ID
         critical_buttons = [
             # Login buttons
-            {'id': 'btn_login', 'accessibility_id': 'login_button', 'xpath': '//android.widget.Button[@resource-id="btn_login"]',
+            {'id': 'btn_login', 'accessibility_id': 'login_button',
+             'xpath': '//android.widget.Button[@resource-id="btn_login"]',
              'label': 'Log In', 'type': 'button', 'visible': True, 'enabled': True, 'depth': 3, 'siblings_count': 2,
              'unique_text': True, 'position_stable': 1.0},
             {'id': 'signin_button', 'accessibility_id': 'sign_in', 'xpath': '//button[@id="signin_button"]',
@@ -48,7 +49,8 @@ class RealWorldTrainingDataGenerator:
              'unique_text': True, 'position_stable': 1.0},
             # Signup buttons
             {'id': 'btn_signup', 'accessibility_id': 'create_account', 'xpath': '//button[@id="btn_signup"]',
-             'label': 'Create Account', 'type': 'button', 'visible': True, 'enabled': True, 'depth': 3, 'siblings_count': 2,
+             'label': 'Create Account', 'type': 'button', 'visible': True, 'enabled': True, 'depth': 3,
+             'siblings_count': 2,
              'unique_text': True, 'position_stable': 1.0},
             # Submit/Confirm buttons
             {'id': 'submit_btn', 'accessibility_id': 'submit', 'xpath': '//button[@id="submit_btn"]',
@@ -64,10 +66,12 @@ class RealWorldTrainingDataGenerator:
              'label': 'Email', 'type': 'textfield', 'visible': True, 'enabled': True, 'depth': 3, 'siblings_count': 4,
              'unique_text': False, 'position_stable': 0.95},
             {'id': 'password_field', 'accessibility_id': 'password', 'xpath': '//input[@type="password"]',
-             'label': 'Password', 'type': 'textfield', 'visible': True, 'enabled': True, 'depth': 3, 'siblings_count': 4,
+             'label': 'Password', 'type': 'textfield', 'visible': True, 'enabled': True, 'depth': 3,
+             'siblings_count': 4,
              'unique_text': False, 'position_stable': 0.95},
             {'id': 'username_input', 'accessibility_id': 'username', 'xpath': '//input[@name="username"]',
-             'label': 'Username', 'type': 'textfield', 'visible': True, 'enabled': True, 'depth': 3, 'siblings_count': 3,
+             'label': 'Username', 'type': 'textfield', 'visible': True, 'enabled': True, 'depth': 3,
+             'siblings_count': 3,
              'unique_text': False, 'position_stable': 0.9},
         ]
         features.extend(form_inputs * 40)  # 120 samples
@@ -94,7 +98,8 @@ class RealWorldTrainingDataGenerator:
              'label': 'Item 1', 'type': 'view', 'visible': True, 'enabled': True, 'depth': 5, 'siblings_count': 20,
              'unique_text': False, 'position_stable': 0.3},
             {'id': '', 'accessibility_id': '', 'xpath': '//ul[@class="product-list"]/li[2]',
-             'label': 'Product Name', 'type': 'view', 'visible': True, 'enabled': True, 'depth': 6, 'siblings_count': 15,
+             'label': 'Product Name', 'type': 'view', 'visible': True, 'enabled': True, 'depth': 6,
+             'siblings_count': 15,
              'unique_text': False, 'position_stable': 0.2},
             {'id': '', 'accessibility_id': '', 'xpath': '//div[@data-testid="message-list"]/div[3]',
              'label': 'Message', 'type': 'view', 'visible': True, 'enabled': True, 'depth': 4, 'siblings_count': 50,
@@ -106,10 +111,12 @@ class RealWorldTrainingDataGenerator:
         # 5. UNIQUE TEXT ELEMENTS - используем text selector
         text_elements = [
             {'id': '', 'accessibility_id': '', 'xpath': '//button[contains(text(), "Continue")]',
-             'label': 'Continue Shopping', 'type': 'button', 'visible': True, 'enabled': True, 'depth': 4, 'siblings_count': 3,
+             'label': 'Continue Shopping', 'type': 'button', 'visible': True, 'enabled': True, 'depth': 4,
+             'siblings_count': 3,
              'unique_text': True, 'position_stable': 0.6},
             {'id': '', 'accessibility_id': '', 'xpath': '//a[text()="Terms of Service"]',
-             'label': 'Terms of Service', 'type': 'link', 'visible': True, 'enabled': True, 'depth': 6, 'siblings_count': 8,
+             'label': 'Terms of Service', 'type': 'link', 'visible': True, 'enabled': True, 'depth': 6,
+             'siblings_count': 8,
              'unique_text': True, 'position_stable': 0.7},
         ]
         features.extend(text_elements * 25)  # 50 samples
