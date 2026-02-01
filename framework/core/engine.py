@@ -9,11 +9,11 @@ This module extends the existing UI discovery with:
 - Skeleton test generation
 """
 
-from typing import List, Dict, Any, Optional
+import json
 from dataclasses import dataclass
 from enum import Enum
-import json
 from pathlib import Path
+from typing import List, Dict, Any, Optional
 
 
 class Language(Enum):
@@ -115,7 +115,7 @@ class CoreEngine:
     def __init__(self, config: Optional[Dict[str, Any]] = None):
         self.config = config or {}
         self.screens: Dict[str, Screen] = {}
-        self.flow_graph: Dict[str, List[str]] = {}
+        self.flow_graph: Dict[str, List[Dict[str, str]]] = {}
         self.enabled_modules = self.config.get('enabled_modules', [
             'ui_discovery', 'flow_builder', 'skeleton_generator'
         ])

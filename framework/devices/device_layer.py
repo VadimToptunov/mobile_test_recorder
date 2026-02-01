@@ -10,13 +10,14 @@ This module handles:
 - Multi-language support
 """
 
-from typing import List, Dict, Any, Optional, Protocol
-from dataclasses import dataclass
-from enum import Enum
-from pathlib import Path
 import json
 import subprocess
+from dataclasses import dataclass
 from datetime import datetime
+from enum import Enum
+from pathlib import Path
+from typing import List, Dict, Any, Optional, Protocol
+
 from framework.licensing.validator import check_feature
 
 
@@ -32,6 +33,14 @@ class DeviceType(Enum):
     SIMULATOR = "simulator"
     REAL = "real"
     CLOUD = "cloud"
+
+
+class DeviceStatus(Enum):
+    """Device status for pool management"""
+    AVAILABLE = "available"
+    BUSY = "busy"
+    OFFLINE = "offline"
+    ERROR = "error"
 
 
 @dataclass
@@ -137,11 +146,56 @@ class Device:
         self.logs: List[LogEntry] = []
         self.api_traces: List[APITrace] = []
         self._is_connected = True
+        self.status: DeviceStatus = DeviceStatus.AVAILABLE
+
+    @property
+    def id(self) -> str:
+        """Get device unique identifier"""
+        return self.capabilities.udid
+
+    @property
+    def name(self) -> str:
+        """Get device name"""
+        return self.capabilities.device_name
 
     @property
     def platform(self) -> Platform:
         """Get device platform"""
         return self.capabilities.platform
+
+    @property
+    def device_id(self) -> str:
+        """Get device ID (alias for id)"""
+        return self.id
+
+    @property
+    def type(self) -> DeviceType:
+        """Get device type"""
+        return self.capabilities.device_type
+
+    @property
+    def model(self) -> str:
+        """Get device model (alias for name)"""
+        return self.capabilities.device_name
+
+    @property
+    def platform_version(self) -> str:
+        """Get platform version"""
+        return self.capabilities.platform_version
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert device to dictionary"""
+        return {
+            "id": self.id,
+            "name": self.name,
+            "device_id": self.device_id,
+            "platform": self.platform.value,
+            "platform_version": self.platform_version,
+            "type": self.type.value,
+            "model": self.model,
+            "status": self.status.value,
+            "is_connected": self.is_connected
+        }
 
     @property
     def is_connected(self) -> bool:
@@ -198,7 +252,7 @@ class Device:
                     )
                     logs.append(log)
                     self.logs.append(log)
-        except Exception as e:
+        except (AttributeError, KeyError, TypeError) as e:
             print(f"Warning: Could not capture logs: {e}")
 
         return logs
@@ -231,7 +285,7 @@ class Device:
             try:
                 if hasattr(self.driver, 'quit'):
                     self.driver.quit()
-            except:
+            except (OSError, RuntimeError):
                 pass
             self._is_connected = False
 
@@ -299,7 +353,7 @@ class LocalDeviceProvider:
                     ))
         except FileNotFoundError:
             print("⚠️  adb not found. Install Android SDK.")
-        except Exception as e:
+        except (subprocess.SubprocessError, OSError, subprocess.TimeoutExpired) as e:
             print(f"⚠️  Error listing Android devices: {e}")
 
         return devices
@@ -335,7 +389,7 @@ class LocalDeviceProvider:
         except FileNotFoundError:
             # Not on macOS or Xcode not installed
             pass
-        except Exception as e:
+        except (subprocess.SubprocessError, json.JSONDecodeError, subprocess.TimeoutExpired) as e:
             print(f"⚠️  Error listing iOS simulators: {e}")
 
         return devices
@@ -344,13 +398,16 @@ class LocalDeviceProvider:
         """Connect to device using Appium"""
         try:
             from appium import webdriver
+            from appium.options.common import AppiumOptions
         except ImportError:
             raise ImportError("Appium client not installed. Run: pip install appium-python-client")
 
-        # Create Appium driver
+        # Create Appium driver using options (Appium 3.x API)
+        options = AppiumOptions()
+        options.load_capabilities(caps.to_appium_caps())
         driver = webdriver.Remote(
             command_executor='http://localhost:4723',
-            desired_capabilities=caps.to_appium_caps()
+            options=options
         )
 
         return Device(caps, driver)
@@ -410,12 +467,16 @@ class CloudDeviceProvider:
         """Connect to cloud device"""
         try:
             from appium import webdriver
+            from appium.options.common import AppiumOptions
         except ImportError:
             raise ImportError("Appium client not installed. Run: pip install appium-python-client")
 
+        # Create Appium driver using options (Appium 3.x API)
+        options = AppiumOptions()
+        options.load_capabilities(caps.to_appium_caps())
         driver = webdriver.Remote(
             command_executor=self._hub_url,
-            desired_capabilities=caps.to_appium_caps()
+            options=options
         )
 
         return Device(caps, driver)

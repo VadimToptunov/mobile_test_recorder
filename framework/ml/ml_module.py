@@ -14,12 +14,13 @@ This module is designed to be flexible and support multiple ML backends
 without hardcoding specific implementations.
 """
 
-from typing import List, Dict, Any, Optional, Tuple
+import json
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-import json
-from abc import ABC, abstractmethod
+from typing import List, Dict, Any, Optional, Tuple
+
 from framework.licensing.validator import check_feature
 
 
@@ -206,8 +207,9 @@ class SelectorPredictor(MLModel):
         # Save model weights if trained
         if self._model is not None and self.backend == MLBackend.SKLEARN:
             import pickle
-            with open(path.with_suffix('.pkl'), 'wb') as f:
-                pickle.dump(self._model, f)
+            model_path = path.with_suffix('.pkl')
+            with open(model_path, 'wb') as model_file:
+                pickle.dump(self._model, model_file)
 
         # Save metadata
         with open(path.with_suffix('.json'), 'w') as f:
@@ -265,7 +267,7 @@ class SelectorPredictor(MLModel):
                 proba = self._model.predict_proba(X)[0]
                 confidence = float(max(proba))
                 return prediction, confidence
-        except Exception:
+        except (ValueError, TypeError, AttributeError, ImportError):
             # Fallback if prediction fails
             pass
 
@@ -556,7 +558,7 @@ class MLModule:
             if model_path.exists():
                 try:
                     model.load(model_path)
-                except Exception:
+                except (OSError, json.JSONDecodeError, KeyError, ValueError, ModuleNotFoundError):
                     pass  # Use untrained model
 
     def predict_selector(self, element_features: Dict[str, Any]) -> PredictionResult:
