@@ -283,11 +283,34 @@ class Device:
         """Disconnect from device"""
         if self._is_connected:
             try:
-                if hasattr(self.driver, 'quit'):
+                # Check driver is not None before accessing attributes
+                if self.driver is not None and hasattr(self.driver, 'quit'):
                     self.driver.quit()
             except (OSError, RuntimeError):
                 pass
             self._is_connected = False
+
+
+def _validate_device_id(udid: str) -> bool:
+    """
+    Validate device ID format to prevent command injection.
+
+    Valid formats:
+    - Android emulator: emulator-5554
+    - Android device: alphanumeric with colons (e.g., 192.168.1.1:5555)
+    - iOS: UUID format (e.g., 00008101-0012345A1234001E)
+    """
+    import re
+    # Android emulator pattern
+    if re.match(r'^emulator-\d+$', udid):
+        return True
+    # Android device serial (alphanumeric, may include colons for network devices)
+    if re.match(r'^[a-zA-Z0-9.:_-]+$', udid):
+        return True
+    # iOS UUID pattern
+    if re.match(r'^[A-F0-9-]+$', udid, re.IGNORECASE):
+        return True
+    return False
 
 
 class LocalDeviceProvider:
@@ -324,6 +347,12 @@ class LocalDeviceProvider:
                 parts = line.split()
                 if len(parts) >= 2:
                     udid = parts[0]
+
+                    # Validate device ID to prevent command injection
+                    if not _validate_device_id(udid):
+                        print(f"⚠️  Skipping device with invalid ID format: {udid}")
+                        continue
+
                     device_type = DeviceType.EMULATOR if 'emulator' in udid else DeviceType.REAL
 
                     # Get device properties

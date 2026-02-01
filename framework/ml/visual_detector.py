@@ -60,16 +60,15 @@ class VisualDetector:
         if not TESSERACT_AVAILABLE:
             raise RuntimeError("pytesseract not available")
 
-        # Load image
-        image = Image.open(image_path)
+        # Load image with context manager to ensure proper cleanup
+        with Image.open(image_path) as image:
+            # Crop to region if specified
+            if region:
+                x, y, w, h = region
+                image = image.crop((x, y, x + w, y + h))
 
-        # Crop to region if specified
-        if region:
-            x, y, w, h = region
-            image = image.crop((x, y, x + w, y + h))
-
-        # Extract text
-        text = pytesseract.image_to_string(image)
+            # Extract text
+            text = pytesseract.image_to_string(image)
 
         return text.strip()
 
@@ -232,12 +231,13 @@ class VisualDetector:
             bounds: (x, y, width, height)
             output_path: Where to save extracted image
         """
-        image = Image.open(screenshot_path)
-        x, y, w, h = bounds
-        element_image = image.crop((x, y, x + w, y + h))
+        # Use context manager to ensure proper resource cleanup
+        with Image.open(screenshot_path) as image:
+            x, y, w, h = bounds
+            element_image = image.crop((x, y, x + w, y + h))
 
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        element_image.save(output_path)
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            element_image.save(output_path)
         logger.debug(f"Element screenshot saved to {output_path}")
 
     def find_similar_elements(

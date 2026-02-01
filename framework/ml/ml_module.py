@@ -206,10 +206,15 @@ class SelectorPredictor(MLModel):
 
         # Save model weights if trained
         if self._model is not None and self.backend == MLBackend.SKLEARN:
-            import pickle
             model_path = path.with_suffix('.pkl')
-            with open(model_path, 'wb') as model_file:
-                pickle.dump(self._model, model_file)
+            try:
+                import joblib
+                joblib.dump(self._model, model_path)
+            except ImportError:
+                # Fallback to pickle
+                import pickle
+                with open(model_path, 'wb') as model_file:
+                    pickle.dump(self._model, model_file)
 
         # Save metadata
         with open(path.with_suffix('.json'), 'w') as f:
@@ -229,9 +234,22 @@ class SelectorPredictor(MLModel):
         # Load model weights if exists
         pkl_path = path.with_suffix('.pkl')
         if pkl_path.exists() and self.backend == MLBackend.SKLEARN:
-            import pickle
-            with open(pkl_path, 'rb') as f:
-                self._model = pickle.load(f)
+            # Use joblib for safer deserialization (still requires trusted source)
+            # WARNING: Only load models from trusted sources
+            try:
+                import joblib
+                self._model = joblib.load(pkl_path)
+            except ImportError:
+                # Fallback to pickle with warning
+                import pickle
+                import warnings
+                warnings.warn(
+                    "Loading model with pickle. For better security, install joblib. "
+                    "Only load models from trusted sources.",
+                    SecurityWarning
+                )
+                with open(pkl_path, 'rb') as f:
+                    self._model = pickle.load(f)
 
     def _extract_features(self, features: Dict[str, Any]) -> List[float]:
         """Extract numerical feature vector"""
