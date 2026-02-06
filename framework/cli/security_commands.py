@@ -31,6 +31,11 @@ from framework.security.advanced_security import (
     RiskLevel,
     OWASPMobileTop10,
 )
+from framework.security.sast_analyzer import SASTAnalyzer, VulnerabilityType
+from framework.security.dast_analyzer import DASTAnalyzer
+from framework.security.decompiler import Decompiler
+from framework.security.supply_chain import SupplyChainAnalyzer
+from framework.security.runtime_protection import RuntimeProtectionAnalyzer
 
 console = Console()
 
@@ -787,6 +792,1154 @@ def owasp() -> None:
     console.print(table)
 
     console.print("\n[dim]Run 'observe security full' for comprehensive OWASP coverage[/dim]")
+
+
+# =============================================================================
+# SAST (Static Application Security Testing) Commands
+# =============================================================================
+
+
+@security.command()
+@click.argument("source_path", type=Path)
+@click.option("--language", "-l", type=click.Choice(["python", "java", "kotlin", "swift", "javascript", "all"]), default="all")
+@click.option("--output", "-o", type=Path, help="Output report path")
+@click.option("--format", "-f", type=click.Choice(["json", "sarif", "html"]), default="json")
+@click.option("--taint/--no-taint", default=True, help="Enable taint analysis")
+@click.option("--crypto/--no-crypto", default=True, help="Enable cryptography analysis")
+def sast(
+    source_path: Path,
+    language: str,
+    output: Optional[Path],
+    format: str,
+    taint: bool,
+    crypto: bool,
+) -> None:
+    """
+    Run Static Application Security Testing (SAST).
+
+    Comprehensive static analysis with taint tracking, control flow analysis,
+    and cryptography vulnerability detection.
+
+    Example:
+        observe security sast ./src --language python
+        observe security sast ./app -l java -o sast_report.sarif --format sarif
+        observe security sast ./project --taint --crypto
+    """
+    if not source_path.exists():
+        console.print(f"[red]✗[/red] Path not found: {source_path}")
+        raise SystemExit(1)
+
+    console.print(Panel.fit(
+        "🔍 Static Application Security Testing (SAST)\n\n"
+        f"Source: {source_path}\n"
+        f"Language: {language.upper()}\n"
+        f"Taint Analysis: {'Enabled' if taint else 'Disabled'}\n"
+        f"Crypto Analysis: {'Enabled' if crypto else 'Disabled'}",
+        style="bold cyan"
+    ))
+
+    analyzer = SASTAnalyzer()
+
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        console=console,
+    ) as progress:
+        task = progress.add_task("Running SAST analysis...", total=None)
+        result = analyzer.analyze(
+            source_path,
+            language=language if language != "all" else None,
+            enable_taint=taint,
+            enable_crypto=crypto,
+        )
+        progress.update(task, completed=True)
+
+    # Summary by vulnerability type
+    console.print()
+    console.print(Panel.fit("📊 SAST Analysis Results", style="bold green"))
+
+    if not result.vulnerabilities:
+        console.print("[green]✓[/green] No vulnerabilities found!")
+        raise SystemExit(0)
+
+    # Group by type
+    by_type: dict = {}
+    for vuln in result.vulnerabilities:
+        vtype = vuln.vulnerability_type.value
+        if vtype not in by_type:
+            by_type[vtype] = []
+        by_type[vtype].append(vuln)
+
+    table = Table(title=f"Found {len(result.vulnerabilities)} Vulnerabilities")
+    table.add_column("Type", style="cyan")
+    table.add_column("Count", justify="right")
+    table.add_column("Critical", style="red", justify="right")
+    table.add_column("High", style="yellow", justify="right")
+
+    for vtype, vulns in sorted(by_type.items(), key=lambda x: len(x[1]), reverse=True):
+        critical = len([v for v in vulns if v.severity == "critical"])
+        high = len([v for v in vulns if v.severity == "high"])
+        table.add_row(vtype, str(len(vulns)), str(critical) if critical else "-", str(high) if high else "-")
+
+    console.print(table)
+
+    # Show top findings
+    console.print("\n[bold]Top Findings:[/bold]")
+    critical_vulns = [v for v in result.vulnerabilities if v.severity == "critical"]
+    high_vulns = [v for v in result.vulnerabilities if v.severity == "high"]
+
+    for vuln in (critical_vulns + high_vulns)[:10]:
+        severity_style = "red bold" if vuln.severity == "critical" else "yellow"
+        console.print(f"  [{severity_style}]•[/{severity_style}] [{severity_style}]{vuln.vulnerability_type.value}[/{severity_style}]")
+        console.print(f"    [dim]File:[/dim] {vuln.file_path}:{vuln.line_number}")
+        console.print(f"    [dim]CWE:[/dim] {vuln.cwe_id} | {vuln.description[:60]}...")
+        if vuln.taint_flow:
+            console.print(f"    [dim]Taint Flow:[/dim] {vuln.taint_flow.source} → {vuln.taint_flow.sink}")
+        console.print()
+
+    # Save report
+    if output:
+        if format == "sarif":
+            analyzer.export_sarif(result, output)
+        elif format == "html":
+            analyzer.export_html(result, output)
+        else:
+            import json
+            with open(output, 'w') as f:
+                json.dump(result.to_dict(), f, indent=2, default=str)
+        console.print(f"\n[green]✓[/green] Report saved to {output}")
+
+    if critical_vulns:
+        raise SystemExit(2)
+    elif high_vulns:
+        raise SystemExit(1)
+    raise SystemExit(0)
+
+
+@security.command()
+@click.argument("source_path", type=Path)
+@click.option("--output", "-o", type=Path, help="Output report path")
+def taint(source_path: Path, output: Optional[Path]) -> None:
+    """
+    Run taint analysis to track data flow from sources to sinks.
+
+    Identifies injection vulnerabilities by tracing untrusted input.
+
+    Example:
+        observe security taint ./src
+        observe security taint ./app -o taint_report.json
+    """
+    if not source_path.exists():
+        console.print(f"[red]✗[/red] Path not found: {source_path}")
+        raise SystemExit(1)
+
+    console.print(Panel.fit("🔬 Taint Flow Analysis", style="bold magenta"))
+
+    analyzer = SASTAnalyzer()
+
+    with console.status("[cyan]Analyzing taint flows..."):
+        result = analyzer.analyze(source_path, enable_taint=True, enable_crypto=False)
+
+    taint_vulns = [v for v in result.vulnerabilities if v.taint_flow]
+
+    if not taint_vulns:
+        console.print("[green]✓[/green] No taint flow vulnerabilities found!")
+        raise SystemExit(0)
+
+    console.print(f"\n[red]⚠️ Found {len(taint_vulns)} taint flow issue(s)[/red]\n")
+
+    for vuln in taint_vulns[:15]:
+        flow = vuln.taint_flow
+        severity_style = "red" if vuln.severity in ["critical", "high"] else "yellow"
+
+        panel = Panel(
+            f"[bold]{vuln.vulnerability_type.value}[/bold]\n\n"
+            f"[dim]Source:[/dim] {flow.source} (line {flow.source_line})\n"
+            f"[dim]Sink:[/dim] {flow.sink} (line {flow.sink_line})\n"
+            f"[dim]File:[/dim] {vuln.file_path}\n"
+            f"[dim]Path Length:[/dim] {len(flow.path)} nodes\n\n"
+            f"[cyan]Flow Path:[/cyan]\n" + " → ".join(flow.path[:5]) +
+            (f" → ... ({len(flow.path) - 5} more)" if len(flow.path) > 5 else "") +
+            f"\n\n[yellow]CWE-{vuln.cwe_id}:[/yellow] {vuln.description}",
+            title=f"[{severity_style}]{vuln.severity.upper()}[/{severity_style}]",
+            border_style=severity_style,
+        )
+        console.print(panel)
+        console.print()
+
+    if output:
+        import json
+        data = [v.to_dict() for v in taint_vulns]
+        with open(output, 'w') as f:
+            json.dump(data, f, indent=2, default=str)
+        console.print(f"\n[green]✓[/green] Report saved to {output}")
+
+    raise SystemExit(1)
+
+
+# =============================================================================
+# DAST (Dynamic Application Security Testing) Commands
+# =============================================================================
+
+
+@security.command()
+@click.argument("target", type=str)
+@click.option("--port", "-p", type=int, default=443, help="Target port")
+@click.option("--output", "-o", type=Path, help="Output report path")
+@click.option("--format", "-f", type=click.Choice(["json", "html"]), default="json")
+def dast(target: str, port: int, output: Optional[Path], format: str) -> None:
+    """
+    Run Dynamic Application Security Testing (DAST).
+
+    Tests running application for SSL/TLS, API security, and session vulnerabilities.
+
+    Example:
+        observe security dast api.example.com
+        observe security dast 192.168.1.100 --port 8443 -o dast_report.json
+    """
+    console.print(Panel.fit(
+        "⚡ Dynamic Application Security Testing (DAST)\n\n"
+        f"Target: {target}:{port}\n"
+        f"Tests: SSL/TLS, API Security, Session Analysis",
+        style="bold yellow"
+    ))
+
+    analyzer = DASTAnalyzer()
+
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        console=console,
+    ) as progress:
+        task = progress.add_task("Running DAST analysis...", total=None)
+        result = analyzer.analyze(target, port)
+        progress.update(task, completed=True)
+
+    console.print()
+    console.print(Panel.fit("📊 DAST Analysis Results", style="bold green"))
+
+    if not result.findings:
+        console.print("[green]✓[/green] No vulnerabilities found!")
+        raise SystemExit(0)
+
+    # Summary table
+    table = Table(title=f"Found {len(result.findings)} Issues")
+    table.add_column("Category", style="cyan")
+    table.add_column("Severity", style="bold")
+    table.add_column("Finding")
+
+    for finding in result.findings:
+        severity_style = {
+            "critical": "red bold",
+            "high": "red",
+            "medium": "yellow",
+            "low": "dim",
+        }.get(finding.severity, "white")
+
+        table.add_row(
+            finding.category,
+            f"[{severity_style}]{finding.severity.upper()}[/{severity_style}]",
+            finding.title[:50] + ("..." if len(finding.title) > 50 else ""),
+        )
+
+    console.print(table)
+
+    # Detailed findings
+    console.print("\n[bold]Detailed Findings:[/bold]\n")
+
+    for finding in result.findings[:10]:
+        severity_style = "red" if finding.severity in ["critical", "high"] else "yellow"
+        console.print(f"[{severity_style}]•[/{severity_style}] [{severity_style}]{finding.title}[/{severity_style}]")
+        console.print(f"  [dim]Category:[/dim] {finding.category}")
+        console.print(f"  {finding.description}")
+        console.print(f"  [cyan]Recommendation:[/cyan] {finding.recommendation}")
+        console.print()
+
+    if output:
+        if format == "html":
+            analyzer.export_html(result, output)
+        else:
+            import json
+            with open(output, 'w') as f:
+                json.dump(result.to_dict(), f, indent=2, default=str)
+        console.print(f"\n[green]✓[/green] Report saved to {output}")
+
+    critical = len([f for f in result.findings if f.severity == "critical"])
+    if critical:
+        raise SystemExit(2)
+    raise SystemExit(1)
+
+
+@security.command()
+@click.argument("host", type=str)
+@click.option("--port", "-p", type=int, default=443, help="Target port")
+def ssl(host: str, port: int) -> None:
+    """
+    Analyze SSL/TLS configuration.
+
+    Checks for weak protocols, cipher suites, and certificate issues.
+
+    Example:
+        observe security ssl api.example.com
+        observe security ssl 192.168.1.100 --port 8443
+    """
+    console.print(Panel.fit(f"🔐 SSL/TLS Analysis: {host}:{port}", style="bold cyan"))
+
+    analyzer = DASTAnalyzer()
+
+    with console.status("[cyan]Analyzing SSL/TLS configuration..."):
+        result = analyzer.analyze_ssl(host, port)
+
+    if not result.findings:
+        console.print("[green]✓[/green] SSL/TLS configuration is secure!")
+        console.print(f"\n[dim]Protocol: {result.protocol}[/dim]")
+        console.print(f"[dim]Cipher: {result.cipher_suite}[/dim]")
+        console.print(f"[dim]Certificate Valid Until: {result.cert_expiry}[/dim]")
+        raise SystemExit(0)
+
+    console.print(f"\n[yellow]⚠️ Found {len(result.findings)} SSL/TLS issue(s)[/yellow]\n")
+
+    table = Table()
+    table.add_column("Severity", style="bold", width=10)
+    table.add_column("Issue", style="white")
+    table.add_column("Recommendation", style="cyan")
+
+    for finding in result.findings:
+        severity_style = {
+            "critical": "red",
+            "high": "yellow",
+            "medium": "blue",
+            "low": "dim",
+        }.get(finding.severity, "white")
+
+        table.add_row(
+            f"[{severity_style}]{finding.severity.upper()}[/{severity_style}]",
+            finding.title,
+            finding.recommendation[:40] + "...",
+        )
+
+    console.print(table)
+
+    raise SystemExit(1)
+
+
+@security.command()
+@click.argument("base_url", type=str)
+@click.option("--auth-header", "-a", type=str, help="Authorization header value")
+@click.option("--endpoints", "-e", type=Path, help="File with endpoint definitions")
+def api(base_url: str, auth_header: Optional[str], endpoints: Optional[Path]) -> None:
+    """
+    Test API security vulnerabilities.
+
+    Checks for injection, authentication bypass, and IDOR vulnerabilities.
+
+    Example:
+        observe security api https://api.example.com
+        observe security api https://api.example.com -a "Bearer token123"
+        observe security api https://api.example.com -e endpoints.json
+    """
+    console.print(Panel.fit(f"🌐 API Security Testing: {base_url}", style="bold green"))
+
+    analyzer = DASTAnalyzer()
+
+    headers = {}
+    if auth_header:
+        headers["Authorization"] = auth_header
+
+    endpoint_list = None
+    if endpoints and endpoints.exists():
+        import json
+        with open(endpoints) as f:
+            endpoint_list = json.load(f)
+
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        console=console,
+    ) as progress:
+        task = progress.add_task("Testing API endpoints...", total=None)
+        result = analyzer.test_api(base_url, headers, endpoint_list)
+        progress.update(task, completed=True)
+
+    if not result.findings:
+        console.print("[green]✓[/green] No API security issues found!")
+        raise SystemExit(0)
+
+    console.print(f"\n[red]⚠️ Found {len(result.findings)} API vulnerability(ies)[/red]\n")
+
+    for finding in result.findings:
+        severity_style = "red" if finding.severity in ["critical", "high"] else "yellow"
+
+        panel = Panel(
+            f"[bold]{finding.title}[/bold]\n\n"
+            f"[dim]Endpoint:[/dim] {finding.endpoint}\n"
+            f"[dim]Method:[/dim] {finding.method}\n"
+            f"[dim]Vulnerability:[/dim] {finding.vulnerability_type}\n\n"
+            f"{finding.description}\n\n"
+            f"[cyan]Recommendation:[/cyan] {finding.recommendation}",
+            title=f"[{severity_style}]{finding.severity.upper()}[/{severity_style}]",
+            border_style=severity_style,
+        )
+        console.print(panel)
+        console.print()
+
+    raise SystemExit(1)
+
+
+# =============================================================================
+# Decompilation & Reverse Engineering Commands
+# =============================================================================
+
+
+@security.command()
+@click.argument("binary_path", type=Path)
+@click.option("--output", "-o", type=Path, help="Output directory for decompiled files")
+@click.option("--extract-strings/--no-strings", default=True, help="Extract strings from binary")
+@click.option("--analyze-native/--no-native", default=True, help="Analyze native libraries")
+def decompile(
+    binary_path: Path,
+    output: Optional[Path],
+    extract_strings: bool,
+    analyze_native: bool,
+) -> None:
+    """
+    Decompile and analyze mobile application binary.
+
+    Supports APK (Android) and IPA (iOS) files.
+
+    Example:
+        observe security decompile app.apk
+        observe security decompile app.ipa -o ./decompiled
+        observe security decompile app.apk --extract-strings --analyze-native
+    """
+    if not binary_path.exists():
+        console.print(f"[red]✗[/red] File not found: {binary_path}")
+        raise SystemExit(1)
+
+    platform = "android" if binary_path.suffix.lower() == ".apk" else "ios"
+
+    console.print(Panel.fit(
+        f"🔧 Binary Decompilation & Analysis\n\n"
+        f"File: {binary_path.name}\n"
+        f"Platform: {platform.upper()}\n"
+        f"String Extraction: {'Enabled' if extract_strings else 'Disabled'}\n"
+        f"Native Analysis: {'Enabled' if analyze_native else 'Disabled'}",
+        style="bold magenta"
+    ))
+
+    decompiler = Decompiler()
+
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        console=console,
+    ) as progress:
+        task = progress.add_task("Decompiling binary...", total=None)
+        result = decompiler.decompile(
+            binary_path,
+            output_dir=output,
+            extract_strings=extract_strings,
+            analyze_native=analyze_native,
+        )
+        progress.update(task, completed=True)
+
+    console.print()
+    console.print(Panel.fit("📊 Decompilation Results", style="bold green"))
+
+    # Basic info
+    info_table = Table(title="Binary Information")
+    info_table.add_column("Property", style="cyan")
+    info_table.add_column("Value", style="white")
+
+    info_table.add_row("Package", result.package_name)
+    info_table.add_row("Version", result.version)
+    info_table.add_row("Min SDK", str(result.min_sdk) if result.min_sdk else "N/A")
+    info_table.add_row("Target SDK", str(result.target_sdk) if result.target_sdk else "N/A")
+    info_table.add_row("SHA256", result.sha256[:32] + "...")
+    info_table.add_row("Size", f"{result.size_bytes / 1024 / 1024:.2f} MB")
+
+    console.print(info_table)
+
+    # Protection analysis
+    if result.protections:
+        console.print("\n[bold]Protection Mechanisms Detected:[/bold]")
+
+        protection_table = Table()
+        protection_table.add_column("Protection", style="cyan")
+        protection_table.add_column("Status", style="bold")
+        protection_table.add_column("Details", style="dim")
+
+        for prot in result.protections:
+            status_style = "green" if prot.detected else "red"
+            status = "Detected" if prot.detected else "Not Found"
+            protection_table.add_row(
+                prot.name,
+                f"[{status_style}]{status}[/{status_style}]",
+                prot.details[:40] if prot.details else "-",
+            )
+
+        console.print(protection_table)
+
+    # Strings of interest
+    if result.interesting_strings:
+        console.print(f"\n[bold]Interesting Strings Found ({len(result.interesting_strings)}):[/bold]")
+
+        for string_info in result.interesting_strings[:15]:
+            category_style = {
+                "url": "blue",
+                "api_key": "red",
+                "password": "red",
+                "email": "yellow",
+                "ip_address": "cyan",
+                "secret": "red",
+            }.get(string_info.category, "white")
+
+            console.print(f"  [{category_style}]•[/{category_style}] [{category_style}]{string_info.category}[/{category_style}]: {string_info.value[:60]}...")
+
+        if len(result.interesting_strings) > 15:
+            console.print(f"  [dim]... and {len(result.interesting_strings) - 15} more[/dim]")
+
+    # Native libraries
+    if result.native_libs:
+        console.print(f"\n[bold]Native Libraries ({len(result.native_libs)}):[/bold]")
+
+        for lib in result.native_libs[:10]:
+            arch_str = ", ".join(lib.architectures) if lib.architectures else "Unknown"
+            console.print(f"  [cyan]•[/cyan] {lib.name} ({arch_str})")
+
+    # Security findings
+    if result.security_findings:
+        console.print(f"\n[bold red]⚠️ Security Findings ({len(result.security_findings)}):[/bold red]")
+
+        for finding in result.security_findings[:10]:
+            severity_style = "red" if finding.severity in ["critical", "high"] else "yellow"
+            console.print(f"  [{severity_style}]•[/{severity_style}] [{severity_style}]{finding.title}[/{severity_style}]")
+            console.print(f"    {finding.description}")
+
+    if output:
+        console.print(f"\n[green]✓[/green] Decompiled files saved to {output}")
+
+    raise SystemExit(0)
+
+
+@security.command()
+@click.argument("binary_path", type=Path)
+@click.option("--output", "-o", type=Path, help="Output file for strings")
+@click.option("--min-length", "-m", type=int, default=8, help="Minimum string length")
+@click.option("--filter", "-f", type=click.Choice(["all", "urls", "secrets", "emails", "ips"]), default="all")
+def strings(
+    binary_path: Path,
+    output: Optional[Path],
+    min_length: int,
+    filter: str,
+) -> None:
+    """
+    Extract strings from binary.
+
+    Extracts and categorizes interesting strings from APK/IPA files.
+
+    Example:
+        observe security strings app.apk
+        observe security strings app.ipa -o strings.txt --filter secrets
+        observe security strings app.apk --min-length 12
+    """
+    if not binary_path.exists():
+        console.print(f"[red]✗[/red] File not found: {binary_path}")
+        raise SystemExit(1)
+
+    console.print(Panel.fit(f"📝 String Extraction: {binary_path.name}", style="bold cyan"))
+
+    decompiler = Decompiler()
+
+    with console.status("[cyan]Extracting strings..."):
+        strings_list = decompiler.extract_strings(binary_path, min_length=min_length)
+
+    if filter != "all":
+        filter_map = {
+            "urls": ["url", "endpoint"],
+            "secrets": ["api_key", "password", "secret", "token"],
+            "emails": ["email"],
+            "ips": ["ip_address"],
+        }
+        categories = filter_map.get(filter, [])
+        strings_list = [s for s in strings_list if s.category in categories]
+
+    if not strings_list:
+        console.print("[dim]No strings found matching criteria[/dim]")
+        raise SystemExit(0)
+
+    console.print(f"\n[bold]Found {len(strings_list)} strings[/bold]\n")
+
+    # Group by category
+    by_category: dict = {}
+    for s in strings_list:
+        if s.category not in by_category:
+            by_category[s.category] = []
+        by_category[s.category].append(s)
+
+    for category, cat_strings in sorted(by_category.items()):
+        category_style = {
+            "url": "blue",
+            "api_key": "red",
+            "password": "red",
+            "email": "yellow",
+            "ip_address": "cyan",
+            "secret": "red",
+        }.get(category, "white")
+
+        console.print(f"[{category_style}][bold]{category.upper()}[/bold][/{category_style}] ({len(cat_strings)})")
+
+        for s in cat_strings[:10]:
+            console.print(f"  {s.value[:80]}{'...' if len(s.value) > 80 else ''}")
+
+        if len(cat_strings) > 10:
+            console.print(f"  [dim]... and {len(cat_strings) - 10} more[/dim]")
+        console.print()
+
+    if output:
+        with open(output, 'w') as f:
+            for s in strings_list:
+                f.write(f"[{s.category}] {s.value}\n")
+        console.print(f"\n[green]✓[/green] Strings saved to {output}")
+
+    raise SystemExit(0)
+
+
+# =============================================================================
+# Supply Chain Security Commands
+# =============================================================================
+
+
+@security.command(name="supply-chain")
+@click.argument("project_path", type=Path)
+@click.option("--output", "-o", type=Path, help="Output report path")
+@click.option("--format", "-f", type=click.Choice(["json", "sbom", "html"]), default="json")
+@click.option("--check-vulns/--no-vulns", default=True, help="Check for known vulnerabilities")
+def supply_chain(
+    project_path: Path,
+    output: Optional[Path],
+    format: str,
+    check_vulns: bool,
+) -> None:
+    """
+    Analyze supply chain security.
+
+    Scans dependencies for vulnerabilities, generates SBOM, and checks licenses.
+
+    Example:
+        observe security supply-chain ./project
+        observe security supply-chain ./app -o sbom.json --format sbom
+        observe security supply-chain ./src --check-vulns
+    """
+    if not project_path.exists():
+        console.print(f"[red]✗[/red] Path not found: {project_path}")
+        raise SystemExit(1)
+
+    console.print(Panel.fit(
+        "📦 Supply Chain Security Analysis\n\n"
+        f"Project: {project_path}\n"
+        f"Vulnerability Check: {'Enabled' if check_vulns else 'Disabled'}",
+        style="bold blue"
+    ))
+
+    analyzer = SupplyChainAnalyzer()
+
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        console=console,
+    ) as progress:
+        task = progress.add_task("Analyzing dependencies...", total=None)
+        result = analyzer.analyze(project_path, check_vulnerabilities=check_vulns)
+        progress.update(task, completed=True)
+
+    console.print()
+    console.print(Panel.fit("📊 Supply Chain Analysis Results", style="bold green"))
+
+    # Dependency summary
+    dep_table = Table(title=f"Dependencies ({len(result.dependencies)})")
+    dep_table.add_column("Ecosystem", style="cyan")
+    dep_table.add_column("Count", justify="right")
+    dep_table.add_column("Vulnerable", style="red", justify="right")
+
+    by_ecosystem: dict = {}
+    for dep in result.dependencies:
+        eco = dep.ecosystem
+        if eco not in by_ecosystem:
+            by_ecosystem[eco] = {"total": 0, "vulnerable": 0}
+        by_ecosystem[eco]["total"] += 1
+        if dep.vulnerabilities:
+            by_ecosystem[eco]["vulnerable"] += 1
+
+    for eco, counts in by_ecosystem.items():
+        dep_table.add_row(
+            eco,
+            str(counts["total"]),
+            str(counts["vulnerable"]) if counts["vulnerable"] else "-",
+        )
+
+    console.print(dep_table)
+
+    # Vulnerabilities
+    if result.vulnerabilities:
+        console.print(f"\n[bold red]⚠️ Vulnerable Dependencies ({len(result.vulnerabilities)}):[/bold red]\n")
+
+        vuln_table = Table()
+        vuln_table.add_column("Package", style="cyan")
+        vuln_table.add_column("Version", style="dim")
+        vuln_table.add_column("CVE", style="red")
+        vuln_table.add_column("Severity", style="bold")
+        vuln_table.add_column("Fixed In", style="green")
+
+        for vuln in result.vulnerabilities[:20]:
+            severity_style = {
+                "critical": "red bold",
+                "high": "red",
+                "medium": "yellow",
+                "low": "dim",
+            }.get(vuln.severity, "white")
+
+            vuln_table.add_row(
+                vuln.package_name,
+                vuln.installed_version,
+                vuln.cve_id or "N/A",
+                f"[{severity_style}]{vuln.severity.upper()}[/{severity_style}]",
+                vuln.fixed_version or "Unknown",
+            )
+
+        console.print(vuln_table)
+
+        if len(result.vulnerabilities) > 20:
+            console.print(f"\n[dim]... and {len(result.vulnerabilities) - 20} more vulnerabilities[/dim]")
+
+    # License issues
+    if result.license_issues:
+        console.print(f"\n[bold yellow]⚠️ License Issues ({len(result.license_issues)}):[/bold yellow]")
+
+        for issue in result.license_issues[:10]:
+            console.print(f"  [yellow]•[/yellow] {issue.package_name}: {issue.license} - {issue.issue}")
+
+    # Save report
+    if output:
+        if format == "sbom":
+            analyzer.generate_sbom(result, output)
+            console.print(f"\n[green]✓[/green] SBOM saved to {output}")
+        elif format == "html":
+            analyzer.export_html(result, output)
+            console.print(f"\n[green]✓[/green] HTML report saved to {output}")
+        else:
+            import json
+            with open(output, 'w') as f:
+                json.dump(result.to_dict(), f, indent=2, default=str)
+            console.print(f"\n[green]✓[/green] Report saved to {output}")
+
+    critical_vulns = len([v for v in result.vulnerabilities if v.severity == "critical"])
+    if critical_vulns:
+        raise SystemExit(2)
+    elif result.vulnerabilities:
+        raise SystemExit(1)
+    raise SystemExit(0)
+
+
+@security.command()
+@click.argument("project_path", type=Path)
+@click.option("--output", "-o", type=Path, required=True, help="Output SBOM file path")
+@click.option("--format", "-f", type=click.Choice(["cyclonedx", "spdx"]), default="cyclonedx")
+def sbom(project_path: Path, output: Path, format: str) -> None:
+    """
+    Generate Software Bill of Materials (SBOM).
+
+    Creates a comprehensive inventory of all dependencies.
+
+    Example:
+        observe security sbom ./project -o sbom.json
+        observe security sbom ./app -o sbom.xml --format spdx
+    """
+    if not project_path.exists():
+        console.print(f"[red]✗[/red] Path not found: {project_path}")
+        raise SystemExit(1)
+
+    console.print(Panel.fit(f"📋 SBOM Generation ({format.upper()})", style="bold cyan"))
+
+    analyzer = SupplyChainAnalyzer()
+
+    with console.status("[cyan]Generating SBOM..."):
+        result = analyzer.analyze(project_path, check_vulnerabilities=False)
+        analyzer.generate_sbom(result, output, format=format)
+
+    console.print(f"\n[green]✓[/green] SBOM generated: {output}")
+    console.print(f"[dim]Format: {format.upper()}[/dim]")
+    console.print(f"[dim]Components: {len(result.dependencies)}[/dim]")
+
+    raise SystemExit(0)
+
+
+# =============================================================================
+# Runtime Protection Analysis Commands
+# =============================================================================
+
+
+@security.command(name="runtime")
+@click.argument("app_path", type=Path)
+@click.option("--platform", "-p", type=click.Choice(["android", "ios"]), required=True)
+@click.option("--output", "-o", type=Path, help="Output report path")
+@click.option("--format", "-f", type=click.Choice(["json", "html"]), default="json")
+def runtime(
+    app_path: Path,
+    platform: str,
+    output: Optional[Path],
+    format: str,
+) -> None:
+    """
+    Analyze runtime protection mechanisms.
+
+    Checks for root/jailbreak detection, anti-debugging, anti-tampering, etc.
+
+    Example:
+        observe security runtime app.apk --platform android
+        observe security runtime app.ipa -p ios -o runtime_report.json
+    """
+    if not app_path.exists():
+        console.print(f"[red]✗[/red] File not found: {app_path}")
+        raise SystemExit(1)
+
+    console.print(Panel.fit(
+        f"🛡️ Runtime Protection Analysis\n\n"
+        f"App: {app_path.name}\n"
+        f"Platform: {platform.upper()}",
+        style="bold red"
+    ))
+
+    analyzer = RuntimeProtectionAnalyzer()
+
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        console=console,
+    ) as progress:
+        task = progress.add_task("Analyzing runtime protections...", total=None)
+        result = analyzer.analyze(app_path, platform)
+        progress.update(task, completed=True)
+
+    console.print()
+    console.print(Panel.fit("📊 Runtime Protection Results", style="bold green"))
+
+    # Protection matrix
+    protection_table = Table(title="Protection Mechanisms")
+    protection_table.add_column("Protection", style="cyan")
+    protection_table.add_column("Status", style="bold", justify="center")
+    protection_table.add_column("Strength", justify="center")
+    protection_table.add_column("Details", style="dim")
+
+    protections = [
+        ("Root/Jailbreak Detection", result.root_detection),
+        ("Emulator Detection", result.emulator_detection),
+        ("Debug Detection", result.debug_detection),
+        ("Tamper Detection", result.tamper_detection),
+        ("Hook Detection (Frida/Xposed)", result.hook_detection),
+        ("SSL Pinning", result.ssl_pinning),
+        ("Code Obfuscation", result.obfuscation),
+    ]
+
+    for name, protection in protections:
+        if protection.detected:
+            status = "[green]✓ Detected[/green]"
+            strength_color = {"strong": "green", "medium": "yellow", "weak": "red"}.get(protection.strength, "white")
+            strength = f"[{strength_color}]{protection.strength.upper()}[/{strength_color}]"
+        else:
+            status = "[red]✗ Missing[/red]"
+            strength = "[dim]-[/dim]"
+
+        protection_table.add_row(
+            name,
+            status,
+            strength,
+            protection.details[:30] + "..." if protection.details and len(protection.details) > 30 else (protection.details or "-"),
+        )
+
+    console.print(protection_table)
+
+    # Overall score
+    detected_count = sum(1 for _, p in protections if p.detected)
+    score = (detected_count / len(protections)) * 100
+
+    if score >= 80:
+        score_style = "green bold"
+        verdict = "EXCELLENT"
+    elif score >= 60:
+        score_style = "yellow bold"
+        verdict = "GOOD"
+    elif score >= 40:
+        score_style = "yellow"
+        verdict = "MODERATE"
+    else:
+        score_style = "red bold"
+        verdict = "WEAK"
+
+    console.print(f"\n[bold]Protection Score:[/bold] [{score_style}]{score:.0f}% - {verdict}[/{score_style}]")
+
+    # Recommendations
+    if result.recommendations:
+        console.print("\n[bold]Recommendations:[/bold]")
+        for rec in result.recommendations[:5]:
+            console.print(f"  [cyan]•[/cyan] {rec}")
+
+    # Bypass methods found
+    if result.bypass_methods:
+        console.print(f"\n[bold red]⚠️ Potential Bypass Methods ({len(result.bypass_methods)}):[/bold red]")
+        for bypass in result.bypass_methods[:5]:
+            console.print(f"  [red]•[/red] {bypass.method}: {bypass.description}")
+
+    if output:
+        if format == "html":
+            analyzer.export_html(result, output)
+        else:
+            import json
+            with open(output, 'w') as f:
+                json.dump(result.to_dict(), f, indent=2, default=str)
+        console.print(f"\n[green]✓[/green] Report saved to {output}")
+
+    if score < 40:
+        raise SystemExit(1)
+    raise SystemExit(0)
+
+
+@security.command()
+@click.argument("app_path", type=Path)
+@click.option("--platform", "-p", type=click.Choice(["android", "ios"]), required=True)
+def protections(app_path: Path, platform: str) -> None:
+    """
+    Quick check for runtime protections.
+
+    Rapidly scans for common protection mechanisms.
+
+    Example:
+        observe security protections app.apk -p android
+        observe security protections app.ipa -p ios
+    """
+    if not app_path.exists():
+        console.print(f"[red]✗[/red] File not found: {app_path}")
+        raise SystemExit(1)
+
+    console.print(Panel.fit(f"🔒 Quick Protection Check: {app_path.name}", style="bold cyan"))
+
+    analyzer = RuntimeProtectionAnalyzer()
+
+    with console.status("[cyan]Checking protections..."):
+        result = analyzer.quick_check(app_path, platform)
+
+    console.print()
+
+    checks = [
+        ("Root/Jailbreak Detection", result.has_root_detection, "Prevents running on compromised devices"),
+        ("Emulator Detection", result.has_emulator_detection, "Prevents analysis in emulators"),
+        ("Debug Detection", result.has_debug_detection, "Detects attached debuggers"),
+        ("Tamper Detection", result.has_tamper_detection, "Verifies app integrity"),
+        ("SSL Pinning", result.has_ssl_pinning, "Prevents MITM attacks"),
+        ("Code Obfuscation", result.has_obfuscation, "Makes reverse engineering harder"),
+    ]
+
+    for name, detected, description in checks:
+        if detected:
+            console.print(f"[green]✓[/green] {name}")
+            console.print(f"  [dim]{description}[/dim]")
+        else:
+            console.print(f"[red]✗[/red] {name}")
+            console.print(f"  [dim]{description}[/dim]")
+
+    detected_count = sum(1 for _, d, _ in checks if d)
+    console.print(f"\n[bold]Protection Coverage:[/bold] {detected_count}/{len(checks)}")
+
+    if detected_count < len(checks) // 2:
+        console.print("[red]⚠️ Application lacks basic protections![/red]")
+        raise SystemExit(1)
+
+    raise SystemExit(0)
+
+
+# =============================================================================
+# Comprehensive Analysis Command
+# =============================================================================
+
+
+@security.command(name="comprehensive")
+@click.argument("app_path", type=Path)
+@click.option("--platform", "-p", type=click.Choice(["android", "ios"]), required=True)
+@click.option("--app-name", "-n", required=True, help="Application name")
+@click.option("--source-path", "-s", type=Path, help="Source code path for SAST")
+@click.option("--output", "-o", type=Path, help="Output directory for all reports")
+@click.option("--target-host", "-t", type=str, help="Target host for DAST")
+def comprehensive(
+    app_path: Path,
+    platform: str,
+    app_name: str,
+    source_path: Optional[Path],
+    output: Optional[Path],
+    target_host: Optional[str],
+) -> None:
+    """
+    Run ALL security analyses in one comprehensive scan.
+
+    Combines SAST, DAST, decompilation, supply chain, and runtime analysis.
+
+    Example:
+        observe security comprehensive app.apk -p android -n MyApp -o ./reports
+        observe security comprehensive app.apk -p android -n MyApp -s ./src -t api.example.com
+    """
+    if not app_path.exists():
+        console.print(f"[red]✗[/red] File not found: {app_path}")
+        raise SystemExit(1)
+
+    console.print(Panel.fit(
+        "🛡️ COMPREHENSIVE SECURITY ANALYSIS\n\n"
+        f"App: {app_name}\n"
+        f"Platform: {platform.upper()}\n"
+        f"Binary: {app_path.name}\n"
+        f"Source: {source_path or 'N/A'}\n"
+        f"DAST Target: {target_host or 'N/A'}",
+        style="bold red"
+    ))
+
+    if output:
+        output.mkdir(parents=True, exist_ok=True)
+
+    all_findings = []
+    total_critical = 0
+    total_high = 0
+
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        console=console,
+    ) as progress:
+        # 1. Decompilation
+        task1 = progress.add_task("[1/5] Decompiling binary...", total=None)
+        decompiler = Decompiler()
+        decompile_result = decompiler.decompile(app_path, extract_strings=True, analyze_native=True)
+        all_findings.extend(decompile_result.security_findings)
+        progress.update(task1, completed=True)
+
+        # 2. SAST (if source provided or use decompiled)
+        task2 = progress.add_task("[2/5] Running SAST analysis...", total=None)
+        sast_analyzer = SASTAnalyzer()
+        sast_source = source_path or decompile_result.output_dir
+        if sast_source and Path(sast_source).exists():
+            sast_result = sast_analyzer.analyze(Path(sast_source))
+            for vuln in sast_result.vulnerabilities:
+                if vuln.severity == "critical":
+                    total_critical += 1
+                elif vuln.severity == "high":
+                    total_high += 1
+        progress.update(task2, completed=True)
+
+        # 3. Runtime Protection Analysis
+        task3 = progress.add_task("[3/5] Analyzing runtime protections...", total=None)
+        runtime_analyzer = RuntimeProtectionAnalyzer()
+        runtime_result = runtime_analyzer.analyze(app_path, platform)
+        progress.update(task3, completed=True)
+
+        # 4. Supply Chain (if source provided)
+        task4 = progress.add_task("[4/5] Checking supply chain...", total=None)
+        if source_path and source_path.exists():
+            supply_analyzer = SupplyChainAnalyzer()
+            supply_result = supply_analyzer.analyze(source_path)
+            for vuln in supply_result.vulnerabilities:
+                if vuln.severity == "critical":
+                    total_critical += 1
+                elif vuln.severity == "high":
+                    total_high += 1
+        progress.update(task4, completed=True)
+
+        # 5. DAST (if target provided)
+        task5 = progress.add_task("[5/5] Running DAST analysis...", total=None)
+        if target_host:
+            dast_analyzer = DASTAnalyzer()
+            dast_result = dast_analyzer.analyze(target_host)
+            for finding in dast_result.findings:
+                if finding.severity == "critical":
+                    total_critical += 1
+                elif finding.severity == "high":
+                    total_high += 1
+        progress.update(task5, completed=True)
+
+    # Summary
+    console.print()
+    console.print(Panel.fit("📊 COMPREHENSIVE ANALYSIS SUMMARY", style="bold green"))
+
+    summary_table = Table()
+    summary_table.add_column("Analysis", style="cyan")
+    summary_table.add_column("Status", style="bold")
+    summary_table.add_column("Findings")
+
+    analyses = [
+        ("Binary Decompilation", "✓ Complete", f"{len(decompile_result.security_findings)} issues"),
+        ("SAST", "✓ Complete" if sast_source else "⊘ Skipped", f"{len(sast_result.vulnerabilities) if sast_source else 0} vulnerabilities"),
+        ("Runtime Protection", "✓ Complete", f"Score: {runtime_result.score:.0f}%"),
+        ("Supply Chain", "✓ Complete" if source_path else "⊘ Skipped", f"{len(supply_result.vulnerabilities) if source_path else 0} vulnerabilities"),
+        ("DAST", "✓ Complete" if target_host else "⊘ Skipped", f"{len(dast_result.findings) if target_host else 0} issues"),
+    ]
+
+    for name, status, findings in analyses:
+        status_style = "green" if "✓" in status else "dim"
+        summary_table.add_row(name, f"[{status_style}]{status}[/{status_style}]", findings)
+
+    console.print(summary_table)
+
+    # Risk assessment
+    console.print(f"\n[bold]Total Critical Issues:[/bold] [red]{total_critical}[/red]")
+    console.print(f"[bold]Total High Issues:[/bold] [yellow]{total_high}[/yellow]")
+
+    if total_critical > 0:
+        console.print("\n[red bold]🚨 CRITICAL RISK - Immediate remediation required![/red bold]")
+    elif total_high > 5:
+        console.print("\n[yellow bold]⚠️ HIGH RISK - Significant security issues found[/yellow bold]")
+    elif runtime_result.score < 50:
+        console.print("\n[yellow]⚠️ MODERATE RISK - Missing runtime protections[/yellow]")
+    else:
+        console.print("\n[green]✓ Application has reasonable security posture[/green]")
+
+    # Save all reports
+    if output:
+        import json
+
+        # Save individual reports
+        with open(output / f"{app_name}_decompile.json", 'w') as f:
+            json.dump(decompile_result.to_dict(), f, indent=2, default=str)
+
+        if sast_source:
+            with open(output / f"{app_name}_sast.json", 'w') as f:
+                json.dump(sast_result.to_dict(), f, indent=2, default=str)
+
+        with open(output / f"{app_name}_runtime.json", 'w') as f:
+            json.dump(runtime_result.to_dict(), f, indent=2, default=str)
+
+        if source_path:
+            with open(output / f"{app_name}_supply_chain.json", 'w') as f:
+                json.dump(supply_result.to_dict(), f, indent=2, default=str)
+
+        if target_host:
+            with open(output / f"{app_name}_dast.json", 'w') as f:
+                json.dump(dast_result.to_dict(), f, indent=2, default=str)
+
+        # Save combined summary
+        combined = {
+            "app_name": app_name,
+            "platform": platform,
+            "total_critical": total_critical,
+            "total_high": total_high,
+            "runtime_score": runtime_result.score,
+            "analyses_completed": [a[0] for a in analyses if "✓" in a[1]],
+        }
+        with open(output / f"{app_name}_summary.json", 'w') as f:
+            json.dump(combined, f, indent=2)
+
+        console.print(f"\n[green]✓[/green] All reports saved to {output}/")
+
+    if total_critical > 0:
+        raise SystemExit(2)
+    elif total_high > 0:
+        raise SystemExit(1)
+    raise SystemExit(0)
 
 
 if __name__ == "__main__":
