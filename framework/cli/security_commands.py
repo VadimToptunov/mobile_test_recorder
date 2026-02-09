@@ -31,7 +31,7 @@ from framework.security.advanced_security import (
     RiskLevel,
     OWASPMobileTop10,
 )
-from framework.security.sast_analyzer import SASTAnalyzer, VulnerabilityType
+from framework.security.sast_analyzer import SASTAnalyzer
 from framework.security.dast_analyzer import DASTAnalyzer
 from framework.security.decompiler import Decompiler
 from framework.security.supply_chain import SupplyChainAnalyzer
@@ -1803,9 +1803,14 @@ def comprehensive(
     if output:
         output.mkdir(parents=True, exist_ok=True)
 
-    all_findings = []
     total_critical = 0
     total_high = 0
+
+    # Initialize optional results to None
+    sast_result = None
+    supply_result = None
+    dast_result = None
+    sast_source = None
 
     with Progress(
         SpinnerColumn(),
@@ -1816,7 +1821,6 @@ def comprehensive(
         task1 = progress.add_task("[1/5] Decompiling binary...", total=None)
         decompiler = Decompiler()
         decompile_result = decompiler.decompile(app_path, extract_strings=True, analyze_native=True)
-        all_findings.extend(decompile_result.security_findings)
         progress.update(task1, completed=True)
 
         # 2. SAST (if source provided or use decompiled)
@@ -1862,6 +1866,19 @@ def comprehensive(
                     total_high += 1
         progress.update(task5, completed=True)
 
+    # Calculate runtime score from protection results
+    protections = [
+        runtime_result.root_detection,
+        runtime_result.emulator_detection,
+        runtime_result.debug_detection,
+        runtime_result.tamper_detection,
+        runtime_result.hook_detection,
+        runtime_result.ssl_pinning,
+        runtime_result.obfuscation,
+    ]
+    detected_count = sum(1 for p in protections if p.detected)
+    runtime_score = (detected_count / len(protections)) * 100
+
     # Summary
     console.print()
     console.print(Panel.fit("📊 COMPREHENSIVE ANALYSIS SUMMARY", style="bold green"))
@@ -1871,12 +1888,17 @@ def comprehensive(
     summary_table.add_column("Status", style="bold")
     summary_table.add_column("Findings")
 
+    # Calculate findings counts safely
+    sast_vuln_count = len(sast_result.vulnerabilities) if sast_result else 0
+    supply_vuln_count = len(supply_result.vulnerabilities) if supply_result else 0
+    dast_finding_count = len(dast_result.findings) if dast_result else 0
+
     analyses = [
         ("Binary Decompilation", "✓ Complete", f"{len(decompile_result.security_findings)} issues"),
-        ("SAST", "✓ Complete" if sast_source else "⊘ Skipped", f"{len(sast_result.vulnerabilities) if sast_source else 0} vulnerabilities"),
-        ("Runtime Protection", "✓ Complete", f"Score: {runtime_result.score:.0f}%"),
-        ("Supply Chain", "✓ Complete" if source_path else "⊘ Skipped", f"{len(supply_result.vulnerabilities) if source_path else 0} vulnerabilities"),
-        ("DAST", "✓ Complete" if target_host else "⊘ Skipped", f"{len(dast_result.findings) if target_host else 0} issues"),
+        ("SAST", "✓ Complete" if sast_result else "⊘ Skipped", f"{sast_vuln_count} vulnerabilities"),
+        ("Runtime Protection", "✓ Complete", f"Score: {runtime_score:.0f}%"),
+        ("Supply Chain", "✓ Complete" if supply_result else "⊘ Skipped", f"{supply_vuln_count} vulnerabilities"),
+        ("DAST", "✓ Complete" if dast_result else "⊘ Skipped", f"{dast_finding_count} issues"),
     ]
 
     for name, status, findings in analyses:
@@ -1893,7 +1915,7 @@ def comprehensive(
         console.print("\n[red bold]🚨 CRITICAL RISK - Immediate remediation required![/red bold]")
     elif total_high > 5:
         console.print("\n[yellow bold]⚠️ HIGH RISK - Significant security issues found[/yellow bold]")
-    elif runtime_result.score < 50:
+    elif runtime_score < 50:
         console.print("\n[yellow]⚠️ MODERATE RISK - Missing runtime protections[/yellow]")
     else:
         console.print("\n[green]✓ Application has reasonable security posture[/green]")
@@ -1906,18 +1928,18 @@ def comprehensive(
         with open(output / f"{app_name}_decompile.json", 'w') as f:
             json.dump(decompile_result.to_dict(), f, indent=2, default=str)
 
-        if sast_source:
+        if sast_result:
             with open(output / f"{app_name}_sast.json", 'w') as f:
                 json.dump(sast_result.to_dict(), f, indent=2, default=str)
 
         with open(output / f"{app_name}_runtime.json", 'w') as f:
             json.dump(runtime_result.to_dict(), f, indent=2, default=str)
 
-        if source_path:
+        if supply_result:
             with open(output / f"{app_name}_supply_chain.json", 'w') as f:
                 json.dump(supply_result.to_dict(), f, indent=2, default=str)
 
-        if target_host:
+        if dast_result:
             with open(output / f"{app_name}_dast.json", 'w') as f:
                 json.dump(dast_result.to_dict(), f, indent=2, default=str)
 
@@ -1927,7 +1949,7 @@ def comprehensive(
             "platform": platform,
             "total_critical": total_critical,
             "total_high": total_high,
-            "runtime_score": runtime_result.score,
+            "runtime_score": runtime_score,
             "analyses_completed": [a[0] for a in analyses if "✓" in a[1]],
         }
         with open(output / f"{app_name}_summary.json", 'w') as f:
