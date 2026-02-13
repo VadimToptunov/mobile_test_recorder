@@ -12,9 +12,9 @@ from typing import Any, Optional
 import yaml
 
 try:
-    from yaml import CLoader as Loader, CDumper as Dumper
+    from yaml import CSafeLoader as SafeLoader, CDumper as Dumper
 except ImportError:
-    from yaml import Loader, Dumper
+    from yaml import SafeLoader, Dumper
 
 from pydantic import BaseModel, Field
 
@@ -99,7 +99,7 @@ class ObserveConfig(BaseModel):
 
         with open(path, "r") as f:
             if path.suffix in [".yaml", ".yml"]:
-                data = yaml.load(f, Loader=Loader)
+                data = yaml.safe_load(f)
             elif path.suffix == ".json":
                 import json
                 data = json.load(f)
