@@ -4,12 +4,18 @@ Security Configuration and Best Practices
 Centralized security configuration for the Mobile Test Recorder framework.
 """
 
-import hashlib
 import logging
 import os
 import secrets
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Tuple
+
+try:
+    from argon2 import PasswordHasher, exceptions as argon2_exceptions
+    from argon2.profiles import RFC_9106_LOW_MEMORY
+    ARGON2_AVAILABLE = True
+except ImportError:
+    ARGON2_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 
@@ -64,35 +70,96 @@ class SecurityConfig:
         )
         return key
 
-    @staticmethod
-    def hash_password(password: str, salt: Optional[str] = None) -> str:
+    # Argon2 password hasher instance (singleton)
+    _password_hasher: Optional["PasswordHasher"] = None
+
+    @classmethod
+    def _get_password_hasher(cls) -> "PasswordHasher":
         """
-        Hash password using SHA-256 (for testing only - use bcrypt/argon2 in production)
+        Get or create Argon2 password hasher with secure parameters.
+
+        Uses RFC 9106 LOW_MEMORY profile which is suitable for most applications:
+        - time_cost: 3 iterations
+        - memory_cost: 64 MiB
+        - parallelism: 4 threads
+        """
+        if not ARGON2_AVAILABLE:
+            raise SecurityError(
+                "argon2-cffi is not installed. Install it with: pip install argon2-cffi"
+            )
+
+        if cls._password_hasher is None:
+            cls._password_hasher = PasswordHasher.from_parameters(RFC_9106_LOW_MEMORY)
+
+        return cls._password_hasher
+
+    @classmethod
+    def hash_password(cls, password: str) -> str:
+        """
+        Hash password using Argon2id (winner of Password Hashing Competition).
+
+        Argon2id is resistant to:
+        - GPU cracking attacks (memory-hard)
+        - Side-channel attacks (hybrid approach)
+        - Time-memory trade-off attacks
 
         Args:
             password: Plain text password
-            salt: Optional salt (generated if not provided)
 
         Returns:
-            Hashed password as hex string
+            Argon2 hash string (includes algorithm params, salt, and hash)
+
+        Raises:
+            SecurityError: If argon2-cffi is not installed
         """
-        if salt is None:
-            salt = secrets.token_hex(16)
+        hasher = cls._get_password_hasher()
+        return hasher.hash(password)
 
-        combined = f"{salt}:{password}"
-        hashed = hashlib.sha256(combined.encode()).hexdigest()
-        return f"{salt}:{hashed}"
+    @classmethod
+    def verify_password(cls, password: str, hashed: str) -> bool:
+        """
+        Verify password against Argon2 hash.
 
-    @staticmethod
-    def verify_password(password: str, hashed: str) -> bool:
-        """Verify password against hash"""
-        try:
-            salt, expected_hash = hashed.split(':', 1)
-            combined = f"{salt}:{password}"
-            actual_hash = hashlib.sha256(combined.encode()).hexdigest()
-            return secrets.compare_digest(expected_hash, actual_hash)
-        except ValueError:
+        Also handles rehashing if parameters have changed (returns need_rehash flag).
+
+        Args:
+            password: Plain text password to verify
+            hashed: Argon2 hash string to verify against
+
+        Returns:
+            True if password matches, False otherwise
+        """
+        if not ARGON2_AVAILABLE:
+            logger.error("argon2-cffi is not installed, cannot verify password")
             return False
+
+        hasher = cls._get_password_hasher()
+
+        try:
+            hasher.verify(hashed, password)
+            return True
+        except argon2_exceptions.VerifyMismatchError:
+            return False
+        except argon2_exceptions.InvalidHashError:
+            logger.warning("Invalid hash format provided to verify_password")
+            return False
+
+    @classmethod
+    def password_needs_rehash(cls, hashed: str) -> bool:
+        """
+        Check if password hash needs to be rehashed (e.g., if parameters changed).
+
+        Args:
+            hashed: Existing Argon2 hash string
+
+        Returns:
+            True if hash should be regenerated with new parameters
+        """
+        if not ARGON2_AVAILABLE:
+            return False
+
+        hasher = cls._get_password_hasher()
+        return hasher.check_needs_rehash(hashed)
 
     @staticmethod
     def sanitize_for_logging(data: dict) -> dict:
