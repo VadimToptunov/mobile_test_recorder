@@ -53,8 +53,9 @@
         <applicationConfigurable id="com.mobiletest.recorder.settings" displayName="Mobile Test Recorder"
                                  instance="com.mobiletest.recorder.settings.MTRSettingsConfigurable"/>
 
-        <!-- Application Service -->
+        <!-- Application Services -->
         <applicationService serviceImplementation="com.mobiletest.recorder.services.MTRDaemonService"/>
+        <applicationService serviceImplementation="com.mobiletest.recorder.settings.MTRSettings"/>
     </extensions>
 
     <!-- Notification Group -->
