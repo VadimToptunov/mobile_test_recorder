@@ -130,6 +130,78 @@ class SupplyChainFinding:
         }
 
 
+@dataclass
+class DependencyWithVulns:
+    """Dependency with its vulnerabilities - for CLI compatibility"""
+    name: str
+    version: str
+    ecosystem: str
+    vulnerabilities: List[Vulnerability] = field(default_factory=list)
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "name": self.name,
+            "version": self.version,
+            "ecosystem": self.ecosystem,
+            "vulnerabilities": [v.to_dict() for v in self.vulnerabilities],
+        }
+
+
+@dataclass
+class VulnerabilityInfo:
+    """Simplified vulnerability info for CLI - matches CLI expectations"""
+    package_name: str
+    installed_version: str
+    cve_id: Optional[str]
+    severity: str  # string for CLI compatibility
+    fixed_version: Optional[str]
+    description: str = ""
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "package_name": self.package_name,
+            "installed_version": self.installed_version,
+            "cve_id": self.cve_id,
+            "severity": self.severity,
+            "fixed_version": self.fixed_version,
+            "description": self.description,
+        }
+
+
+@dataclass
+class LicenseIssue:
+    """License compliance issue - for CLI compatibility"""
+    package_name: str
+    license: str
+    issue: str
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "package_name": self.package_name,
+            "license": self.license,
+            "issue": self.issue,
+        }
+
+
+@dataclass
+class SupplyChainResult:
+    """Complete supply chain analysis result - for CLI compatibility"""
+    dependencies: List[DependencyWithVulns] = field(default_factory=list)
+    vulnerabilities: List[VulnerabilityInfo] = field(default_factory=list)
+    license_issues: List[LicenseIssue] = field(default_factory=list)
+    scan_time: str = field(default_factory=lambda: datetime.now().isoformat())
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "scan_time": self.scan_time,
+            "total_dependencies": len(self.dependencies),
+            "total_vulnerabilities": len(self.vulnerabilities),
+            "dependencies": [d.to_dict() for d in self.dependencies],
+            "vulnerabilities": [v.to_dict() for v in self.vulnerabilities],
+            "license_issues": [l.to_dict() for l in self.license_issues],
+        }
+
+
 class PythonDependencyParser:
     """
     Python Dependency Parser
@@ -665,3 +737,207 @@ class SupplyChainAnalyzer:
 
         with open(output_path, 'w') as f:
             json.dump(report, f, indent=2)
+
+    def analyze(self, project_path: Path, check_vulnerabilities: bool = True) -> SupplyChainResult:
+        """
+        Analyze project for supply chain security issues.
+
+        This is the main entry point for CLI compatibility.
+        """
+        dependencies, findings = self.scan_directory(project_path)
+
+        # Convert to CLI-compatible format
+        result = SupplyChainResult()
+
+        # Group dependencies by name and convert
+        deps_by_name: Dict[str, DependencyWithVulns] = {}
+        for dep in dependencies:
+            key = f"{dep.name}@{dep.version}"
+            if key not in deps_by_name:
+                deps_by_name[key] = DependencyWithVulns(
+                    name=dep.name,
+                    version=dep.version,
+                    ecosystem=dep.dep_type.value,
+                )
+        result.dependencies = list(deps_by_name.values())
+
+        # Convert findings to vulnerabilities and license issues
+        if check_vulnerabilities:
+            for finding in findings:
+                if finding.finding_type == "vulnerability" and finding.vulnerability:
+                    result.vulnerabilities.append(VulnerabilityInfo(
+                        package_name=finding.dependency.name,
+                        installed_version=finding.dependency.version,
+                        cve_id=finding.vulnerability.cve_id,
+                        severity=finding.severity.value,
+                        fixed_version=finding.vulnerability.fixed_version,
+                        description=finding.description,
+                    ))
+                elif finding.finding_type == "license":
+                    result.license_issues.append(LicenseIssue(
+                        package_name=finding.dependency.name,
+                        license=finding.dependency.license or "Unknown",
+                        issue=finding.description,
+                    ))
+
+        return result
+
+    def generate_sbom_file(
+        self,
+        result: SupplyChainResult,
+        output_path: Path,
+        format: str = "cyclonedx"
+    ) -> None:
+        """
+        Generate SBOM file from analysis result.
+
+        CLI-compatible wrapper around generate_sbom.
+        """
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+
+        # Convert result dependencies back to Dependency objects for SBOM generation
+        deps = [
+            Dependency(
+                name=d.name,
+                version=d.version,
+                dep_type=DependencyType(d.ecosystem) if d.ecosystem in [e.value for e in DependencyType] else DependencyType.PYTHON,
+            )
+            for d in result.dependencies
+        ]
+
+        sbom = self.generate_sbom(deps)
+
+        if format == "spdx":
+            # Convert to SPDX format
+            sbom = {
+                "spdxVersion": "SPDX-2.3",
+                "dataLicense": "CC0-1.0",
+                "SPDXID": "SPDXRef-DOCUMENT",
+                "name": "Supply Chain SBOM",
+                "documentNamespace": f"https://example.com/sbom/{datetime.now().isoformat()}",
+                "packages": [
+                    {
+                        "SPDXID": f"SPDXRef-Package-{i}",
+                        "name": d.name,
+                        "versionInfo": d.version,
+                        "downloadLocation": "NOASSERTION",
+                    }
+                    for i, d in enumerate(result.dependencies)
+                ],
+            }
+
+        with open(output_path, 'w') as f:
+            json.dump(sbom, f, indent=2)
+
+    def export_html(self, result: SupplyChainResult, output_path: Path) -> None:
+        """Export supply chain analysis to HTML report"""
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+
+        critical_count = len([v for v in result.vulnerabilities if v.severity == "critical"])
+        high_count = len([v for v in result.vulnerabilities if v.severity == "high"])
+
+        html = f"""<!DOCTYPE html>
+<html>
+<head>
+    <title>Supply Chain Security Report</title>
+    <style>
+        body {{ font-family: -apple-system, BlinkMacSystemFont, sans-serif; margin: 40px; background: #f5f5f5; }}
+        .container {{ max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }}
+        h1 {{ color: #333; border-bottom: 2px solid #007bff; padding-bottom: 10px; }}
+        .summary {{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin: 20px 0; }}
+        .stat {{ padding: 20px; border-radius: 8px; text-align: center; }}
+        .stat.deps {{ background: #d1ecf1; color: #0c5460; }}
+        .stat.critical {{ background: #f8d7da; color: #721c24; }}
+        .stat.high {{ background: #fff3cd; color: #856404; }}
+        .stat.license {{ background: #d4edda; color: #155724; }}
+        .stat-value {{ font-size: 36px; font-weight: bold; }}
+        .stat-label {{ font-size: 14px; text-transform: uppercase; }}
+        table {{ width: 100%; border-collapse: collapse; margin-top: 20px; }}
+        th, td {{ padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }}
+        th {{ background: #007bff; color: white; }}
+        .severity-critical {{ color: #721c24; font-weight: bold; }}
+        .severity-high {{ color: #856404; font-weight: bold; }}
+        .severity-medium {{ color: #0c5460; }}
+        .severity-low {{ color: #155724; }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Supply Chain Security Report</h1>
+        <p><strong>Scan Time:</strong> {result.scan_time}</p>
+
+        <div class="summary">
+            <div class="stat deps">
+                <div class="stat-value">{len(result.dependencies)}</div>
+                <div class="stat-label">Dependencies</div>
+            </div>
+            <div class="stat critical">
+                <div class="stat-value">{critical_count}</div>
+                <div class="stat-label">Critical</div>
+            </div>
+            <div class="stat high">
+                <div class="stat-value">{high_count}</div>
+                <div class="stat-label">High</div>
+            </div>
+            <div class="stat license">
+                <div class="stat-value">{len(result.license_issues)}</div>
+                <div class="stat-label">License Issues</div>
+            </div>
+        </div>
+
+        <h2>Vulnerabilities ({len(result.vulnerabilities)})</h2>
+        <table>
+            <tr>
+                <th>Package</th>
+                <th>Version</th>
+                <th>CVE</th>
+                <th>Severity</th>
+                <th>Fixed In</th>
+            </tr>
+"""
+
+        for vuln in result.vulnerabilities:
+            severity_class = f"severity-{vuln.severity}"
+            html += f"""
+            <tr>
+                <td>{vuln.package_name}</td>
+                <td>{vuln.installed_version}</td>
+                <td>{vuln.cve_id or 'N/A'}</td>
+                <td class="{severity_class}">{vuln.severity.upper()}</td>
+                <td>{vuln.fixed_version or 'Unknown'}</td>
+            </tr>
+"""
+
+        html += """
+        </table>
+
+        <h2>Dependencies by Ecosystem</h2>
+        <table>
+            <tr>
+                <th>Ecosystem</th>
+                <th>Count</th>
+            </tr>
+"""
+
+        # Group by ecosystem
+        by_ecosystem: Dict[str, int] = {}
+        for dep in result.dependencies:
+            by_ecosystem[dep.ecosystem] = by_ecosystem.get(dep.ecosystem, 0) + 1
+
+        for eco, count in sorted(by_ecosystem.items()):
+            html += f"""
+            <tr>
+                <td>{eco}</td>
+                <td>{count}</td>
+            </tr>
+"""
+
+        html += """
+        </table>
+    </div>
+</body>
+</html>
+"""
+
+        with open(output_path, 'w') as f:
+            f.write(html)

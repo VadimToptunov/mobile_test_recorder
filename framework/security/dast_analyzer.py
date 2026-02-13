@@ -79,6 +79,21 @@ class DASTFinding:
     owasp_category: Optional[str] = None
     cvss_score: Optional[float] = None
     metadata: Dict[str, Any] = field(default_factory=dict)
+    # Additional fields for CLI compatibility
+    category: str = ""
+    endpoint: str = ""
+    method: str = ""
+    vulnerability_type: str = ""
+
+    def __post_init__(self):
+        # Set category from test_type if not provided
+        if not self.category:
+            self.category = self.test_type.value
+
+    @property
+    def severity_str(self) -> str:
+        """Get severity as string for CLI compatibility"""
+        return self.severity.value
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -92,6 +107,60 @@ class DASTFinding:
             "owasp_category": self.owasp_category,
             "cvss_score": self.cvss_score,
             "metadata": self.metadata,
+            "category": self.category,
+            "endpoint": self.endpoint,
+            "method": self.method,
+            "vulnerability_type": self.vulnerability_type,
+        }
+
+
+@dataclass
+class SSLAnalysisResult:
+    """SSL/TLS analysis result"""
+    findings: List[DASTFinding] = field(default_factory=list)
+    protocol: str = ""
+    cipher_suite: str = ""
+    cert_expiry: str = ""
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "findings": [f.to_dict() for f in self.findings],
+            "protocol": self.protocol,
+            "cipher_suite": self.cipher_suite,
+            "cert_expiry": self.cert_expiry,
+        }
+
+
+@dataclass
+class DASTResult:
+    """DAST analysis result wrapper"""
+    findings: List[DASTFinding] = field(default_factory=list)
+    target: str = ""
+    port: int = 443
+    scan_time: str = field(default_factory=lambda: datetime.now().isoformat())
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "target": self.target,
+            "port": self.port,
+            "scan_time": self.scan_time,
+            "total_findings": len(self.findings),
+            "findings": [f.to_dict() for f in self.findings],
+        }
+
+
+@dataclass
+class APITestResult:
+    """API security test result"""
+    findings: List[DASTFinding] = field(default_factory=list)
+    base_url: str = ""
+    endpoints_tested: int = 0
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "base_url": self.base_url,
+            "endpoints_tested": self.endpoints_tested,
+            "findings": [f.to_dict() for f in self.findings],
         }
 
 
@@ -760,3 +829,191 @@ class DASTAnalyzer:
 
         with open(output_path, 'w') as f:
             json.dump(report, f, indent=2, default=str)
+
+    def analyze(self, target: str, port: int = 443) -> DASTResult:
+        """
+        Run comprehensive DAST analysis on a target.
+
+        This is the main entry point for CLI.
+        """
+        findings = []
+
+        # Run SSL/TLS analysis
+        findings.extend(self.ssl_analyzer.analyze_host(target, port))
+
+        return DASTResult(
+            findings=findings,
+            target=target,
+            port=port,
+        )
+
+    def analyze_ssl(self, host: str, port: int = 443) -> SSLAnalysisResult:
+        """
+        Analyze SSL/TLS configuration of a host.
+
+        Returns detailed SSL info including protocol and cipher.
+        """
+        findings = self.ssl_analyzer.analyze_host(host, port)
+
+        # Try to get connection details
+        protocol = ""
+        cipher_suite = ""
+        cert_expiry = ""
+
+        try:
+            context = ssl.create_default_context()
+            context.check_hostname = False
+            context.verify_mode = ssl.CERT_NONE
+
+            with socket.create_connection((host, port), timeout=5) as sock:
+                with context.wrap_socket(sock, server_hostname=host) as ssock:
+                    protocol = ssock.version() or ""
+                    cipher = ssock.cipher()
+                    if cipher:
+                        cipher_suite = cipher[0]
+
+                    cert = ssock.getpeercert()
+                    if cert:
+                        cert_expiry = cert.get('notAfter', '')
+        except (socket.error, ssl.SSLError, OSError):
+            pass
+
+        return SSLAnalysisResult(
+            findings=findings,
+            protocol=protocol,
+            cipher_suite=cipher_suite,
+            cert_expiry=cert_expiry,
+        )
+
+    def test_api(
+        self,
+        base_url: str,
+        headers: Optional[Dict[str, str]] = None,
+        endpoints: Optional[List[Dict[str, Any]]] = None
+    ) -> APITestResult:
+        """
+        Test API endpoints for security vulnerabilities.
+
+        Args:
+            base_url: Base URL of the API
+            headers: Optional headers including authorization
+            endpoints: Optional list of endpoint definitions
+        """
+        findings = []
+
+        auth_header = headers.get("Authorization") if headers else None
+
+        # If no endpoints provided, test base URL
+        if not endpoints:
+            endpoints = [{"path": "/", "method": "GET"}]
+
+        for endpoint in endpoints:
+            url = f"{base_url.rstrip('/')}{endpoint.get('path', '/')}"
+            method = endpoint.get('method', 'GET')
+            params = endpoint.get('params', {})
+
+            endpoint_findings = self.api_tester.test_endpoint(
+                url, method, headers, params
+            )
+
+            # Add endpoint info to findings
+            for finding in endpoint_findings:
+                finding.endpoint = endpoint.get('path', '/')
+                finding.method = method
+
+            findings.extend(endpoint_findings)
+
+        return APITestResult(
+            findings=findings,
+            base_url=base_url,
+            endpoints_tested=len(endpoints),
+        )
+
+    def export_html(self, result: DASTResult, output_path: Path) -> None:
+        """Export DAST results to HTML report"""
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+
+        html_content = f"""<!DOCTYPE html>
+<html>
+<head>
+    <title>DAST Security Report - {result.target}</title>
+    <style>
+        body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 40px; background: #f5f5f5; }}
+        .container {{ max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }}
+        h1 {{ color: #333; border-bottom: 2px solid #007bff; padding-bottom: 10px; }}
+        h2 {{ color: #555; margin-top: 30px; }}
+        .summary {{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin: 20px 0; }}
+        .stat {{ padding: 20px; border-radius: 8px; text-align: center; }}
+        .stat.critical {{ background: #f8d7da; color: #721c24; }}
+        .stat.high {{ background: #fff3cd; color: #856404; }}
+        .stat.medium {{ background: #d1ecf1; color: #0c5460; }}
+        .stat.low {{ background: #d4edda; color: #155724; }}
+        .stat-value {{ font-size: 36px; font-weight: bold; }}
+        .stat-label {{ font-size: 14px; text-transform: uppercase; }}
+        .finding {{ border: 1px solid #ddd; border-radius: 8px; margin: 15px 0; overflow: hidden; }}
+        .finding-header {{ padding: 15px; font-weight: bold; }}
+        .finding-header.critical {{ background: #f8d7da; }}
+        .finding-header.high {{ background: #fff3cd; }}
+        .finding-header.medium {{ background: #d1ecf1; }}
+        .finding-header.low {{ background: #d4edda; }}
+        .finding-body {{ padding: 15px; }}
+        .finding-meta {{ color: #666; font-size: 14px; margin: 5px 0; }}
+        .recommendation {{ background: #e7f3ff; padding: 10px; border-radius: 4px; margin-top: 10px; }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>DAST Security Report</h1>
+        <p><strong>Target:</strong> {result.target}:{result.port}</p>
+        <p><strong>Scan Time:</strong> {result.scan_time}</p>
+
+        <h2>Summary</h2>
+        <div class="summary">
+            <div class="stat critical">
+                <div class="stat-value">{len([f for f in result.findings if f.severity == DASTSeverity.CRITICAL])}</div>
+                <div class="stat-label">Critical</div>
+            </div>
+            <div class="stat high">
+                <div class="stat-value">{len([f for f in result.findings if f.severity == DASTSeverity.HIGH])}</div>
+                <div class="stat-label">High</div>
+            </div>
+            <div class="stat medium">
+                <div class="stat-value">{len([f for f in result.findings if f.severity == DASTSeverity.MEDIUM])}</div>
+                <div class="stat-label">Medium</div>
+            </div>
+            <div class="stat low">
+                <div class="stat-value">{len([f for f in result.findings if f.severity == DASTSeverity.LOW])}</div>
+                <div class="stat-label">Low</div>
+            </div>
+        </div>
+
+        <h2>Findings ({len(result.findings)})</h2>
+"""
+
+        for finding in result.findings:
+            severity_class = finding.severity.value
+            html_content += f"""
+        <div class="finding">
+            <div class="finding-header {severity_class}">
+                [{finding.severity.value.upper()}] {finding.title}
+            </div>
+            <div class="finding-body">
+                <p>{finding.description}</p>
+                <p class="finding-meta"><strong>Category:</strong> {finding.category}</p>
+                <p class="finding-meta"><strong>Evidence:</strong> {finding.evidence}</p>
+                {f'<p class="finding-meta"><strong>CWE:</strong> {finding.cwe_id}</p>' if finding.cwe_id else ''}
+                <div class="recommendation">
+                    <strong>Recommendation:</strong> {finding.recommendation}
+                </div>
+            </div>
+        </div>
+"""
+
+        html_content += """
+    </div>
+</body>
+</html>
+"""
+
+        with open(output_path, 'w') as f:
+            f.write(html_content)

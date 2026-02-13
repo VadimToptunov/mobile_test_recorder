@@ -63,6 +63,63 @@ class StringFinding:
     category: str  # url, api_key, password, etc.
     confidence: float
 
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "value": self.value,
+            "location": self.location,
+            "category": self.category,
+            "confidence": self.confidence,
+        }
+
+
+@dataclass
+class ProtectionInfo:
+    """Protection mechanism info - for CLI compatibility"""
+    name: str
+    detected: bool
+    details: str = ""
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "name": self.name,
+            "detected": self.detected,
+            "details": self.details,
+        }
+
+
+@dataclass
+class NativeLibInfo:
+    """Native library info - for CLI compatibility"""
+    name: str
+    path: str
+    architectures: List[str] = field(default_factory=list)
+    size: int = 0
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "name": self.name,
+            "path": self.path,
+            "architectures": self.architectures,
+            "size": self.size,
+        }
+
+
+@dataclass
+class SecurityFinding:
+    """Security finding from decompilation - for CLI compatibility"""
+    title: str
+    description: str
+    severity: str  # critical, high, medium, low
+    location: str = ""
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "title": self.title,
+            "description": self.description,
+            "severity": self.severity,
+            "location": self.location,
+        }
+
 
 @dataclass
 class DecompileResult:
@@ -85,6 +142,76 @@ class DecompileResult:
     protections: List[ProtectionType]
     hashes: Dict[str, str]
     metadata: Dict[str, Any] = field(default_factory=dict)
+    # CLI compatibility fields
+    security_findings: List[SecurityFinding] = field(default_factory=list)
+    _protection_infos: List[ProtectionInfo] = field(default_factory=list)
+    _native_lib_infos: List[NativeLibInfo] = field(default_factory=list)
+
+    # CLI-compatible property aliases
+    @property
+    def version(self) -> str:
+        """Alias for version_name for CLI compatibility"""
+        return self.version_name or "unknown"
+
+    @property
+    def sha256(self) -> str:
+        """Direct SHA256 access for CLI compatibility"""
+        return self.hashes.get("sha256", "")
+
+    @property
+    def size_bytes(self) -> int:
+        """File size for CLI compatibility"""
+        return self.metadata.get("file_size", 0)
+
+    @property
+    def interesting_strings(self) -> List[StringFinding]:
+        """Alias for strings for CLI compatibility"""
+        return self.strings
+
+    @property
+    def protection_infos(self) -> List[ProtectionInfo]:
+        """Protection info objects for CLI compatibility"""
+        if self._protection_infos:
+            return self._protection_infos
+
+        # Convert ProtectionType list to ProtectionInfo list
+        infos = []
+        all_types = list(ProtectionType)
+
+        for ptype in all_types:
+            detected = ptype in self.protections
+            infos.append(ProtectionInfo(
+                name=ptype.value.replace("_", " ").title(),
+                detected=detected,
+                details=f"{'Detected' if detected else 'Not found'} in binary analysis",
+            ))
+
+        return infos
+
+    @property
+    def native_lib_infos(self) -> List[NativeLibInfo]:
+        """Native library info objects for CLI compatibility"""
+        if self._native_lib_infos:
+            return self._native_lib_infos
+
+        # Convert native_libs strings to NativeLibInfo objects
+        infos = []
+        for lib_path in self.native_libs:
+            path = Path(lib_path)
+            # Extract architecture from path (e.g., /lib/arm64-v8a/libname.so)
+            parts = path.parts
+            arch = []
+            for part in parts:
+                if part in ["arm64-v8a", "armeabi-v7a", "x86", "x86_64", "armeabi"]:
+                    arch.append(part)
+
+            infos.append(NativeLibInfo(
+                name=path.name,
+                path=lib_path,
+                architectures=arch if arch else ["unknown"],
+            ))
+
+        return infos
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -92,18 +219,22 @@ class DecompileResult:
             "binary_path": self.binary_path,
             "output_dir": self.output_dir,
             "package_name": self.package_name,
+            "version": self.version,
             "version_name": self.version_name,
             "version_code": self.version_code,
             "min_sdk": self.min_sdk,
             "target_sdk": self.target_sdk,
+            "sha256": self.sha256,
+            "size_bytes": self.size_bytes,
             "permissions": self.permissions,
             "activities": self.activities,
             "services": self.services,
             "receivers": self.receivers,
             "providers": self.providers,
-            "native_libs": self.native_libs,
-            "strings": [{"value": s.value[:50], "category": s.category, "confidence": s.confidence} for s in self.strings],
-            "protections": [p.value for p in self.protections],
+            "native_libs": [lib.to_dict() for lib in self.native_lib_infos],
+            "interesting_strings": [{"value": s.value[:100], "category": s.category, "confidence": s.confidence} for s in self.strings[:50]],
+            "protections": [p.to_dict() for p in self.protection_infos],
+            "security_findings": [f.to_dict() for f in self.security_findings],
             "hashes": self.hashes,
             "metadata": self.metadata,
         }
@@ -715,6 +846,172 @@ class Decompiler:
             return self.ipa_analyzer.analyze(binary_path, output_dir)
         else:
             raise ValueError(f"Unsupported binary type: {suffix}")
+
+    def decompile(
+        self,
+        binary_path: Path,
+        output_dir: Optional[Path] = None,
+        extract_strings: bool = True,
+        analyze_native: bool = True,
+    ) -> DecompileResult:
+        """
+        Decompile binary with options.
+
+        CLI-compatible entry point.
+        """
+        result = self.analyze(binary_path, output_dir)
+
+        # Add security findings based on analysis
+        result.security_findings = self._generate_security_findings(result)
+
+        return result
+
+    def _generate_security_findings(self, result: DecompileResult) -> List[SecurityFinding]:
+        """Generate security findings from decompile result"""
+        findings = []
+
+        # Check for dangerous permissions
+        dangerous_permissions = {
+            "android.permission.READ_SMS": ("SMS Access", "high"),
+            "android.permission.SEND_SMS": ("SMS Send", "high"),
+            "android.permission.READ_CONTACTS": ("Contacts Access", "medium"),
+            "android.permission.READ_CALL_LOG": ("Call Log Access", "high"),
+            "android.permission.CAMERA": ("Camera Access", "medium"),
+            "android.permission.RECORD_AUDIO": ("Audio Recording", "high"),
+            "android.permission.ACCESS_FINE_LOCATION": ("Precise Location", "medium"),
+            "android.permission.READ_EXTERNAL_STORAGE": ("Storage Read", "low"),
+            "android.permission.WRITE_EXTERNAL_STORAGE": ("Storage Write", "medium"),
+        }
+
+        for perm in result.permissions:
+            if perm in dangerous_permissions:
+                name, severity = dangerous_permissions[perm]
+                findings.append(SecurityFinding(
+                    title=f"Dangerous Permission: {name}",
+                    description=f"App requests {perm}",
+                    severity=severity,
+                    location="AndroidManifest.xml",
+                ))
+
+        # Check for exported components without permissions
+        for activity in result.activities:
+            if ".MainActivity" not in activity:
+                findings.append(SecurityFinding(
+                    title=f"Exported Activity: {activity.split('.')[-1]}",
+                    description="Activity may be exported and accessible by other apps",
+                    severity="low",
+                    location="AndroidManifest.xml",
+                ))
+
+        # Check for sensitive strings
+        sensitive_categories = ["api_key", "password", "private_key", "aws_key"]
+        for string in result.strings:
+            if string.category in sensitive_categories:
+                findings.append(SecurityFinding(
+                    title=f"Sensitive String: {string.category}",
+                    description=f"Found {string.category} in binary",
+                    severity="high",
+                    location=string.location,
+                ))
+
+        # Check for missing protections
+        expected_protections = [
+            ProtectionType.ROOT_DETECTION,
+            ProtectionType.CERTIFICATE_PINNING,
+            ProtectionType.OBFUSCATION,
+        ]
+
+        for prot in expected_protections:
+            if prot not in result.protections:
+                findings.append(SecurityFinding(
+                    title=f"Missing Protection: {prot.value.replace('_', ' ').title()}",
+                    description=f"{prot.value.replace('_', ' ').title()} not detected in binary",
+                    severity="medium",
+                    location="Binary analysis",
+                ))
+
+        return findings
+
+    def extract_strings(self, binary_path: Path, min_length: int = 8) -> List[StringFinding]:
+        """
+        Extract strings from binary.
+
+        CLI-compatible method.
+        """
+        strings = []
+
+        try:
+            if binary_path.suffix.lower() == ".apk":
+                with zipfile.ZipFile(binary_path, 'r') as zf:
+                    # Extract strings from DEX files
+                    for name in zf.namelist():
+                        if name.endswith(".dex"):
+                            content = zf.read(name)
+                            strings.extend(self._extract_strings_from_bytes(content, name, min_length))
+            elif binary_path.suffix.lower() == ".ipa":
+                with zipfile.ZipFile(binary_path, 'r') as zf:
+                    for name in zf.namelist():
+                        if "/Payload/" in name and not name.endswith("/"):
+                            try:
+                                content = zf.read(name)
+                                strings.extend(self._extract_strings_from_bytes(content, name, min_length))
+                            except Exception:
+                                pass
+            else:
+                content = binary_path.read_bytes()
+                strings.extend(self._extract_strings_from_bytes(content, str(binary_path), min_length))
+
+        except (zipfile.BadZipFile, OSError):
+            pass
+
+        return strings
+
+    def _extract_strings_from_bytes(
+        self,
+        content: bytes,
+        location: str,
+        min_length: int
+    ) -> List[StringFinding]:
+        """Extract strings from bytes"""
+        strings = []
+
+        # Patterns for categorization
+        patterns = {
+            "url": r'https?://[^\s"\'<>]+',
+            "ip_address": r'\b(?:\d{1,3}\.){3}\d{1,3}\b',
+            "api_key": r'(?:api[_-]?key|apikey)["\s:=]+["\']?([\w\-]{16,})["\']?',
+            "email": r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b',
+            "password": r'(?:password|passwd|pwd)["\s:=]+["\']?([^\s"\']{4,})["\']?',
+            "token": r'(?:token|secret)["\s:=]+["\']?([\w\-]{16,})["\']?',
+        }
+
+        # Extract ASCII strings
+        ascii_pattern = rb'[\x20-\x7e]{' + str(min_length).encode() + rb',}'
+        raw_strings = re.findall(ascii_pattern, content)
+
+        for raw in raw_strings[:1000]:  # Limit to prevent excessive processing
+            try:
+                decoded = raw.decode('utf-8')
+
+                # Categorize string
+                category = "other"
+                for cat, pattern in patterns.items():
+                    if re.search(pattern, decoded, re.IGNORECASE):
+                        category = cat
+                        break
+
+                if category != "other":  # Only include categorized strings
+                    strings.append(StringFinding(
+                        value=decoded,
+                        location=location,
+                        category=category,
+                        confidence=0.7,
+                    ))
+
+            except UnicodeDecodeError:
+                pass
+
+        return strings
 
     def export_report(self, result: DecompileResult, output_path: Path) -> None:
         """Export analysis report"""

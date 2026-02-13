@@ -31,7 +31,7 @@ from framework.security.advanced_security import (
     RiskLevel,
     OWASPMobileTop10,
 )
-from framework.security.sast_analyzer import SASTAnalyzer
+from framework.security.sast_analyzer import SASTAnalyzer, SASTResult
 from framework.security.dast_analyzer import DASTAnalyzer
 from framework.security.decompiler import Decompiler
 from framework.security.supply_chain import SupplyChainAnalyzer
@@ -1829,10 +1829,10 @@ def comprehensive(
         sast_source = source_path or decompile_result.output_dir
         if sast_source and Path(sast_source).exists():
             sast_result = sast_analyzer.analyze(Path(sast_source))
-            for vuln in sast_result.vulnerabilities:
-                if vuln.severity == "critical":
+            for finding in sast_result.findings:
+                if finding.severity.value == "critical":
                     total_critical += 1
-                elif vuln.severity == "high":
+                elif finding.severity.value == "high":
                     total_high += 1
         progress.update(task2, completed=True)
 
@@ -1860,9 +1860,9 @@ def comprehensive(
             dast_analyzer = DASTAnalyzer()
             dast_result = dast_analyzer.analyze(target_host)
             for finding in dast_result.findings:
-                if finding.severity == "critical":
+                if finding.severity.value == "critical":
                     total_critical += 1
-                elif finding.severity == "high":
+                elif finding.severity.value == "high":
                     total_high += 1
         progress.update(task5, completed=True)
 
