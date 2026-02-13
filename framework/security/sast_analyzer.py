@@ -539,7 +539,7 @@ class InsecureAPIAnalyzer:
         "marshal.load": ("CWE-502", Severity.HIGH, "Unsafe deserialization with marshal"),
         "shelve.open": ("CWE-502", Severity.MEDIUM, "Shelve uses pickle internally"),
         "os.system(": ("CWE-78", Severity.HIGH, "Command injection risk with os.system"),
-        "subprocess.call(.*shell=True": ("CWE-78", Severity.HIGH, "Shell injection with shell=True"),
+        "subprocess.call.*shell=True": ("CWE-78", Severity.HIGH, "Shell injection with shell=True"),
         "tempfile.mktemp": ("CWE-377", Severity.MEDIUM, "Race condition in temp file creation"),
         "assert ": ("CWE-617", Severity.LOW, "Assert can be disabled in production"),
 
@@ -580,13 +580,27 @@ class InsecureAPIAnalyzer:
                     continue
 
                 for pattern, (cwe, severity, desc) in self.INSECURE_APIS.items():
-                    if re.search(pattern, line):
+                    # Use simple string matching for patterns without regex special chars
+                    # or regex for patterns with wildcards
+                    matched = False
+                    if '*' in pattern or '?' in pattern or '[' in pattern:
+                        # Escape parentheses for regex matching
+                        escaped_pattern = pattern.replace('(', r'\(').replace(')', r'\)')
+                        try:
+                            matched = bool(re.search(escaped_pattern, line))
+                        except re.error:
+                            matched = pattern in line
+                    else:
+                        # Simple substring match
+                        matched = pattern in line
+
+                    if matched:
                         findings.append(SASTFinding(
                             vulnerability_type=VulnerabilityType.INSECURE_WEBVIEW
                                 if "WebView" in desc or "JavaScript" in desc
                                 else VulnerabilityType.COMMAND_INJECTION,
                             severity=severity,
-                            title=f"Insecure API usage: {pattern.split('(')[0]}",
+                            title=f"Insecure API usage: {pattern.split('(')[0] if '(' in pattern else pattern}",
                             description=desc,
                             file_path=str(file_path),
                             line_number=i,
