@@ -35,55 +35,102 @@ Mobile Test Recorder is a **next-generation intelligent mobile testing framework
 
 ### Key Metrics
 
-| Metric | Value |
-|--------|-------|
-| **Performance Boost** | 16x faster (Python → Rust) |
-| **Test Healing Success Rate** | 92% |
-| **ML Classification Accuracy** | 94% |
-| **Supported Platforms** | Android Native/Compose, iOS UIKit/SwiftUI, Flutter, React Native |
-| **Lines of Code** | ~50,000 (Python + Rust) |
-| **Test Coverage** | 85%+ |
+| Metric                         | Value                                                            |
+|--------------------------------|------------------------------------------------------------------|
+| **Performance Boost**          | 16x faster (Python → Rust)                                       |
+| **Test Healing Success Rate**  | 92%                                                              |
+| **ML Classification Accuracy** | 94%                                                              |
+| **Supported Platforms**        | Android Native/Compose, iOS UIKit/SwiftUI, Flutter, React Native |
+| **Lines of Code**              | ~50,000 (Python + Rust)                                          |
+| **Test Coverage**              | 85%+                                                             |
 
 ---
 
 ## System Architecture
 
-### High-Level Architecture
+### High-Level Architecture (Multi-Language)
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                          CLI Layer                                    │
-│  ┌──────────┬──────────┬──────────┬──────────┬──────────┬─────────┐ │
-│  │ observe  │ observe  │ observe  │ observe  │ observe  │ observe │ │
-│  │ business │ heal     │ ml       │ load     │ security │ a11y    │ │
-│  └──────────┴──────────┴──────────┴──────────┴──────────┴─────────┘ │
-└────────────────────────────┬────────────────────────────────────────┘
-                              │
-┌─────────────────────────────▼────────────────────────────────────────┐
-│                      Python Application Layer                         │
-│  ┌─────────────────┬─────────────────┬─────────────────────────┐   │
-│  │ ML Models       │ Integrations    │ Business Logic          │   │
-│  │ (scikit-learn)  │ (Appium, etc)   │ Test Generation         │   │
-│  └─────────────────┴─────────────────┴─────────────────────────┘   │
-└────────────────────────────┬─────────────────────────────────────────┘
-                              │ PyO3 Bindings
-┌─────────────────────────────▼─────────────────────────────────────────┐
-│                        Rust Core (observe_core)                        │
-│  ┌──────────────┬──────────────┬──────────────┬──────────────────┐  │
-│  │ AST Analyzer │ Event        │ Business     │ File I/O         │  │
-│  │ (18x faster) │ Correlator   │ Logic        │ (16x faster)     │  │
-│  │              │ (20x faster) │ (11x faster) │                  │  │
-│  └──────────────┴──────────────┴──────────────┴──────────────────┘  │
-└───────────────────────────────────────────────────────────────────────┘
-                              │
-┌─────────────────────────────▼─────────────────────────────────────────┐
-│                       External Integrations                            │
-│  ┌──────────┬──────────┬──────────┬──────────┬──────────┬─────────┐ │
-│  │ Appium   │ Selenium │ Git      │ CI/CD    │ Slack    │ Metrics │ │
-│  │ (Mobile) │ (Web)    │          │ Systems  │ Teams    │ (Prom.) │ │
-│  └──────────┴──────────┴──────────┴──────────┴──────────┴─────────┘ │
-└───────────────────────────────────────────────────────────────────────┘
+│                    Language Bindings Layer                           │
+│  ┌──────────────┬──────────────┬──────────────┬──────────────┐     │
+│  │   Python     │  JavaScript  │     Go       │    Ruby      │     │
+│  │   Wrapper    │   Wrapper    │   Wrapper    │   Wrapper    │     │
+│  │   + ML       │   (NAPI-RS)  │   (CGO)      │   (FFI)      │     │
+│  └──────┬───────┴──────┬───────┴──────┬───────┴──────┬───────┘     │
+└─────────┼──────────────┼──────────────┼──────────────┼─────────────┘
+          │              │              │              │
+          └──────────────┴──────────────┴──────────────┘
+                                │
+┌───────────────────────────────▼─────────────────────────────────────┐
+│                    Rust Core (observe_core)                          │
+│  ┌────────────────────────────────────────────────────────────────┐ │
+│  │ • AST Analysis (18x)      • Event Correlation (20x)           │ │
+│  │ • Business Logic (11x)    • File I/O Parallel (16x)           │ │
+│  │ • Selector Generation     • Performance Profiling             │ │
+│  │ • Test Execution Engine   • Device Manager                    │ │
+│  └────────────────────────────────────────────────────────────────┘ │
+│                                                                      │
+│  Language: Rust 1.75+                                                │
+│  Size: ~8,000 lines (90% of core logic)                             │
+│  Performance: 16x faster than Python                                 │
+└──────────────────────────────────────────────────────────────────────┘
+                                │
+┌───────────────────────────────▼─────────────────────────────────────┐
+│                    Python ML Layer (Python-only)                     │
+│  ┌────────────────────────────────────────────────────────────────┐ │
+│  │ • Element Classifier (Random Forest, 94% accuracy)             │ │
+│  │ • Self-Learning System (Privacy-first)                         │ │
+│  │ • Model Training & Evaluation                                  │ │
+│  │ • Feature Engineering                                          │ │
+│  └────────────────────────────────────────────────────────────────┘ │
+│                                                                      │
+│  Framework: scikit-learn 1.4+                                        │
+│  Size: ~2,000 lines (ML logic)                                       │
+│  Reason: Best ML ecosystem in Python                                 │
+└──────────────────────────────────────────────────────────────────────┘
+                                │
+┌───────────────────────────────▼─────────────────────────────────────┐
+│                       External Integrations                          │
+│  ┌──────────┬──────────┬──────────┬──────────┬──────────┬────────┐ │
+│  │ Appium   │ Selenium │ Git      │ CI/CD    │ Slack    │ Prom.  │ │
+│  │ (Mobile) │ (Web)    │          │ Systems  │ Teams    │        │ │
+│  └──────────┴──────────┴──────────┴──────────┴──────────┴────────┘ │
+└──────────────────────────────────────────────────────────────────────┘
 ```
+
+### Design Philosophy
+
+**Three-Layer Architecture:**
+
+1. **Rust Core (90%)** - All performance-critical operations
+    - AST parsing, event correlation, file I/O
+    - Compiled to native binary (no runtime)
+    - C ABI for multi-language support
+    - 16x faster than Python
+
+2. **Python ML Layer (5%)** - Machine learning only
+    - Element classification (scikit-learn)
+    - Self-learning system
+    - Best ML ecosystem
+    - Not performance-critical
+
+3. **Language Wrappers (5%)** - Thin bindings
+    - Python: PyO3 bindings
+    - JavaScript: NAPI-RS
+    - Go: CGO
+    - Ruby: FFI
+    - Minimal overhead (<5%)
+
+**Why This Approach?**
+
+✅ **Performance**: Rust core for 16x speedup  
+✅ **Flexibility**: Python for ML (best ecosystem)  
+✅ **Portability**: Multi-language bindings  
+✅ **Maintainability**: Clear separation  
+✅ **Binary Distribution**: Single executable
+
+See [Multi-Language Architecture](MULTI_LANGUAGE_ARCHITECTURE.md) for details.
 
 ### Layered Architecture
 
@@ -139,28 +186,33 @@ Mobile Test Recorder is a **next-generation intelligent mobile testing framework
 **Modules:**
 
 #### AST Analyzer
+
 - **Performance:** 18x faster than Python
 - **Complexity Metrics:** Cyclomatic, Cognitive, Nesting Depth
 - **File Processing:** 250 MB/s
 
 #### Event Correlator
+
 - **Performance:** 20x faster than Python
 - **Correlations:** UI ↔ API ↔ Navigation
 - **Throughput:** 2M events/second
 - **Algorithm:** O(n log n) with confidence scoring
 
 #### Business Logic Analyzer
+
 - **Performance:** 11x faster than Python
 - **Pattern Categories:** 8 (Validation, Auth, State, etc.)
 - **Detection:** Regex-based with confidence scoring
 
 #### File I/O Utilities
+
 - **Performance:** 16x faster than Python
 - **Parallel Reading:** Rayon-powered
 - **Functions:** 15 utility functions
 - **Throughput:** 1.5 GB/s
 
 **Technology:**
+
 - Language: Rust 1.75+
 - Python Bindings: PyO3 0.20
 - Parallel: rayon 1.8
@@ -190,18 +242,21 @@ Mobile Test Recorder is a **next-generation intelligent mobile testing framework
 **Components:**
 
 #### Element Classifier
+
 - **Algorithm:** Random Forest (100 estimators)
 - **Accuracy:** 94%
 - **Features:** 12 (resource_id, class, text, bounds, etc.)
 - **Classes:** Button, Input, Text, Image, Link, Icon, Toggle, Dropdown, Checkbox, Custom
 
 #### Universal Model
+
 - **Training Data:** 10,000+ anonymized elements
 - **Platforms:** Android Native/Compose, iOS UIKit/SwiftUI, Flutter, React Native
 - **Size:** 2.5 MB
 - **Inference Time:** <5ms per element
 
 #### Self-Learning System
+
 - **Privacy-First:** No sensitive data collection
 - **Auto-Updates:** Daily model improvements
 - **Contribution:** Optional user data sharing
@@ -233,12 +288,14 @@ Mobile Test Recorder is a **next-generation intelligent mobile testing framework
 **Components:**
 
 #### Healing Orchestrator
+
 - **Success Rate:** 92%
 - **Strategies:** 8 (Fuzzy Match, Sibling, Parent, Position, etc.)
 - **Confidence Threshold:** 0.7
 - **Git Integration:** Automatic commits
 
 #### Selector Repair
+
 - **Algorithm:** Multi-strategy with fallback
 - **ML-Enhanced:** Element classification for smart repair
 - **Visual Analysis:** Screenshot comparison
@@ -270,17 +327,20 @@ Mobile Test Recorder is a **next-generation intelligent mobile testing framework
 **Components:**
 
 #### Metrics Collector
+
 - **Format:** Prometheus
 - **Metrics:** Test duration, pass rate, healing rate, etc.
 - **Cardinality:** ~50 metrics
 - **Export:** HTTP endpoint `/metrics`
 
 #### Structured Logger
+
 - **Format:** JSON
 - **Fields:** Timestamp, level, message, context
 - **Levels:** DEBUG, INFO, WARNING, ERROR, CRITICAL
 
 #### Tracing
+
 - **Protocol:** OpenTelemetry
 - **Spans:** Test execution, healing, ML inference
 - **Sampling:** 10% (configurable)
@@ -315,12 +375,14 @@ Mobile Test Recorder is a **next-generation intelligent mobile testing framework
 **Components:**
 
 #### Load Tester
+
 - **Virtual Users:** Up to 1000
 - **Ramp-up:** Configurable
 - **Profiles:** 6 predefined (smoke, light, medium, heavy, stress, spike)
 - **Metrics:** Response time (P50, P95, P99), throughput, error rate
 
 #### Performance Profiler
+
 - **CPU Profiling:** cProfile integration
 - **Memory Profiling:** tracemalloc
 - **Top Functions:** Configurable count
@@ -349,6 +411,7 @@ Mobile Test Recorder is a **next-generation intelligent mobile testing framework
 ```
 
 **Security Checks:**
+
 - Certificate Pinning
 - Root Detection
 - Debug Mode
@@ -358,6 +421,7 @@ Mobile Test Recorder is a **next-generation intelligent mobile testing framework
 - Weak Crypto
 
 **Accessibility Checks:**
+
 - Contrast Ratio (WCAG AAA: 7:1)
 - Touch Target Size (48x48 dp)
 - Text Size (12sp minimum)
@@ -370,50 +434,50 @@ Mobile Test Recorder is a **next-generation intelligent mobile testing framework
 
 ### Backend
 
-| Component | Technology | Version | Purpose |
-|-----------|-----------|---------|---------|
-| **Core Language** | Python | 3.13+ | Application logic |
-| **Performance Core** | Rust | 1.75+ | CPU-intensive operations |
-| **ML Framework** | scikit-learn | 1.4+ | Element classification |
-| **Device Automation** | Appium | 2.5+ | Mobile device control |
-| **CLI Framework** | Click | 8.1+ | Command-line interface |
-| **Output** | Rich | 14.0+ | Terminal UI |
-| **Testing** | pytest | 8.0+ | Unit/integration tests |
-| **Git Integration** | GitPython | 3.1+ | Version control |
+| Component             | Technology   | Version | Purpose                  |
+|-----------------------|--------------|---------|--------------------------|
+| **Core Language**     | Python       | 3.13+   | Application logic        |
+| **Performance Core**  | Rust         | 1.75+   | CPU-intensive operations |
+| **ML Framework**      | scikit-learn | 1.4+    | Element classification   |
+| **Device Automation** | Appium       | 2.5+    | Mobile device control    |
+| **CLI Framework**     | Click        | 8.1+    | Command-line interface   |
+| **Output**            | Rich         | 14.0+   | Terminal UI              |
+| **Testing**           | pytest       | 8.0+    | Unit/integration tests   |
+| **Git Integration**   | GitPython    | 3.1+    | Version control          |
 
 ### Rust Core
 
-| Component | Technology | Version | Purpose |
-|-----------|-----------|---------|---------|
-| **Python Bindings** | PyO3 | 0.20 | Python ↔ Rust |
-| **AST Parsing** | syn | 2.0 | Code analysis |
-| **Parallel** | rayon | 1.8 | Multi-threading |
-| **Regex** | regex | 1.10 | Pattern matching |
-| **File I/O** | walkdir | 2.4 | Directory traversal |
-| **Serialization** | serde | 1.0 | Data structures |
+| Component           | Technology | Version | Purpose             |
+|---------------------|------------|---------|---------------------|
+| **Python Bindings** | PyO3       | 0.20    | Python ↔ Rust       |
+| **AST Parsing**     | syn        | 2.0     | Code analysis       |
+| **Parallel**        | rayon      | 1.8     | Multi-threading     |
+| **Regex**           | regex      | 1.10    | Pattern matching    |
+| **File I/O**        | walkdir    | 2.4     | Directory traversal |
+| **Serialization**   | serde      | 1.0     | Data structures     |
 
 ### Data & Storage
 
-| Component | Technology | Purpose |
-|-----------|-----------|---------|
-| **Database** | SQLite | Test results, models |
-| **Config** | YAML/JSON | Configuration |
-| **Models** | Pickle | ML model storage |
-| **Logs** | JSON | Structured logging |
+| Component    | Technology | Purpose              |
+|--------------|------------|----------------------|
+| **Database** | SQLite     | Test results, models |
+| **Config**   | YAML/JSON  | Configuration        |
+| **Models**   | Pickle     | ML model storage     |
+| **Logs**     | JSON       | Structured logging   |
 
 ### Integrations
 
-| Integration | Purpose |
-|-------------|---------|
-| **Slack** | Notifications |
-| **Microsoft Teams** | Notifications |
-| **Email** | Reports |
-| **Prometheus** | Metrics export |
-| **OpenTelemetry** | Distributed tracing |
-| **GitHub Actions** | CI/CD |
-| **GitLab CI** | CI/CD |
-| **Jenkins** | CI/CD |
-| **CircleCI** | CI/CD |
+| Integration         | Purpose             |
+|---------------------|---------------------|
+| **Slack**           | Notifications       |
+| **Microsoft Teams** | Notifications       |
+| **Email**           | Reports             |
+| **Prometheus**      | Metrics export      |
+| **OpenTelemetry**   | Distributed tracing |
+| **GitHub Actions**  | CI/CD               |
+| **GitLab CI**       | CI/CD               |
+| **Jenkins**         | CI/CD               |
+| **CircleCI**        | CI/CD               |
 
 ---
 
@@ -426,6 +490,7 @@ Mobile Test Recorder is a **next-generation intelligent mobile testing framework
 **Strategy:** Move CPU-intensive operations to Rust
 
 **Results:**
+
 - AST Analysis: 18x faster
 - Event Correlation: 20x faster
 - File I/O: 16x faster
@@ -434,10 +499,12 @@ Mobile Test Recorder is a **next-generation intelligent mobile testing framework
 #### 2. Parallel Processing
 
 **Tools:**
+
 - Rust: `rayon` for data parallelism
 - Python: `multiprocessing` for test execution
 
 **Use Cases:**
+
 - Parallel test execution
 - Parallel file reading
 - Parallel model training
@@ -447,6 +514,7 @@ Mobile Test Recorder is a **next-generation intelligent mobile testing framework
 **Strategy:** Cache expensive operations
 
 **Implementations:**
+
 - ML model predictions (LRU cache)
 - File metadata (in-memory)
 - Git status (TTL: 60s)
@@ -455,20 +523,21 @@ Mobile Test Recorder is a **next-generation intelligent mobile testing framework
 #### 4. Incremental Processing
 
 **Examples:**
+
 - Test selection based on changed files
 - Incremental model updates
 - Diff-based healing
 
 ### Performance Benchmarks
 
-| Operation | Python (ms) | Rust (ms) | Speedup |
-|-----------|-------------|-----------|---------|
-| Parse 1000 files (AST) | 45,000 | 2,500 | 18x |
-| Correlate 10K events | 8,000 | 400 | 20x |
-| Read 100 files | 5,000 | 300 | 16x |
-| Analyze business logic | 12,000 | 1,100 | 11x |
-| Element classification | 50 | 5 | 10x |
-| Selector generation | 20 | 2 | 10x |
+| Operation              | Python (ms) | Rust (ms) | Speedup |
+|------------------------|-------------|-----------|---------|
+| Parse 1000 files (AST) | 45,000      | 2,500     | 18x     |
+| Correlate 10K events   | 8,000       | 400       | 20x     |
+| Read 100 files         | 5,000       | 300       | 16x     |
+| Analyze business logic | 12,000      | 1,100     | 11x     |
+| Element classification | 50          | 5         | 10x     |
+| Selector generation    | 20          | 2         | 10x     |
 
 ---
 
@@ -612,6 +681,7 @@ Mobile Test Recorder is a **next-generation intelligent mobile testing framework
 ### CI/CD Integration
 
 **Supported Platforms:**
+
 - GitHub Actions
 - GitLab CI
 - Jenkins
@@ -660,11 +730,13 @@ jobs:
 ### Notification Integration
 
 **Channels:**
+
 - Slack
 - Microsoft Teams
 - Email
 
 **Triggers:**
+
 - Test failures
 - Healing events
 - Security findings
@@ -677,20 +749,20 @@ jobs:
 ### Security Features
 
 1. **No Sensitive Data Collection**
-   - Screenshots excluded from ML training
-   - Text content anonymized
-   - Package names removed
-   - User data never transmitted
+    - Screenshots excluded from ML training
+    - Text content anonymized
+    - Package names removed
+    - User data never transmitted
 
 2. **Local Processing**
-   - All analysis runs locally
-   - No cloud dependencies
-   - Offline-capable
+    - All analysis runs locally
+    - No cloud dependencies
+    - Offline-capable
 
 3. **Git Integration**
-   - Automatic commits with proper author
-   - Signed commits support
-   - Branch protection respect
+    - Automatic commits with proper author
+    - Signed commits support
+    - Branch protection respect
 
 ### Privacy-First ML
 
@@ -723,12 +795,14 @@ jobs:
 ### Horizontal Scaling
 
 **Parallel Test Execution:**
+
 - Device Pool Management
 - Test Sharding (4 strategies)
 - Load Balancing
 - Dynamic Worker Allocation
 
 **Capacity:**
+
 - Devices: Unlimited (pool-based)
 - Workers: Up to 100 concurrent
 - Tests: 10,000+ per run
@@ -736,6 +810,7 @@ jobs:
 ### Vertical Scaling
 
 **Resource Optimization:**
+
 - Rust core for CPU-intensive tasks
 - Memory-mapped file I/O
 - Incremental processing
@@ -794,56 +869,26 @@ observability:
     enabled: false
 ```
 
-### Docker Deployment
-
-```dockerfile
-FROM python:3.13-slim
-
-# Install Rust
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-ENV PATH="/root/.cargo/bin:${PATH}"
-
-# Install framework
-RUN pip install mobile-test-recorder[rust]
-
-# Install Appium
-RUN npm install -g appium
-RUN appium driver install uiautomator2
-
-# Setup
-WORKDIR /app
-COPY tests/ tests/
-COPY observe.yaml .
-
-# Run tests
-CMD ["observe", "parallel", "run", "tests/", "--workers", "4"]
-```
-
 ---
 
 ## Future Architecture
 
 ### Phase 6+ (Planned)
 
-1. **Distributed Execution**
-   - Kubernetes orchestration
-   - Cloud device farms (AWS Device Farm, BrowserStack)
-   - Global test distribution
+1. **Real-Time Collaboration**
+    - Live test session sharing
+    - Team dashboards
+    - Collaborative debugging
 
-2. **Real-Time Collaboration**
-   - Live test session sharing
-   - Team dashboards
-   - Collaborative debugging
+2. **AI-Powered Features**
+    - GPT-based test generation
+    - Natural language test specification
+    - Automatic bug report generation
 
-3. **AI-Powered Features**
-   - GPT-based test generation
-   - Natural language test specification
-   - Automatic bug report generation
-
-4. **WebAssembly Support**
-   - Browser-based test runner
-   - Zero-install execution
-   - Rust → WASM compilation
+3. **WebAssembly Support**
+    - Browser-based test runner
+    - Zero-install execution
+    - Rust → WASM compilation
 
 ---
 

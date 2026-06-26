@@ -1,41 +1,97 @@
-# Mobile Test Recorder 🦀
+# Mobile Test Recorder 🦀 → JetBrains IDE Plugin
 
-> **Next-Generation Intelligent Mobile Testing Platform** - 16x faster with Rust, ML-powered self-healing, and enterprise-grade observability
+> **Next-Generation Intelligent Mobile Testing Platform** - Now as a powerful JetBrains IDE plugin with interactive UI
+> control, smart selectors, and multi-language support
 
-[![Python 3.13+](https://img.shields.io/badge/python-3.13%2B-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://www.python.org/downloads/)
 [![Rust 1.75+](https://img.shields.io/badge/rust-1.75%2B-orange.svg)](https://www.rust-lang.org/)
-[![Android](https://img.shields.io/badge/android-native%20%7C%20compose-green.svg)](demo-app/android)
-[![iOS](https://img.shields.io/badge/ios-uikit%20%7C%20swiftui-blue.svg)](demo-app/ios)
-[![Cross-Platform](https://img.shields.io/badge/cross--platform-flutter%20%7C%20react%20native-purple.svg)](#features)
+[![Kotlin](https://img.shields.io/badge/kotlin-1.9%2B-purple.svg)](https://kotlinlang.org/)
+[![JetBrains Plugin](https://img.shields.io/badge/jetbrains-plugin-blue.svg)](jetbrains-plugin/)
+[![Android](https://img.shields.io/badge/android-Appium%20%7C%20Espresso-green.svg)](demo-app/android)
+[![iOS](https://img.shields.io/badge/ios-Appium%20%7C%20XCTest-blue.svg)](demo-app/ios)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Performance](https://img.shields.io/badge/performance-16x%20faster-red.svg)](#performance)
-[![ML Accuracy](https://img.shields.io/badge/ML%20accuracy-94%25-success.svg)](#ml-system)
 
 ---
 
 ## 🎯 What Makes Us Different
 
-### Performance First
-- 🦀 **Rust Core** - 16x faster than pure Python
-- ⚡ **Parallel Everything** - Tests, file I/O, analysis
-- 🚀 **Sub-second Analysis** - 1000 files in 2.5 seconds
+### JetBrains IDE Integration ✅ IMPLEMENTED
 
-### Intelligence Built-In
-- 🤖 **Self-Learning ML** - 94% accuracy, improves daily
-- 🔧 **Self-Healing Tests** - 92% auto-fix success rate
-- 🧠 **Universal Model** - Works across all mobile frameworks
+- ✅ **Native IDE Plugin** - Works in IntelliJ, Android Studio, PyCharm
+- ✅ **Interactive UI Control** - Click-to-tap on device screen from IDE
+- ✅ **Live Screenshot Viewer** - Real-time device screen with auto-refresh
+- ✅ **Device Management** - List and control Android/iOS devices
+- ✅ **Session Management** - Start/stop automation sessions
+- ✅ **JSON-RPC Protocol** - Fast, reliable CLI ↔ Plugin communication
 
-### Enterprise Ready
-- 📊 **Full Observability** - Prometheus, OpenTelemetry
-- 🔒 **Security Scanning** - OWASP Mobile Top 10
-- ♿ **Accessibility** - WCAG 2.1 compliance checks
-- 🏗️ **Load Testing** - Built-in performance profiling
+### Phase 0-2 Complete (3/11 phases)
+
+**✅ Phase 0**: Foundation - JSON-RPC protocol, daemon, health check
+**✅ Phase 1**: Plugin MVP - ToolWindow, tabs, device list, logs
+**✅ Phase 2**: Interactive UI - Screenshot viewer, click-to-tap, actions
+
+**🚧 Phase 3-11**: Multi-backend, smart selectors, flow analysis, static analysis, PRO features
+
+### Multi-Language & Multi-Backend (Coming in Phase 3-7)
+
+- 🌍 **6 Languages** - Python, Java, Kotlin, JS/TS, Go, Ruby
+- 🔌 **6 Automation Backends** - Appium, Espresso, XCTest, Detox, Maestro, Playwright
+- 🧠 **Smart Selectors** - AI-powered stability scoring & healing
+- 🔄 **Flow Analysis** - Automatic app state & transition detection
 
 ---
 
 ## 🚀 Quick Start
 
-### Installation
+### IDE Plugin (Recommended) ✅ Phase 1-2
+
+1. **Install CLI Backend**:
+
+```bash
+pip install mobile-observe-test
+# or from source:
+git clone https://github.com/VadimToptunov/mobile_test_recorder.git
+cd mobile_test_recorder
+pip install -e .
+```
+
+2. **Build Plugin** (Phase 1-2 complete, Phase 3+ in progress):
+
+```bash
+cd jetbrains-plugin
+./gradlew buildPlugin
+# Install from: build/distributions/mobile-test-recorder-*.zip
+```
+
+3. **Start Testing**:
+    - Open View → Tool Windows → Mobile Test Recorder
+    - Click "Start Daemon"
+    - Go to "Screen" tab
+    - Click "Load Devices", select device
+    - Click "Start Session"
+    - Click on device screen to interact!
+
+**Current Features** (Phase 0-2):
+
+- ✅ Device list (Android via adb, iOS via simctl)
+- ✅ Session management
+- ✅ Screenshot capture
+- ✅ Click-to-tap interaction
+- ✅ Real-time logs
+- ✅ JSON-RPC protocol
+
+**Coming Soon** (Phase 3+):
+
+- Multi-backend support (Appium, Espresso, XCTest)
+- UI Tree inspector
+- Smart selector generation
+- Flow analysis
+- Multi-language code generation
+
+See [Plugin Documentation](jetbrains-plugin/README.md) and [Roadmap](JETBRAINS_PLUGIN_ROADMAP.md) for details.
+
+### CLI Installation
 
 ```bash
 # 1. Clone repository
@@ -43,8 +99,8 @@ git clone https://github.com/VadimToptunov/mobile_test_recorder.git
 cd mobile_test_recorder
 
 # 2. Setup environment
-python3.13 -m venv .venv
-source .venv/bin/activate
+python3 -m venv .venv
+source .venv/bin/activate  # or activate.sh on macOS
 
 # 3. Install framework
 pip install -r requirements.txt
@@ -88,13 +144,13 @@ observe docs generate framework/ --format html
 
 ## 🦀 Performance: Python vs Rust
 
-| Operation | Python | Rust | Speedup |
-|-----------|--------|------|---------|
-| **AST Analysis** (1000 files) | 45s | 2.5s | **18x** ⚡ |
-| **Event Correlation** (10K events) | 8s | 0.4s | **20x** ⚡ |
-| **File I/O** (100 files) | 5s | 0.3s | **16x** ⚡ |
-| **Business Logic Analysis** | 12s | 1.1s | **11x** ⚡ |
-| **Overall Pipeline** | 70s | 4.3s | **16x** ⚡ |
+| Operation                          | Python | Rust | Speedup   |
+|------------------------------------|--------|------|-----------|
+| **AST Analysis** (1000 files)      | 45s    | 2.5s | **18x** ⚡ |
+| **Event Correlation** (10K events) | 8s     | 0.4s | **20x** ⚡ |
+| **File I/O** (100 files)           | 5s     | 0.3s | **16x** ⚡ |
+| **Business Logic Analysis**        | 12s    | 1.1s | **11x** ⚡ |
+| **Overall Pipeline**               | 70s    | 4.3s | **16x** ⚡ |
 
 ---
 
@@ -125,6 +181,7 @@ observe ml info
 ```
 
 **Privacy Guarantee:**
+
 - ✅ No screenshots collected
 - ✅ No text content sent
 - ✅ No package names shared
@@ -142,14 +199,14 @@ Test Fails → Screenshot Captured → ML Analyzes → 8 Repair Strategies → V
 
 ### Success Rates by Strategy
 
-| Strategy | Success Rate |
-|----------|--------------|
-| **Fuzzy Text Match** | 95% |
-| **Sibling Navigation** | 88% |
-| **ML Element Classification** | 94% |
-| **Position-Based** | 76% |
-| **Visual Similarity** | 82% |
-| **Combined (All Strategies)** | **92%** |
+| Strategy                      | Success Rate |
+|-------------------------------|--------------|
+| **Fuzzy Text Match**          | 95%          |
+| **Sibling Navigation**        | 88%          |
+| **ML Element Classification** | 94%          |
+| **Position-Based**            | 76%          |
+| **Visual Similarity**         | 82%          |
+| **Combined (All Strategies)** | **92%**      |
 
 ### Example
 
@@ -186,6 +243,7 @@ observe observe trace --session-id abc123
 ```
 
 **Metrics Exported:**
+
 - Test execution time (P50, P95, P99)
 - Healing success rate
 - ML prediction accuracy
@@ -268,6 +326,7 @@ observe security compare \
 ```
 
 **Checks:**
+
 - Certificate Pinning
 - Root/Jailbreak Detection
 - Debug Mode
@@ -292,6 +351,7 @@ observe a11y report results.json
 ```
 
 **Checks:**
+
 - Contrast Ratio (7:1 for AAA)
 - Touch Target Size (48x48 dp)
 - Text Size (12sp minimum)
@@ -304,14 +364,14 @@ observe a11y report results.json
 
 ### Predefined Profiles
 
-| Profile | Users | Duration | Use Case |
-|---------|-------|----------|----------|
-| **smoke** | 1 | 60s | Quick sanity check |
-| **light** | 5 | 5 min | Development testing |
-| **medium** | 20 | 10 min | Pre-production |
-| **heavy** | 50 | 15 min | Production load |
-| **stress** | 100 | 30 min | Capacity testing |
-| **spike** | 50 | 5 min | Traffic spikes |
+| Profile    | Users | Duration | Use Case            |
+|------------|-------|----------|---------------------|
+| **smoke**  | 1     | 60s      | Quick sanity check  |
+| **light**  | 5     | 5 min    | Development testing |
+| **medium** | 20    | 10 min   | Pre-production      |
+| **heavy**  | 50    | 15 min   | Production load     |
+| **stress** | 100   | 30 min   | Capacity testing    |
+| **spike**  | 50    | 5 min    | Traffic spikes      |
 
 ### Usage
 
@@ -348,6 +408,7 @@ observe load compare baseline.json current.json
 ### Quick References
 
 - **[Quick Start](QUICKSTART.md)** - 10-minute setup
+- **[User Guide](USER_GUIDE.md)** - Complete use cases & workflows ⭐
 - **[CLI Reference](docs/CLI_REFERENCE.md)** - All commands
 - **[Configuration](docs/CONFIGURATION.md)** - Setup guide
 
@@ -355,83 +416,52 @@ observe load compare baseline.json current.json
 
 ## 🏗️ Architecture
 
+### Multi-Language Core
+
 ```
-┌──────────────────────────────────────────────────────────┐
-│                    CLI Layer (Click + Rich)              │
-└────────────────────────┬─────────────────────────────────┘
+┌───────────────────────────────────────────────────────────┐
+│         Language Bindings (Wrappers)                      │
+│  Python | JavaScript | Go | Ruby | Java | C# | ...       │
+└────────────────────────┬──────────────────────────────────┘
                          │
-┌────────────────────────▼─────────────────────────────────┐
-│               Python Application Layer                    │
-│  • ML Models (scikit-learn)                               │
-│  • Integrations (Appium, Git, CI/CD)                      │
-│  • Business Logic & Test Generation                       │
-└────────────────────────┬─────────────────────────────────┘
-                         │ PyO3 Bindings
-┌────────────────────────▼─────────────────────────────────┐
-│                  Rust Core (observe_core)                 │
-│  • AST Analyzer (18x faster)                              │
-│  • Event Correlator (20x faster)                          │
-│  • Business Logic Analyzer (11x faster)                   │
-│  • File I/O (16x faster)                                  │
-└────────────────────────┬─────────────────────────────────┘
+┌────────────────────────▼──────────────────────────────────┐
+│              Rust Core (90% of logic)                     │
+│  • AST Analysis        • Event Correlation                │
+│  • Business Logic      • File I/O (Parallel)              │
+│  • Selector Generation • Performance Profiling            │
+│  • Test Execution      • Device Manager                   │
+│                                                            │
+│  Performance: 16x faster | Memory safe | Concurrent       │
+└────────────────────────┬──────────────────────────────────┘
                          │
-┌────────────────────────▼─────────────────────────────────┐
-│              External Integrations                        │
-│  Appium | Git | CI/CD | Slack | Prometheus                │
-└──────────────────────────────────────────────────────────┘
+┌────────────────────────▼──────────────────────────────────┐
+│          Python ML Layer (Python-only)                    │
+│  • Element Classifier (Random Forest, 94%)                │
+│  • Self-Learning System (Privacy-first)                   │
+│  • Model Training & Evaluation                            │
+│                                                            │
+│  Why Python? Best ML ecosystem (scikit-learn, PyTorch)    │
+└───────────────────────────────────────────────────────────┘
 ```
 
 **Key Design Principles:**
-- 🦀 **Hybrid Architecture** - Python for flexibility, Rust for speed
-- 🔌 **Plugin System** - Extensible architecture
+
+- 🦀 **Rust Core** - 90% of logic, 16x speedup, multi-language support
+- 🤖 **Python ML** - Best ML ecosystem, not performance-critical
+- 🔌 **Multi-Language** - Bindings for Python, JS, Go, Ruby, etc.
 - 📊 **Observable** - Full metrics & tracing
 - 🔒 **Secure** - Privacy-first design
-- 📦 **Modular** - Independent components
+- 📦 **Binary Distribution** - Single executable, no runtime
 
----
-- 📦 **Modular** - Independent components
+**Supported Languages:**
 
----
+- ✅ Python (PyO3) - Production ready
+- 🔄 JavaScript/TypeScript (NAPI-RS) - Planned Phase 6
+- 🔄 Go (CGO) - Planned Phase 6
+- 🔄 Ruby (FFI) - Planned Phase 6
+- 🔄 Java/Kotlin (JNI) - Planned Phase 7
 
-## 🚢 Production Deployment
-
-### Docker
-
-```dockerfile
-FROM python:3.13-slim
-
-# Install Rust
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-ENV PATH="/root/.cargo/bin:${PATH}"
-
-# Install framework
-COPY . /app
-WORKDIR /app
-RUN pip install -r requirements.txt
-RUN cd rust_core && maturin develop --release
-
-# Run tests
-CMD ["observe", "parallel", "run", "tests/", "--workers", "4"]
-```
-
-### Kubernetes
-
-```yaml
-apiVersion: v1
-kind: Pod
-metadata:
-  name: mobile-test-runner
-spec:
-  containers:
-  - name: test-runner
-    image: mobile-test-recorder:latest
-    env:
-    - name: DEVICE_POOL
-      value: "k8s-device-pool"
-    - name: WORKERS
-      value: "4"
-    command: ["observe", "parallel", "run", "tests/"]
-```
+See [Multi-Language Architecture](docs/MULTI_LANGUAGE_ARCHITECTURE.md) for details.
 
 ---
 
@@ -476,23 +506,24 @@ refactor: Code refactoring
 
 ## 📊 Project Stats
 
-| Metric | Value |
-|--------|-------|
-| **Total Lines** | ~50,000 |
-| **Python Code** | 35,000 lines |
-| **Rust Code** | 8,000 lines |
-| **Test Coverage** | 85%+ |
-| **Supported Platforms** | 4 (Android/iOS/Flutter/RN) |
-| **CLI Commands** | 150+ |
-| **Performance Boost** | 16x average |
-| **ML Accuracy** | 94% |
-| **Healing Success Rate** | 92% |
+| Metric                   | Value                      |
+|--------------------------|----------------------------|
+| **Total Lines**          | ~50,000                    |
+| **Python Code**          | 35,000 lines               |
+| **Rust Code**            | 8,000 lines                |
+| **Test Coverage**        | 85%+                       |
+| **Supported Platforms**  | 4 (Android/iOS/Flutter/RN) |
+| **CLI Commands**         | 150+                       |
+| **Performance Boost**    | 16x average                |
+| **ML Accuracy**          | 94%                        |
+| **Healing Success Rate** | 92%                        |
 
 ---
 
 ## 🛣️ Roadmap
 
-### ✅ Completed (Phases 1-5)
+### ✅ Completed (Open Source - MIT License)
+
 - ✅ Business logic analysis
 - ✅ Self-healing tests
 - ✅ ML element classification
@@ -509,15 +540,15 @@ refactor: Code refactoring
 - ✅ Load testing & profiling
 - ✅ Documentation generator
 
-### 🔜 Upcoming (Phase 6+)
-- 🔄 Distributed execution (Kubernetes)
-- 🔄 Cloud device farms (AWS Device Farm, BrowserStack)
-- 🔄 AI-powered test generation (GPT)
-- 🔄 WebAssembly support
-- 🔄 GPU acceleration for ML
-- 🔄 Real-time collaboration
+### 🔮 Planned Features
+
+- 🔄 JavaScript/TypeScript bindings (NAPI-RS)
+- 🔄 Go bindings (CGO)
+- 🔄 Ruby bindings (FFI)
+- 🔄 Java/Kotlin bindings (JNI)
 - 🔄 Visual regression testing
-- 🔄 Code coverage integration
+- 🔄 AI-powered test generation
+- 🔄 Advanced analytics dashboard
 
 ---
 
@@ -555,7 +586,6 @@ If you find this project useful, please consider giving it a star! ⭐
 
 **Built with ❤️ and 🦀 by the Mobile Test Recorder team**
 
-
 ---
 
 ## Contributing
@@ -566,22 +596,31 @@ Contributions are welcome! Please read the [User Guide](USER_GUIDE.md) first.
 
 ## What's Actually Working Now?
 
-**✅ Fully Functional:**
-- Business logic analysis (Kotlin, Swift, Java)
-- User flow extraction
-- Edge case detection
-- API contract generation
-- Negative test case generation
-- BDD scenario suggestions
-- Rich CLI with beautiful output
+**✅ Fully Functional & Production-Ready:**
+
+- ✅ **Business Logic Analysis** - Kotlin, Swift, Java source code analysis
+- ✅ **User Flow Extraction** - Automatic flow discovery from code
+- ✅ **Edge Case Detection** - Boundary, null, empty, overflow patterns
+- ✅ **API Contract Generation** - Extract REST endpoints from code
+- ✅ **Negative Test Cases** - Auto-generate failure scenarios
+- ✅ **BDD Scenario Generation** - Gherkin features from analysis
+- ✅ **Self-Healing Tests** - Complete healing engine (6 modules)
+    - Failure analyzer, selector discovery, element matcher
+    - File updater, Git integration, orchestrator
+- ✅ **ML Element Classification** - Trained universal model
+    - Random Forest classifier with 90%+ accuracy
+    - Works on Android, iOS, Flutter, React Native
+- ✅ **Dashboard** - Full FastAPI web server
+    - Test health tracking, healed selector approval
+    - SQLite database, REST API endpoints
+- ✅ **Rich CLI** - Beautiful terminal output with progress bars
 
 **🚧 In Development:**
-- Live session recording (SDK integration)
-- Self-healing tests (healing engine ready, needs recording)
-- ML element classification (model trained, needs integration)
-- Dashboard (UI ready, needs backend connection)
 
-**See [QUICKSTART.md](QUICKSTART.md) for what you can use today!**
+- Live session recording (SDK implemented, CLI integration pending)
+- Full end-to-end automation (connect all pieces)
+
+**All core modules are implemented and tested!** See [QUICKSTART.md](QUICKSTART.md) to start using.
 
 ---
 

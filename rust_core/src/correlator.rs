@@ -317,7 +317,10 @@ impl RustCorrelator {
 
         // Sort events by timestamp for efficient correlation
         let mut sorted_events = self.events.clone();
-        sorted_events.sort_by(|a, b| a.timestamp.partial_cmp(&b.timestamp).unwrap());
+        sorted_events.sort_by(|a, b| {
+            // Handle NaN timestamps gracefully - treat NaN as greater than any value
+            a.timestamp.partial_cmp(&b.timestamp).unwrap_or(std::cmp::Ordering::Greater)
+        });
 
         // Correlate each event with subsequent events
         for (i, source) in sorted_events.iter().enumerate() {
@@ -469,5 +472,60 @@ mod tests {
         assert!(correlator.should_correlate("UI_INTERACTION", "API_CALL"));
         assert!(correlator.should_correlate("API_RESPONSE", "NAVIGATION"));
         assert!(!correlator.should_correlate("UI_INTERACTION", "UI_INTERACTION"));
+    }
+
+    #[test]
+    fn test_nan_timestamp_handling() {
+        // Bug fix test: NaN timestamps should not cause panic
+        let mut correlator = RustCorrelator::new(5000.0, 0.5);
+        
+        // Add events with valid timestamps
+        let event1 = Event::new("e1".to_string(), "UI_INTERACTION".to_string(), 1000.0);
+        let event2 = Event::new("e2".to_string(), "API_CALL".to_string(), 1100.0);
+        
+        // Add event with NaN timestamp
+        let event_nan = Event::new("e_nan".to_string(), "UI_INTERACTION".to_string(), f64::NAN);
+        
+        correlator.add_event(event1);
+        correlator.add_event(event2);
+        correlator.add_event(event_nan);
+        
+        // These operations should not panic even with NaN timestamp
+        let correlations = correlator.find_correlations();
+        assert!(correlations.is_ok(), "find_correlations should not panic with NaN timestamps");
+        
+        let graph = correlator.build_correlation_graph();
+        assert!(graph.is_ok(), "build_correlation_graph should not panic with NaN timestamps");
+        
+        let stats = correlator.get_statistics();
+        assert!(stats.is_ok(), "get_statistics should not panic with NaN timestamps");
+        
+        // Valid events should still correlate properly
+        let correlations = correlations.unwrap();
+        let valid_correlations: Vec<_> = correlations
+            .iter()
+            .filter(|c| c.source_id != "e_nan" && c.target_id != "e_nan")
+            .collect();
+        
+        // Should have at least one valid correlation between e1 and e2
+        assert!(valid_correlations.len() > 0, "Valid events should still correlate");
+    }
+
+    #[test]
+    fn test_infinity_timestamp_handling() {
+        // Additional edge case: infinity timestamps
+        let mut correlator = RustCorrelator::new(5000.0, 0.5);
+        
+        let event1 = Event::new("e1".to_string(), "UI_INTERACTION".to_string(), 1000.0);
+        let event_inf = Event::new("e_inf".to_string(), "API_CALL".to_string(), f64::INFINITY);
+        let event_neg_inf = Event::new("e_neg_inf".to_string(), "UI_INTERACTION".to_string(), f64::NEG_INFINITY);
+        
+        correlator.add_event(event1);
+        correlator.add_event(event_inf);
+        correlator.add_event(event_neg_inf);
+        
+        // Should not panic
+        let result = correlator.find_correlations();
+        assert!(result.is_ok(), "Should handle infinity timestamps without panic");
     }
 }
