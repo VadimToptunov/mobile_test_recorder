@@ -1,9 +1,6 @@
-"""
-Health Check Module
+"""Health check module."""
 
-System health verification and diagnostics.
-"""
+from .doctor import SystemDoctor
+from .health_checker import HealthChecker
 
-from framework.health.doctor import SystemDoctor, HealthCheck, CheckStatus
-
-__all__ = ["SystemDoctor", "HealthCheck", "CheckStatus"]
+__all__ = ['HealthChecker', 'SystemDoctor']
