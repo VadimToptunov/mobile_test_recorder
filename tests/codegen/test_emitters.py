@@ -156,3 +156,36 @@ def test_ir_roundtrip(login_model: TestModel):
     """IR must survive a JSON round-trip so fixtures stay portable."""
     restored = TestModel.from_dict(login_model.to_dict())
     assert restored.to_dict() == login_model.to_dict()
+
+
+def test_espresso_annotates_unsupported_xpath():
+    """Espresso has no XPath locator. A step whose primary selector is XPath
+    must be honestly annotated as skipped, not silently emit broken code."""
+    from framework.codegen.ir import (
+        ActionType,
+        Selector,
+        SelectorStrategy,
+        Step,
+        TestCase,
+        TestModel as TM,
+    )
+
+    model = TM(
+        name="XpathOnly",
+        app_package="com.example.app",
+        cases=[
+            TestCase(
+                name="tap_xpath",
+                steps=[
+                    Step(
+                        ActionType.TAP,
+                        selector=Selector(SelectorStrategy.XPATH, "//button[1]"),
+                    )
+                ],
+            )
+        ],
+    )
+    out = get_emitter("kotlin_espresso").emit(model)
+    code = next(iter(out.values()))
+    assert "SKIPPED — Espresso has no XPath" in code
+    assert "onView(" not in code  # no broken locator emitted
