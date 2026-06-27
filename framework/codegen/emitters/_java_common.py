@@ -40,3 +40,10 @@ def by_array(sel: Selector) -> str:
     """Render the fallbacks as a Java ``By[]`` array literal (may be empty)."""
     items = ", ".join(by_expr(fb) for fb in sel.fallbacks)
     return "new By[]{" + items + "}"
+
+
+def by_list(sel: Selector) -> str:
+    """Render primary + fallbacks as one Java ``By[]`` array literal. Used by the
+    BDD LOCATORS registry where there is no separate 'primary' argument."""
+    items = ", ".join(by_expr(s) for s in [sel, *sel.fallbacks])
+    return "new By[]{" + items + "}"

@@ -33,6 +33,8 @@ from framework.codegen.emitters import python_pytest  # noqa: F401,E402
 from framework.codegen.emitters import python_pytest_bdd  # noqa: F401,E402
 from framework.codegen.emitters import java_testng  # noqa: F401,E402
 from framework.codegen.emitters import js_webdriverio  # noqa: F401,E402
+from framework.codegen.emitters import java_cucumber  # noqa: F401,E402
+from framework.codegen.emitters import js_cucumber  # noqa: F401,E402
 
 __all__ = [
     "ActionType",
