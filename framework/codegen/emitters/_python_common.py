@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from typing import List, Tuple
 
+from framework.codegen.emitters._bdd_common import collect_targets, target_key  # noqa: F401
 from framework.codegen.ir import Selector, SelectorStrategy
 
 # Abstract strategy -> AppiumBy member used in generated Python code.
@@ -48,23 +49,8 @@ def locator_chain(sel: Selector) -> str:
     return "[" + ", ".join(items) + "]"
 
 
-def target_key(sel: Selector) -> str:
-    """A friendly, human-facing handle for a selector, used as the Gherkin
-    target name and the LOCATORS registry key. Stable and readable."""
-    return sel.description or sel.value
-
-
 def collect_locators(model) -> List[Tuple[str, str]]:
-    """Gather a de-duplicated, ordered list of (target_key, locator_chain) for
-    every selector referenced in the model. Drives the BDD LOCATORS registry."""
-    seen = {}
-    order: List[str] = []
-    for case in model.cases:
-        for step in case.steps:
-            if step.selector is None:
-                continue
-            key = target_key(step.selector)
-            if key not in seen:
-                seen[key] = locator_chain(step.selector)
-                order.append(key)
-    return [(k, seen[k]) for k in order]
+    """(target_key, python locator_chain) for every selector in the model.
+    Targets/ordering come from the shared BDD helper; only the rendering of the
+    chain is Python-specific."""
+    return [(key, locator_chain(sel)) for key, sel in collect_targets(model)]
