@@ -2,9 +2,9 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main, master, develop ]
   pull_request:
-    branches: [ main, develop ]
+    branches: [ main, master, develop ]
   release:
     types: [ published ]
 
@@ -153,6 +153,9 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Set up Kotlin (kotlinc gate for Kotlin targets)
+        run: sudo snap install --classic kotlin
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -164,6 +167,7 @@ jobs:
           python --version
           javac -version
           node --version
+          kotlinc -version
 
       - name: Validate every codegen target (golden + real toolchain compile)
         run: pytest tests/codegen/ -v

@@ -51,6 +51,39 @@ def _java_syntax_ok(java_file: Path) -> None:
     assert not bad, "Generated Java has syntax errors:\n" + "\n".join(bad)
 
 
+# kotlinc, like javac, cannot resolve the Appium/JUnit jars here, so it will
+# report dependency errors. We can't enumerate every dependency-error phrasing
+# reliably, so this gate is safe-by-default: it fails ONLY on recognised Kotlin
+# syntax-error markers (a broken template), and tolerates everything else.
+_KOTLINC_SYNTAX_MARKERS = (
+    "expecting",
+    "unexpected",
+    "mismatched",
+    "illegal",
+    "missing",
+)
+
+
+def _kotlin_syntax_ok(kt_file: Path) -> None:
+    """Assert generated Kotlin has no syntax errors, tolerating missing deps."""
+    kotlinc = shutil.which("kotlinc")
+    if not kotlinc:
+        pytest.skip("kotlinc not available — skipping Kotlin syntax gate")
+    proc = subprocess.run(
+        [kotlinc, str(kt_file), "-d", str(kt_file.parent / "_out")],
+        capture_output=True,
+        text=True,
+    )
+    if proc.returncode == 0:
+        return
+    syntax_errs = [
+        line
+        for line in proc.stderr.splitlines()
+        if "error:" in line and any(m in line.lower() for m in _KOTLINC_SYNTAX_MARKERS)
+    ]
+    assert not syntax_errs, "Generated Kotlin has syntax errors:\n" + "\n".join(syntax_errs)
+
+
 def _js_syntax_ok(js_file: Path) -> None:
     """Assert generated JavaScript parses. node --check is syntax-only, so it
     needs none of the WebdriverIO/Mocha globals at runtime."""
@@ -101,6 +134,9 @@ def test_generated_source_is_valid(target_id: str, login_model: TestModel, tmp_p
         elif path.endswith(".js"):
             _js_syntax_ok(f)
             checked += 1
+        elif path.endswith(".kt"):
+            _kotlin_syntax_ok(f)
+            checked += 1
     assert checked, f"{target_id} produced no source to validate"
 
 
@@ -108,3 +144,36 @@ def test_ir_roundtrip(login_model: TestModel):
     """IR must survive a JSON round-trip so fixtures stay portable."""
     restored = TestModel.from_dict(login_model.to_dict())
     assert restored.to_dict() == login_model.to_dict()
+
+
+def test_espresso_annotates_unsupported_xpath():
+    """Espresso has no XPath locator. A step whose primary selector is XPath
+    must be honestly annotated as skipped, not silently emit broken code."""
+    from framework.codegen.ir import (
+        ActionType,
+        Selector,
+        SelectorStrategy,
+        Step,
+        TestCase,
+        TestModel as TM,
+    )
+
+    model = TM(
+        name="XpathOnly",
+        app_package="com.example.app",
+        cases=[
+            TestCase(
+                name="tap_xpath",
+                steps=[
+                    Step(
+                        ActionType.TAP,
+                        selector=Selector(SelectorStrategy.XPATH, "//button[1]"),
+                    )
+                ],
+            )
+        ],
+    )
+    out = get_emitter("kotlin_espresso").emit(model)
+    code = next(iter(out.values()))
+    assert "SKIPPED — Espresso has no XPath" in code
+    assert "onView(" not in code  # no broken locator emitted

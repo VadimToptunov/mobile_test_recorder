@@ -35,6 +35,8 @@ from framework.codegen.emitters import java_testng  # noqa: F401,E402
 from framework.codegen.emitters import js_webdriverio  # noqa: F401,E402
 from framework.codegen.emitters import java_cucumber  # noqa: F401,E402
 from framework.codegen.emitters import js_cucumber  # noqa: F401,E402
+from framework.codegen.emitters import kotlin_appium  # noqa: F401,E402
+from framework.codegen.emitters import kotlin_espresso  # noqa: F401,E402
 
 __all__ = [
     "ActionType",
