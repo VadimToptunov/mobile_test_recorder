@@ -23,6 +23,7 @@ import logging
 import os
 import re
 import secrets
+import shutil
 import subprocess
 import tempfile
 import threading
@@ -583,10 +584,14 @@ class BinarySecurityAnalyzer:
         """Analyze Android APK for binary security issues"""
         vulnerabilities = []
 
+        # Per-run private temp dir: a shared, world-writable /tmp/apk_analysis
+        # invited symlink attacks and let concurrent scans clobber each other.
+        out_dir = tempfile.mkdtemp(prefix="apk_analysis_")
+
         try:
             # Check if apktool is available
             result = subprocess.run(
-                ["apktool", "d", str(apk_path), "-o", "/tmp/apk_analysis", "-f"],
+                ["apktool", "d", str(apk_path), "-o", out_dir, "-f"],
                 capture_output=True,
                 text=True,
                 timeout=120,
@@ -597,7 +602,7 @@ class BinarySecurityAnalyzer:
                 return vulnerabilities
 
             # Check AndroidManifest.xml
-            manifest_path = Path("/tmp/apk_analysis/AndroidManifest.xml")
+            manifest_path = Path(out_dir) / "AndroidManifest.xml"
             if manifest_path.exists():
                 manifest = manifest_path.read_text()
 
@@ -665,6 +670,8 @@ class BinarySecurityAnalyzer:
             logger.warning("apktool not found, skipping APK analysis")
         except Exception as e:
             logger.error(f"APK analysis failed: {e}")
+        finally:
+            shutil.rmtree(out_dir, ignore_errors=True)
 
         return vulnerabilities
 
