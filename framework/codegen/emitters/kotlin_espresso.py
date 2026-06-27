@@ -52,9 +52,7 @@ def _render_case(case: TestCase) -> List[str]:
         elif a is ActionType.BACK:
             lines.append("pressBack()")
         elif a is ActionType.WAIT:
-            lines.append(
-                "// (Espresso auto-synchronizes with the UI thread; explicit wait omitted)"
-            )
+            lines.append("// (Espresso auto-synchronizes with the UI thread; explicit wait omitted)")
         elif a in (ActionType.TAP, ActionType.TYPE):
             matcher = matcher_expr(step.selector)
             if matcher is None:
@@ -62,9 +60,7 @@ def _render_case(case: TestCase) -> List[str]:
             elif a is ActionType.TAP:
                 lines.append(f"onView({matcher}).perform(click())")
             else:
-                lines.append(
-                    f"onView({matcher}).perform(typeText({kotlin_str(step.text)}), closeSoftKeyboard())"
-                )
+                lines.append(f"onView({matcher}).perform(typeText({kotlin_str(step.text)}), closeSoftKeyboard())")
         elif a is ActionType.ASSERT:
             matcher = matcher_expr(step.selector)
             if matcher is None:
@@ -74,9 +70,7 @@ def _render_case(case: TestCase) -> List[str]:
             elif step.assertion is AssertionType.ENABLED:
                 lines.append(f"onView({matcher}).check(matches(isEnabled()))")
             elif step.assertion is AssertionType.TEXT_EQUALS:
-                lines.append(
-                    f"onView({matcher}).check(matches(withText({kotlin_str(step.expected)})))"
-                )
+                lines.append(f"onView({matcher}).check(matches(withText({kotlin_str(step.expected)})))")
     return lines
 
 

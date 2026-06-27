@@ -41,9 +41,7 @@ class KotlinAppiumEmitter(Emitter):
 
     def emit(self, model: TestModel) -> Dict[str, str]:
         class_name = _pascal(model.name)
-        content = self.env.get_template("test_file.kt.j2").render(
-            model=model, class_name=class_name
-        )
+        content = self.env.get_template("test_file.kt.j2").render(model=model, class_name=class_name)
         return {f"{class_name}.kt": content}
 
 

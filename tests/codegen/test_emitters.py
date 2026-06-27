@@ -79,12 +79,9 @@ def _kotlin_syntax_ok(kt_file: Path) -> None:
     syntax_errs = [
         line
         for line in proc.stderr.splitlines()
-        if "error:" in line
-        and any(m in line.lower() for m in _KOTLINC_SYNTAX_MARKERS)
+        if "error:" in line and any(m in line.lower() for m in _KOTLINC_SYNTAX_MARKERS)
     ]
-    assert not syntax_errs, "Generated Kotlin has syntax errors:\n" + "\n".join(
-        syntax_errs
-    )
+    assert not syntax_errs, "Generated Kotlin has syntax errors:\n" + "\n".join(syntax_errs)
 
 
 def _js_syntax_ok(js_file: Path) -> None:

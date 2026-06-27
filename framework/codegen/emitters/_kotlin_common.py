@@ -24,9 +24,7 @@ _BY_FACTORY = {
 def kotlin_str(value: str) -> str:
     """Render a Kotlin double-quoted string literal, safely escaped. ``$`` is
     escaped too, since it begins a string template in Kotlin."""
-    escaped = (
-        value.replace("\\", "\\\\").replace('"', '\\"').replace("$", "\\$")
-    )
+    escaped = value.replace("\\", "\\\\").replace('"', '\\"').replace("$", "\\$")
     return '"' + escaped + '"'
 
 
