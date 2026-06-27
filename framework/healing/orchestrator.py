@@ -255,13 +255,15 @@ class HealingOrchestrator:
         """Generate comprehensive healing report"""
         total = len(results)
         successful = len([r for r in results if r.success])
+        # Guard against division by zero when there are no failures to heal.
+        success_pct = (successful / total * 100) if total else 0.0
 
         report = ["=" * 80]
         report.append("HEALING REPORT")
         report.append("=" * 80)
         report.append("")
         report.append(f"Total failures: {total}")
-        report.append(f"Successfully healed: {successful} ({successful / total * 100:.1f}%)")
+        report.append(f"Successfully healed: {successful} ({success_pct:.1f}%)")
         report.append(f"Failed to heal: {total - successful}")
         report.append("")
         report.append("=" * 80)

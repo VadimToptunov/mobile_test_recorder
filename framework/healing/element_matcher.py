@@ -135,17 +135,20 @@ class ElementMatcher:
             # Prepare features for ML model
             features = self._extract_features(alternative)
 
-            # Get prediction
-            prediction = self.ml_model.predict(features)
+            # ElementClassifier.predict returns a (ElementType, confidence)
+            # tuple, not a dict — unpack it. The old prediction['type'] raised
+            # TypeError (swallowed below), so ML confidence was always 0.
+            element_type, confidence = self.ml_model.predict(features)
+            type_name = getattr(element_type, "value", str(element_type))
 
             # If expected type provided, check if it matches
-            if expected_type and prediction['type'] == expected_type:
-                return prediction['confidence']
+            if expected_type and type_name == expected_type:
+                return confidence
             elif not expected_type:
-                return prediction['confidence']
+                return confidence
             else:
                 # Type mismatch - lower confidence
-                return prediction['confidence'] * 0.5
+                return confidence * 0.5
 
         except (ValueError, TypeError, KeyError, AttributeError) as e:
             print(f"ML prediction error: {e}")

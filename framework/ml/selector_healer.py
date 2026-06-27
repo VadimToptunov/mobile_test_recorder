@@ -54,7 +54,11 @@ class SelectorHealer:
             "total_healed": 0,
             "successful": 0,
             "failed": 0,
-            "by_strategy": {}
+            "by_strategy": {},
+            # visual-based healing increments its own counters in
+            # _heal_with_visual; must exist up front or every visual heal raises
+            # KeyError (which the broad handler swallows -> heal silently lost).
+            "visual_based": {"successes": 0, "failures": 0},
         }
 
     def report_fallback_usage(

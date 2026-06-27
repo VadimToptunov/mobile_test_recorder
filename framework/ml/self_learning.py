@@ -333,7 +333,15 @@ class ModelUpdater:
             if response.status_code == 200:
                 latest = response.json()
 
-                if latest["version"] > current_version:
+                # Compare versions numerically, not lexically: string compare
+                # makes "0.9.0" > "0.10.0" wrongly True and would refuse a real
+                # update.
+                def _ver(v: str):
+                    return tuple(
+                        int(p) if p.isdigit() else 0 for p in str(v).split(".")
+                    )
+
+                if _ver(latest["version"]) > _ver(current_version):
                     logger.info(f"New model available: v{latest['version']}")
                     return latest
                 else:

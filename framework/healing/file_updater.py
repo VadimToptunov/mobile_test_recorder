@@ -139,7 +139,10 @@ class FileUpdater:
             # Replace with commented version
             replacement = f'{comment}    {new_line}\n    # Fallback: {old_selector}'
 
-            new_content = re.sub(old_pattern, replacement, content)
+            # Pass the replacement as a function so re.sub treats it literally:
+            # selector values contain backslashes (UiAutomator, XPath escapes)
+            # that would otherwise be parsed as \1 / \g<> group references.
+            new_content = re.sub(old_pattern, lambda _m: replacement, content)
 
             # Write updated content
             file_path.write_text(new_content)
@@ -214,7 +217,10 @@ class FileUpdater:
 
             # Replace
             replacement = f'{comment}    {new_line}'
-            new_content = re.sub(old_pattern, replacement, content)
+            # Pass the replacement as a function so re.sub treats it literally:
+            # selector values contain backslashes (UiAutomator, XPath escapes)
+            # that would otherwise be parsed as \1 / \g<> group references.
+            new_content = re.sub(old_pattern, lambda _m: replacement, content)
 
             file_path.write_text(new_content)
 
@@ -290,7 +296,10 @@ class FileUpdater:
 
             # Replace
             replacement = f'{comment}    {new_line}'
-            new_content = re.sub(old_pattern, replacement, content, flags=re.DOTALL)
+            # Literal replacement (function form) — see note in _update_python_file.
+            new_content = re.sub(
+                old_pattern, lambda _m: replacement, content, flags=re.DOTALL
+            )
 
             file_path.write_text(new_content)
 

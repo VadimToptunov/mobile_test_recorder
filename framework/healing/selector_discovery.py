@@ -46,6 +46,9 @@ class SelectorDiscovery:
 
     def __init__(self):
         self.alternatives: List[AlternativeSelector] = []
+        # child -> parent map, rebuilt per page source (ElementTree has no
+        # parent pointers); used by _generate_xpath to build positional paths.
+        self._parent_map: Dict[ET.Element, ET.Element] = {}
 
     def discover_from_page_source(
             self,
@@ -67,6 +70,12 @@ class SelectorDiscovery:
         try:
             tree = ET.parse(page_source_path)
             root = tree.getroot()
+
+            # Build the child->parent map so _generate_xpath can compute
+            # positional, unique paths (without it every XPath collapsed to //tag).
+            self._parent_map = {
+                child: parent for parent in root.iter() for child in parent
+            }
 
             # Find all interactive elements
             elements = self._find_interactive_elements(root)
@@ -219,10 +228,9 @@ class SelectorDiscovery:
         return '//' + '/'.join(path_parts)
 
     def _get_parent(self, elem: ET.Element) -> Optional[ET.Element]:
-        """Get parent of element (not directly supported in ElementTree)"""
-        # This is a simplified version
-        # In real implementation, maintain parent map
-        return None
+        """Get parent of element via the map built in discover_from_page_source
+        (ElementTree elements don't carry parent pointers)."""
+        return self._parent_map.get(elem)
 
     def filter_by_attributes(
             self, required_attributes: Dict[str, str]
@@ -236,9 +244,14 @@ class SelectorDiscovery:
         Returns:
             Filtered list of alternatives
         """
-        filtered = []
-
-        return filtered
+        return [
+            alt
+            for alt in self.alternatives
+            if all(
+                alt.element_attributes.get(key) == value
+                for key, value in required_attributes.items()
+            )
+        ]
 
     def boost_confidence_by_context(
             self,

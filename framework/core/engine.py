@@ -42,6 +42,11 @@ class UIElement:
 
     def to_selector(self, language: Language) -> str:
         """Generate language-specific selector"""
+        # Without any locator, every branch below would interpolate the literal
+        # "None" into a selector that can never match. Emit a clear marker instead.
+        if not self.id and not self.xpath:
+            return f"# TODO: no stable selector for {self.label or self.type!r}"
+
         if language == Language.PYTHON:
             if self.id:
                 return f'driver.find_element(By.ID, "{self.id}")'
@@ -80,7 +85,9 @@ class UIElement:
         elif language == Language.SWIFT:
             if self.id:
                 return f'app.otherElements["{self.id}"]'
-            return f'app.otherElements.matching(identifier: "{self.id}").element'
+            # fall back to the accessibility id (XCUITest has no XPath); the
+            # old code referenced self.id here too, always yielding "None".
+            return f'app.otherElements["{self.accessibility_id}"]'
 
         return f"# Unsupported language: {language}"
 
