@@ -13,15 +13,11 @@ from typing import Dict
 
 from framework.codegen.emitters._bdd_common import collect_targets, render_feature
 from framework.codegen.emitters._java_common import by_list, java_str
+from framework.codegen.emitters._naming import pascal
 from framework.codegen.emitters.base import Emitter
 from framework.codegen.ir import TestModel
 from framework.codegen.targets import Target, register
 from framework.core.engine import Language
-
-
-def _pascal(name: str) -> str:
-    parts = [p for p in name.replace("-", "_").replace(" ", "_").split("_") if p]
-    return "".join(p[:1].upper() + p[1:] for p in parts) or "Generated"
 
 
 class JavaCucumberEmitter(Emitter):
@@ -31,7 +27,7 @@ class JavaCucumberEmitter(Emitter):
         self.env.filters["java_str"] = java_str
 
     def emit(self, model: TestModel) -> Dict[str, str]:
-        base = _pascal(model.name)
+        base = pascal(model.name)
         # (registry key, Java By[] literal of primary + fallbacks)
         locators = [(key, by_list(sel)) for key, sel in collect_targets(model)]
         steps = self.env.get_template("steps.java.j2").render(model=model, class_name=f"{base}Steps", locators=locators)

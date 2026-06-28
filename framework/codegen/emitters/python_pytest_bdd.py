@@ -17,20 +17,12 @@ from __future__ import annotations
 from typing import Dict
 
 from framework.codegen.emitters._bdd_common import render_feature
+from framework.codegen.emitters._naming import snake
 from framework.codegen.emitters._python_common import collect_locators, py_str
 from framework.codegen.emitters.base import Emitter
 from framework.codegen.ir import TestModel
 from framework.codegen.targets import Target, register
 from framework.core.engine import Language
-
-
-def _snake(name: str) -> str:
-    out = []
-    for i, ch in enumerate(name):
-        if ch.isupper() and i > 0 and not name[i - 1].isupper():
-            out.append("_")
-        out.append(ch.lower())
-    return "".join(out).replace(" ", "_").replace("-", "_")
 
 
 class PythonPytestBddEmitter(Emitter):
@@ -40,7 +32,7 @@ class PythonPytestBddEmitter(Emitter):
         self.env.filters["py_str"] = py_str
 
     def emit(self, model: TestModel) -> Dict[str, str]:
-        slug = _snake(model.name)
+        slug = snake(model.name)
         steps = self.env.get_template("steps.py.j2").render(
             model=model,
             feature_file=f"{slug}.feature",

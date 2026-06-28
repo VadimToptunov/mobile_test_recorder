@@ -11,20 +11,12 @@ from __future__ import annotations
 
 from typing import Dict
 
+from framework.codegen.emitters._naming import snake
 from framework.codegen.emitters._python_common import by_value, py_str
 from framework.codegen.emitters.base import Emitter
 from framework.codegen.ir import TestModel
 from framework.codegen.targets import Target, register
 from framework.core.engine import Language
-
-
-def _snake(name: str) -> str:
-    out = []
-    for i, ch in enumerate(name):
-        if ch.isupper() and i > 0 and not name[i - 1].isupper():
-            out.append("_")
-        out.append(ch.lower())
-    return "".join(out).replace(" ", "_").replace("-", "_")
 
 
 class PythonPytestEmitter(Emitter):
@@ -37,7 +29,7 @@ class PythonPytestEmitter(Emitter):
     def emit(self, model: TestModel) -> Dict[str, str]:
         template = self.env.get_template("test_file.py.j2")
         content = template.render(model=model)
-        return {f"test_{_snake(model.name)}.py": content}
+        return {f"test_{snake(model.name)}.py": content}
 
 
 register(

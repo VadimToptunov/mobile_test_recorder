@@ -12,22 +12,11 @@ from __future__ import annotations
 from typing import Dict
 
 from framework.codegen.emitters._kotlin_common import by_array, by_expr, kotlin_str
+from framework.codegen.emitters._naming import camel, pascal
 from framework.codegen.emitters.base import Emitter
 from framework.codegen.ir import TestModel
 from framework.codegen.targets import Target, register
 from framework.core.engine import Language
-
-
-def _camel(name: str) -> str:
-    parts = [p for p in name.replace("-", "_").split("_") if p]
-    if not parts:
-        return "test"
-    return parts[0] + "".join(p.capitalize() for p in parts[1:])
-
-
-def _pascal(name: str) -> str:
-    parts = [p for p in name.replace("-", "_").replace(" ", "_").split("_") if p]
-    return "".join(p[:1].upper() + p[1:] for p in parts) or "Generated"
 
 
 class KotlinAppiumEmitter(Emitter):
@@ -37,10 +26,10 @@ class KotlinAppiumEmitter(Emitter):
         self.env.filters["by_expr"] = by_expr
         self.env.filters["by_array"] = by_array
         self.env.filters["kotlin_str"] = kotlin_str
-        self.env.filters["camel"] = _camel
+        self.env.filters["camel"] = camel
 
     def emit(self, model: TestModel) -> Dict[str, str]:
-        class_name = _pascal(model.name)
+        class_name = pascal(model.name)
         content = self.env.get_template("test_file.kt.j2").render(model=model, class_name=class_name)
         return {f"{class_name}.kt": content}
 

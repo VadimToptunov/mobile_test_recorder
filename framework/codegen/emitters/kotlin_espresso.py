@@ -22,22 +22,11 @@ from typing import Dict, List
 
 from framework.codegen.emitters._espresso_common import activity_class, matcher_expr
 from framework.codegen.emitters._kotlin_common import kotlin_str
+from framework.codegen.emitters._naming import camel, pascal
 from framework.codegen.emitters.base import Emitter
 from framework.codegen.ir import ActionType, AssertionType, TestCase, TestModel
 from framework.codegen.targets import Target, register
 from framework.core.engine import Language
-
-
-def _camel(name: str) -> str:
-    parts = [p for p in name.replace("-", "_").split("_") if p]
-    if not parts:
-        return "test"
-    return parts[0] + "".join(p.capitalize() for p in parts[1:])
-
-
-def _pascal(name: str) -> str:
-    parts = [p for p in name.replace("-", "_").replace(" ", "_").split("_") if p]
-    return "".join(p[:1].upper() + p[1:] for p in parts) or "Generated"
 
 
 def _render_case(case: TestCase) -> List[str]:
@@ -78,8 +67,8 @@ class KotlinEspressoEmitter(Emitter):
     target_id = "kotlin_espresso"
 
     def emit(self, model: TestModel) -> Dict[str, str]:
-        class_name = f"{_pascal(model.name)}Test"
-        cases = [{"name": _camel(c.name), "lines": _render_case(c)} for c in model.cases]
+        class_name = f"{pascal(model.name)}Test"
+        cases = [{"name": camel(c.name), "lines": _render_case(c)} for c in model.cases]
         content = self.env.get_template("test_file.kt.j2").render(
             model=model,
             class_name=class_name,
