@@ -299,6 +299,21 @@ def validate_no_hardcoded_secrets(code: str, file_path: str = "unknown") -> list
         "Potential Token": r'token\s*=\s*["\'][A-Za-z0-9_-]{20,}["\']',
     }
 
+    # Obvious non-secret placeholder values (test data, fuzz labels, docs) that
+    # must not be reported as leaked credentials.
+    placeholder_values = {
+        "password",
+        "wrong_password",
+        "changeme",
+        "placeholder",
+        "your_password",
+        "test_password",
+        "dummy",
+        "example",
+        "sample",
+        "redacted",
+    }
+
     for issue_type, pattern in patterns.items():
         matches = re.finditer(pattern, code, re.IGNORECASE)
         for match in matches:
@@ -306,6 +321,14 @@ def validate_no_hardcoded_secrets(code: str, file_path: str = "unknown") -> list
             if "example" in match.group(0).lower():
                 continue
             if "test" in file_path.lower() and "Test" in match.group(0):
+                continue
+            # Skip raw-string literals (r"..."/r'...'): in the security modules
+            # these are detection regex patterns (e.g. "-----BEGIN ... KEY-----"),
+            # not hardcoded secrets.
+            if code[max(0, match.start() - 2) : match.start()] in ('r"', "r'"):
+                continue
+            quoted = re.search(r"""["']([^"']+)["']""", match.group(0))
+            if quoted and quoted.group(1).lower() in placeholder_values:
                 continue
 
             issues.append(
