@@ -29,7 +29,9 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install flake8 mypy black
+          # black is pinned in requirements.txt — don't reinstall (would pull
+          # the latest, whose formatting differs and breaks --check).
+          pip install flake8 mypy
 
       - name: Run Black (code formatter check)
         run: black --check framework tests

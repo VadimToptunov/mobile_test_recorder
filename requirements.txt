@@ -44,7 +44,10 @@ seaborn>=0.12.0
 plotly>=5.17.0
 
 # Development tools (optional)
-black>=23.0.0
+# Pin black exactly: formatting changes between black releases, so an
+# unpinned version makes `black --check` in CI fail against code formatted
+# with a different version. Bump deliberately (and reformat) when upgrading.
+black==25.12.0
 flake8>=6.0.0
 mypy>=1.5.0
 pytest-cov>=4.1.0
