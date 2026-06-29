@@ -10,19 +10,11 @@ from __future__ import annotations
 from typing import Dict
 
 from framework.codegen.emitters._js_common import js_str, selector_array
+from framework.codegen.emitters._naming import kebab
 from framework.codegen.emitters.base import Emitter
 from framework.codegen.ir import TestModel
 from framework.codegen.targets import Target, register
 from framework.core.engine import Language
-
-
-def _kebab(name: str) -> str:
-    out = []
-    for i, ch in enumerate(name):
-        if ch.isupper() and i > 0 and not name[i - 1].isupper():
-            out.append("-")
-        out.append(ch.lower())
-    return "".join(out).replace(" ", "-").replace("_", "-")
 
 
 class JsWebdriverIOEmitter(Emitter):
@@ -34,7 +26,7 @@ class JsWebdriverIOEmitter(Emitter):
 
     def emit(self, model: TestModel) -> Dict[str, str]:
         content = self.env.get_template("test_file.spec.js.j2").render(model=model)
-        return {f"{_kebab(model.name)}.spec.js": content}
+        return {f"{kebab(model.name)}.spec.js": content}
 
 
 register(
