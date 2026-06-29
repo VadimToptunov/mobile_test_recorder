@@ -12,11 +12,8 @@ from .config_manager import (
     MLConfig,
     IntegrationConfig,
 )
-from .settings import Settings, get_settings
 
 __all__ = [
-    "Settings",
-    "get_settings",
     "ConfigManager",
     "ObserveConfig",
     "FrameworkConfig",
