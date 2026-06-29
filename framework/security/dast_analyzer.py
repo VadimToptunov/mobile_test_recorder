@@ -414,112 +414,35 @@ class APISecurityTester:
         params: Optional[Dict[str, str]] = None,
         body: Optional[str] = None,
     ) -> List[DASTFinding]:
-        """Test API endpoint for vulnerabilities"""
-        findings = []
+        """Test an API endpoint for vulnerabilities.
 
-        # Test SQL injection
-        findings.extend(self._test_sql_injection(url, method, headers, params))
+        Active injection testing (SQL/XSS/path-traversal/auth/rate-limit/CORS)
+        is not yet implemented: it requires issuing real HTTP requests against
+        the target. Rather than return an empty list — which a caller would read
+        as "endpoint is secure" — surface one explicit INFO finding so the
+        report distinguishes "not tested" from "no vulnerabilities found".
+        """
+        return [
+            DASTFinding(
+                test_type=DASTTestType.API,
+                severity=DASTSeverity.INFO,
+                title="Active API security testing not performed",
+                description=(
+                    "Active endpoint testing (SQL injection, XSS, path traversal, "
+                    "auth bypass, rate limiting, CORS) is not implemented in this "
+                    "build, so this endpoint was NOT assessed for those issues."
+                ),
+                evidence=f"{method} {url}",
+                recommendation=(
+                    "Run a dedicated DAST tool against this endpoint, or treat "
+                    "this result as 'not tested' rather than 'secure'."
+                ),
+            )
+        ]
 
-        # Test XSS
-        findings.extend(self._test_xss(url, method, headers, params))
-
-        # Test path traversal
-        findings.extend(self._test_path_traversal(url, method, headers, params))
-
-        # Test authentication bypass
-        findings.extend(self._test_auth_bypass(url, method, headers))
-
-        # Test rate limiting
-        findings.extend(self._test_rate_limiting(url, method, headers))
-
-        # Test CORS
-        findings.extend(self._test_cors(url, headers))
-
-        return findings
-
-    def _test_sql_injection(
-        self, url: str, method: str, headers: Optional[Dict[str, str]], params: Optional[Dict[str, str]]
-    ) -> List[DASTFinding]:
-        """Test for SQL injection vulnerabilities"""
-        findings = []
-
-        # This is a conceptual implementation
-        # In production, you would actually make HTTP requests
-        for payload in self.SQL_PAYLOADS:
-            # Simulate testing each parameter with payload
-            error_patterns = [
-                "sql syntax",
-                "mysql",
-                "sqlite",
-                "postgresql",
-                "oracle",
-                "syntax error",
-                "unclosed quotation",
-                "unterminated string",
-            ]
-
-            # Simulate response analysis
-            # In real implementation:
-            # response = requests.get(url, params={key: payload for key in params})
-            # if any(pattern in response.text.lower() for pattern in error_patterns):
-            #     findings.append(...)
-
-        return findings
-
-    def _test_xss(
-        self, url: str, method: str, headers: Optional[Dict[str, str]], params: Optional[Dict[str, str]]
-    ) -> List[DASTFinding]:
-        """Test for XSS vulnerabilities"""
-        findings = []
-
-        for payload in self.XSS_PAYLOADS:
-            # Simulate XSS testing
-            # In real implementation, check if payload is reflected unencoded
-            pass
-
-        return findings
-
-    def _test_path_traversal(
-        self, url: str, method: str, headers: Optional[Dict[str, str]], params: Optional[Dict[str, str]]
-    ) -> List[DASTFinding]:
-        """Test for path traversal vulnerabilities"""
-        findings = []
-
-        for payload in self.PATH_TRAVERSAL_PAYLOADS:
-            # Simulate path traversal testing
-            pass
-
-        return findings
-
-    def _test_auth_bypass(self, url: str, method: str, headers: Optional[Dict[str, str]]) -> List[DASTFinding]:
-        """Test for authentication bypass"""
-        findings = []
-
-        # Test without authentication
-        # Test with modified tokens
-        # Test with expired tokens
-        # Test parameter manipulation
-
-        return findings
-
-    def _test_rate_limiting(self, url: str, method: str, headers: Optional[Dict[str, str]]) -> List[DASTFinding]:
-        """Test for rate limiting"""
-        findings = []
-
-        # Make rapid requests and check for rate limiting
-        # If no rate limiting found, report as vulnerability
-
-        return findings
-
-    def _test_cors(self, url: str, headers: Optional[Dict[str, str]]) -> List[DASTFinding]:
-        """Test CORS configuration"""
-        findings = []
-
-        # Test with different Origin headers
-        # Check for Access-Control-Allow-Origin: *
-        # Check for credential reflection
-
-        return findings
+    # Active injection-test stubs were removed: they looped over payload lists
+    # but never issued a request, so they always returned [] (a false "secure").
+    # test_endpoint() now reports an explicit "not tested" finding instead.
 
 
 class NetworkTrafficAnalyzer:

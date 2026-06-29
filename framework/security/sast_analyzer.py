@@ -466,9 +466,11 @@ class CryptoAnalyzer:
             for i, line in enumerate(lines, 1):
                 lower_line = line.lower()
 
-                # Check weak algorithms
+                # Check weak algorithms. Match on word boundaries, not as a
+                # substring: "DES" must not fire on "describe"/"nodes"/"used",
+                # nor "ECB"/"RC2" inside unrelated identifiers.
                 for algo, (cwe, desc) in self.WEAK_ALGORITHMS.items():
-                    if algo.lower() in lower_line:
+                    if re.search(rf"\b{re.escape(algo)}\b", line, re.IGNORECASE):
                         # Skip if it's a comment
                         stripped = line.strip()
                         if stripped.startswith(("#", "//", "/*", "*")):

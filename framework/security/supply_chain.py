@@ -673,37 +673,43 @@ class SupplyChainAnalyzer:
         return findings
 
     def _version_matches(self, current: str, spec: str) -> bool:
-        """Check if version matches vulnerability spec"""
-        # Simplified version comparison
+        """Check if a version satisfies a vulnerability spec (e.g. "<= 5.4")."""
+        spec = spec.strip()
+
+        # Match two-char operators before one-char ones, otherwise "<= 5.4"
+        # is read as "<" + "= 5.4" and the threshold fails to parse (the old
+        # bug: <=/>= branches were dead, and the fallback compared versions
+        # lexically so "2.0" < "2.10" came out False).
+        op = None
+        for candidate in ("<=", ">=", "==", "<", ">"):
+            if spec.startswith(candidate):
+                op = candidate
+                threshold_str = spec[len(candidate) :].strip()
+                break
+        if op is None:
+            return current == spec  # no operator -> exact-match spec
+
         try:
             from packaging import version as pkg_version
 
-            current_ver = pkg_version.parse(current)
-            spec = spec.strip()
+            cur = pkg_version.parse(current)
+            thr = pkg_version.parse(threshold_str)
+        except ImportError:
+            # No packaging available: compare numeric tuples, never lexically.
+            def _key(v: str):
+                return tuple(int(p) if p.isdigit() else 0 for p in v.split("."))
 
-            if spec.startswith("<"):
-                threshold = pkg_version.parse(spec[1:].strip())
-                return current_ver < threshold
-            elif spec.startswith("<="):
-                threshold = pkg_version.parse(spec[2:].strip())
-                return current_ver <= threshold
-            elif spec.startswith(">="):
-                threshold = pkg_version.parse(spec[2:].strip())
-                return current_ver >= threshold
-            elif spec.startswith(">"):
-                threshold = pkg_version.parse(spec[1:].strip())
-                return current_ver > threshold
-            elif spec.startswith("=="):
-                threshold = pkg_version.parse(spec[2:].strip())
-                return current_ver == threshold
-            else:
-                return current == spec
+            cur, thr = _key(current), _key(threshold_str)
+        except Exception:
+            return False  # unparseable version -> conservatively no match
 
-        except (ImportError, Exception):
-            # Fallback: simple string comparison
-            if spec.startswith("<"):
-                return current < spec[1:].strip()
-            return False
+        return {
+            "<=": cur <= thr,
+            ">=": cur >= thr,
+            "==": cur == thr,
+            "<": cur < thr,
+            ">": cur > thr,
+        }[op]
 
     def generate_sbom(self, dependencies: List[Dependency]) -> Dict[str, Any]:
         """Generate Software Bill of Materials (SBOM)"""
