@@ -115,6 +115,9 @@ jobs:
           pip install -e .
 
       - name: Run tests
+        # Force bash so the backslash line-continuations parse on Windows
+        # (the default shell there is PowerShell, which fails to parse them).
+        shell: bash
         run: |
           pytest tests/ \
             --cov=framework \
@@ -126,7 +129,7 @@ jobs:
 
       - name: Upload coverage to Codecov
         if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.13'
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           file: ./coverage.xml
           flags: unittests
@@ -185,10 +188,9 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Set up Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: ${{ env.RUST_VERSION }}
-          override: true
+        # actions-rs/* is archived (runs on Node 12 and now hard-fails);
+        # dtolnay/rust-toolchain is the maintained replacement.
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -209,7 +211,7 @@ jobs:
         run: maturin build --release
 
       - name: Upload wheel artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: rust-wheel-${{ matrix.os }}
           path: rust_core/target/wheels/*.whl
@@ -238,7 +240,7 @@ jobs:
           pip install -e .
 
       - name: Download Rust wheels
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: rust-wheel-ubuntu-latest
           path: wheels/
@@ -286,7 +288,7 @@ jobs:
         run: ./gradlew verifyPlugin
 
       - name: Upload plugin artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: jetbrains-plugin
           path: jetbrains-plugin/build/distributions/*.zip
@@ -306,9 +308,10 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Download all wheels
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           path: wheels/
+          merge-multiple: true
 
       - name: Install build tools
         run: pip install build twine
