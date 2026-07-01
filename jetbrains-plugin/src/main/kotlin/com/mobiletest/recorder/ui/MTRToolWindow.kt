@@ -38,7 +38,7 @@ class MTRToolWindow(private val project: Project) {
         val statusLabel = JLabel("Daemon: Stopped")
         
         startButton.addActionListener {
-            SwingWorker<Boolean, Void>().apply {
+            (object : SwingWorker<Boolean, Void>() {
                 override fun doInBackground(): Boolean {
                     return daemonService.start()
                 }
@@ -62,7 +62,7 @@ class MTRToolWindow(private val project: Project) {
                         )
                     }
                 }
-            }.execute()
+            }).execute()
         }
         
         stopButton.addActionListener {
