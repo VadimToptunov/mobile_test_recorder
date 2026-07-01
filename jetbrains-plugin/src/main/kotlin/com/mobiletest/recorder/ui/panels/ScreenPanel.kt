@@ -134,7 +134,7 @@ class ScreenPanel(
     }
     
     private fun loadDevices(combo: JComboBox<String>) {
-        SwingWorker<List<String>, Void>().apply {
+        (object : SwingWorker<List<String>, Void>() {
             override fun doInBackground(): List<String> {
                 try {
                     val result = daemonService.listDevices("all")
@@ -152,12 +152,12 @@ class ScreenPanel(
                 combo.removeAllItems()
                 get().forEach { combo.addItem(it) }
             }
-        }.execute()
+        }).execute()
     }
     
     private fun startSession(deviceStr: String, startBtn: JButton, stopBtn: JButton, 
                             captureBtn: JButton, refreshBtn: JButton) {
-        SwingWorker<String?, Void>().apply {
+        (object : SwingWorker<String?, Void>() {
             override fun doInBackground(): String? {
                 try {
                     // Extract device ID from string
@@ -196,13 +196,13 @@ class ScreenPanel(
                     )
                 }
             }
-        }.execute()
+        }).execute()
     }
     
     private fun stopSession(startBtn: JButton, stopBtn: JButton, 
                            captureBtn: JButton, refreshBtn: JButton) {
         currentSessionId?.let { sessionId ->
-            SwingWorker<Void?, Void>().apply {
+            (object : SwingWorker<Void?, Void>() {
                 override fun doInBackground(): Void? {
                     try {
                         val params = mapOf("session_id" to sessionId)
@@ -223,13 +223,13 @@ class ScreenPanel(
                     captureBtn.isEnabled = false
                     refreshBtn.isEnabled = false
                 }
-            }.execute()
+            }).execute()
         }
     }
     
     private fun captureScreen() {
         currentSessionId?.let { sessionId ->
-            SwingWorker<BufferedImage?, Void>().apply {
+            (object : SwingWorker<BufferedImage?, Void>() {
                 override fun doInBackground(): BufferedImage? {
                     try {
                         val result = daemonService.getScreenshot(sessionId, "png")
@@ -245,13 +245,13 @@ class ScreenPanel(
                     currentImage = get()
                     imagePanel.repaint()
                 }
-            }.execute()
+            }).execute()
         }
     }
     
     private fun performTap(x: Int, y: Int) {
         currentSessionId?.let { sessionId ->
-            SwingWorker<Void?, Void>().apply {
+            (object : SwingWorker<Void?, Void>() {
                 override fun doInBackground(): Void? {
                     try {
                         val params = mapOf(
@@ -273,7 +273,7 @@ class ScreenPanel(
                     // Auto-refresh screenshot after tap
                     captureScreen()
                 }
-            }.execute()
+            }).execute()
         }
     }
     

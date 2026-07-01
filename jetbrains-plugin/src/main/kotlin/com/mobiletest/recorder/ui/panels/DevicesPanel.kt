@@ -39,7 +39,7 @@ class DevicesPanel(
     }
     
     fun refreshDevices() {
-        SwingWorker<JsonObject?, Void>().apply {
+        (object : SwingWorker<JsonObject?, Void>() {
             override fun doInBackground(): JsonObject? {
                 return try {
                     daemonService.listDevices("all")
@@ -61,7 +61,7 @@ class DevicesPanel(
                     )
                 }
             }
-        }.execute()
+        }).execute()
     }
     
     private fun updateTable(result: JsonObject) {
